@@ -33,7 +33,7 @@ public class World
         return GetChunk(chunkX, chunkY);
     }
 
-    public BlockData GetBlock(int x, int y)
+    public BlockData GetBlock(int x, int y, int z)
     {
         int chunkX;
         int chunkY;
@@ -43,7 +43,7 @@ public class World
 
         var chunk = GetChunkAt(x, y);
         Debug.Assert(chunk != null);
-        return chunk.GetBlock(x, y);
+        return chunk.GetBlock(x, y, z);
     }
 
     void ClampChunkPos(int x, int y, out int outX, out int outY)
