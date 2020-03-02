@@ -46,6 +46,78 @@ public class World
         return chunk.GetBlock(x, y, z);
     }
 
+
+    public BlockNeighbors GetBlockNeighbors(int x, int y, int z, int size, int height = 0)
+    {
+        BlockNeighbors b = new BlockNeighbors(size, height);
+
+        int realSize = size * 2 + 1;
+
+        int minX = x - size;
+        int minY = y - size;
+        int maxX = x + size;
+        int maxY = y + size;
+
+        int minChunkX;
+        int minChunkY;
+        int maxChunkX;
+        int maxChunkY;
+
+        PosToChunkPos(minX, minY, out minChunkX, out minChunkY);
+        PosToChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
+
+        for(int i = minChunkX; i <= maxChunkX; i++)
+        {
+            for(int j = minChunkY; j < maxChunkY; j++)
+            {
+                int currentMinX;
+                int currentMinY;
+                int currentMaxX;
+                int currentMaxY;
+
+                BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinY);
+                BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxY);
+
+                int localMinX = 0;
+                int localMinY = 0;
+                int localMaxX = Chunk.chunkSize - 1;
+                int localMaxY = Chunk.chunkSize - 1;
+
+                int tileMinX = 0;
+                int tileMinY = 0;
+
+                if (currentMinX < minX)
+                    localMinX = minX - currentMinX;
+                else tileMinX = currentMinX - minX;
+                if (currentMinY < minY)
+                    localMinY = minY - currentMinY;
+                else tileMinY = currentMinY - minY;
+
+                if (localMaxX - localMinX + 1 > realSize - tileMinX)
+                    localMaxX = realSize + localMinX - 1 - tileMinX;
+                if (localMaxY - localMinY + 1 > realSize - tileMinY)
+                    localMaxY = realSize + localMinY - 1 - tileMinY;
+
+                for (int m = -height; m <= height; m++)
+                {
+                    var layer = GetChunk(i, j).GetLayer(z + m);
+
+                    for (int k = 0; k <= localMaxX - localMinX; k++)
+                    {
+                        for (int l = 0; l <= localMaxY - localMinY; l++)
+                        {
+                            if (layer == null)
+                                b.SetBlock(k + tileMinX - size, l + tileMinY - size, m, BlockData.GetDefault());
+                            else b.SetBlock(k + tileMinX - size, l + tileMinY - size, m, layer.GetBlock(localMinX + k, localMinY + l));
+                        }
+                    }
+                }
+            }
+        }
+
+        return b;
+    }
+
     void ClampChunkPos(int x, int y, out int outX, out int outY)
     {
         if(!m_bWorldLoop)
@@ -103,7 +175,7 @@ public class World
         outY = y;
     }
 
-    public void PosToBlocPosInChunk(int x, int y, out int outX, out int outY)
+    public void PosToBlockPosInChunk(int x, int y, out int outX, out int outY)
     {
         int worldSize = m_chunkNb * Chunk.chunkSize;
 
@@ -151,5 +223,14 @@ public class World
         outBlockY = y % Chunk.chunkSize;
 
         Debug.Assert(x < Chunk.chunkSize && y < Chunk.chunkSize);
+    }
+
+    public void BlockPosInChunkToPos(int x, int y, int chunkX, int chunkY, out int outX, out int outY)
+    {
+        Debug.Assert(x >= 0 && x < Chunk.chunkSize && y >= 0 && y < Chunk.chunkSize);
+        Debug.Assert(m_bWorldLoop || (chunkX >= 0 && chunkX < m_chunkNb && chunkY >= 0 && chunkY < m_chunkNb));
+
+        outX = x + chunkX * Chunk.chunkSize;
+        outY = y + chunkY * Chunk.chunkSize;
     }
 }
