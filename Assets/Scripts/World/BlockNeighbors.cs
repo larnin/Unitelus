@@ -11,6 +11,8 @@ public class BlockNeighbors
     int m_height;
     BlockData[] m_blocks;
 
+    public int size { get { return m_size; } }
+
     public BlockNeighbors(int size, int height = 0)
     {
         m_size = size;
@@ -44,6 +46,19 @@ public class BlockNeighbors
         Debug.Assert(x >= -m_size && x <= m_size && y >= -m_size && y <= m_size && z >= -m_height && z <= m_height);
 
         return ((x + m_size) * (2 * m_size + 1) + (y + m_size)) * (2 * m_size + 1) + z;
+    }
+
+    BlockNeighbors GetBlockNeighbors(int x, int y, int z, int size, int height = 0)
+    {
+        BlockNeighbors b = new BlockNeighbors(size, height);
+
+        for (int i = -size; i <= size; i++)
+            for (int j = -size; j <= size; j++)
+                for (int k = -height; k <= height; k++)
+                    if (x + i >= -m_size && x + i <= m_size && y + j >= -m_size && y + j <= m_size && z + k >= -m_height && z + k <= m_height)
+                        b.SetBlock(i, j, k, GetBlock(x + i, y + j, z + k));
+
+        return b;
     }
 }
 
