@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class ChunkRenderPassBlocks : ChunkRendererPassBase
 {
-    public List<BlockRendererBase> m_blocks;
-
     public override RendererData[] Render(Chunk c, float scaleX, float scaleY, float scaleZ)
     {
         var renders = new List<RendererData>();
@@ -42,7 +40,7 @@ public class ChunkRenderPassBlocks : ChunkRendererPassBase
 
                     Vector3 pos = new Vector3(i * scaleX, j * scaleY, min + k * scaleZ);
 
-                    foreach (var block in m_blocks)
+                    foreach (var block in PlaceholderBlockInfos.instance.m_blockRenderer)
                     {
                         if(block.id == centerID)
                         {

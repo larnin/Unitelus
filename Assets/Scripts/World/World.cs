@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class World
 {
@@ -17,6 +17,10 @@ public class World
         m_chunkNb = chunkNb;
 
         m_chunks = new Chunk[m_chunkNb * m_chunkNb];
+
+        for (int i = 0; i < m_chunkNb; i++)
+            for (int j = 0; j < m_chunkNb; j++)
+                m_chunks[ChunkPosToIndex(i, j)] = new Chunk(this, i, j);
     }
 
     public Chunk GetChunk(int x, int y)
@@ -41,11 +45,34 @@ public class World
         int blockY;
         PosToBlockPosAndChunkPos(x, y, out blockX, out blockY, out chunkX, out chunkY);
 
-        var chunk = GetChunkAt(x, y);
-        Debug.Assert(chunk != null);
-        return chunk.GetBlock(x, y, z);
+        var chunk = GetChunk(chunkX, chunkY);
+        return chunk.GetBlock(blockX, blockY, z);
     }
 
+    public void SetBlock(int x, int y, int z, BlockData block)
+    {
+        int chunkX;
+        int chunkY;
+        int blockX;
+        int blockY;
+        PosToBlockPosAndChunkPos(x, y, out blockX, out blockY, out chunkX, out chunkY);
+
+        var chunk = GetChunk(chunkX, chunkY);
+        Debug.Assert(chunk != null);
+        chunk.SetBlock(blockX, blockY, z, block);
+    }
+
+    public int GetHeight(int x, int y)
+    {
+        int chunkX;
+        int chunkY;
+        int blockX;
+        int blockY;
+        PosToBlockPosAndChunkPos(x, y, out blockX, out blockY, out chunkX, out chunkY);
+
+        var chunk = GetChunk(chunkX, chunkY);
+        return chunk.GetHeight(blockX, blockY);
+    }
 
     public BlockNeighbors GetBlockNeighbors(int x, int y, int z, int size, int height = 0)
     {
@@ -213,6 +240,7 @@ public class World
             if (y < 0)
                 y = y % m_chunkNb + m_chunkNb;
             else y = y % m_chunkNb;
+
         }
         Debug.Assert(x >= 0 && x < m_chunkNb && y >= 0 && y < m_chunkNb);
 
@@ -284,7 +312,7 @@ public class World
         outChunkX = x / Chunk.chunkSize;
         outChunkY = y / Chunk.chunkSize;
 
-        Debug.Assert(x < m_chunkNb && y < m_chunkNb);
+        Debug.Assert(outChunkX < m_chunkNb && outChunkY < m_chunkNb);
 
         outBlockX = x % Chunk.chunkSize;
         outBlockY = y % Chunk.chunkSize;

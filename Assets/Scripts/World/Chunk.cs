@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class ChunkLayer
 {
@@ -81,27 +81,39 @@ public class Chunk
         return BlockData.GetDefault();
     }
 
-    public void SetBlock(int x, int y, int z, BlockData bloc)
+    public void SetBlock(int x, int y, int z, BlockData block)
     {
         if(m_layers.ContainsKey(z))
         {
             var layer = m_layers[z];
 
-            layer.SetBlock(x, y, bloc);
+            layer.SetBlock(x, y, block);
 
             if(layer.IsEmpty())
                 m_layers.Remove(z);
         }
         else
         {
-            if (bloc == BlockData.GetDefault())
+            if (block == BlockData.GetDefault())
                 return;
             var layer = new ChunkLayer();
-            layer.SetBlock(x, y, bloc);
+            layer.SetBlock(x, y, block);
             m_layers.Add(z, layer);
         }
 
         m_updated = true;
+    }
+
+    public int GetHeight(int x, int y)
+    {
+        int z = int.MinValue;
+        foreach(var l in m_layers)
+        {
+            if (l.Key > z && l.Value.GetBlock(x, y) != BlockData.GetDefault())
+                z = l.Key;
+        }
+
+        return z;
     }
 
     public ChunkLayer GetLayer(int z)
