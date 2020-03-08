@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Sirenix.OdinInspector;
 
-public class PlaceholderBlockInfos : MonoBehaviour
+public class PlaceholderBlockInfos : SerializedMonoBehaviour
 {
     public List<BlockRendererBase> m_blockRenderer = new List<BlockRendererBase>();
 

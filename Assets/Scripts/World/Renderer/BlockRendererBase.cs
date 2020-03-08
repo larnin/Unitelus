@@ -7,7 +7,7 @@ using UnityEngine;
 
 public abstract class BlockRendererBase
 {
-    int m_id;
+    [SerializeField] int m_id;
 
     public int id { get { return m_id; } }
 

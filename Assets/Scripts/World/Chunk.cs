@@ -56,14 +56,14 @@ public class Chunk
     World m_world = null;
     int m_x = 0;
     int m_y = 0;
-    bool m_updated = false;
+    float m_updateTime = 0;
 
     Dictionary<int, ChunkLayer> m_layers = new Dictionary<int, ChunkLayer>();
 
     public World world { get { return m_world; } }
     public int x { get { return m_x; } }
     public int y { get { return m_y; } }
-    public bool updated { get { return m_updated; } }
+    public float updateTime { get { return m_updateTime; } }
 
     public Chunk(World world, int x, int y)
     {
@@ -101,7 +101,7 @@ public class Chunk
             m_layers.Add(z, layer);
         }
 
-        m_updated = true;
+        m_updateTime = Time.time;
     }
 
     public int GetHeight(int x, int y)
@@ -140,10 +140,5 @@ public class Chunk
         }
 
         return layers;
-    }
-
-    public void Rendered()
-    {
-        m_updated = false;
     }
 }

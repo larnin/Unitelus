@@ -7,13 +7,16 @@ using UnityEngine;
 
 public class ChunkRenderPassBlocks : ChunkRendererPassBase
 {
-    public override RendererData[] Render(Chunk c, float scaleX, float scaleY, float scaleZ)
+    public override RendererData[] Render(Chunk c, int x, int y, float scaleX, float scaleY, float scaleZ)
     {
         var renders = new List<RendererData>();
         var layers = c.GetLayers();
 
-        int min = int.MinValue;
-        int max = int.MaxValue;
+        int min = int.MaxValue;
+        int max = int.MinValue;
+
+        if (layers.Length == 0)
+            return renders.ToArray();
 
         foreach(var l in layers)
         {

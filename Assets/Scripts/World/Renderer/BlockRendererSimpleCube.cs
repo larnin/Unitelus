@@ -75,12 +75,12 @@ public class BlockRendererSimpleCube : BlockRendererBase
         }
 
         Vector3[] normals = new Vector3[6];
-        normals[0] = new Vector3(-1, 0, 0);
-        normals[1] = new Vector3(0, 1, 0);
-        normals[2] = new Vector3(0, 0, 1);
-        normals[3] = new Vector3(0, -1, 0);
-        normals[4] = new Vector3(1, 0, 0);
-        normals[5] = new Vector3(0, 0, -1);
+        normals[0] = new Vector3(1, 0, 0);
+        normals[1] = new Vector3(0, -1, 0);
+        normals[2] = new Vector3(0, 0, -1);
+        normals[3] = new Vector3(0, 1, 0);
+        normals[4] = new Vector3(-1, 0, 0);
+        normals[5] = new Vector3(0, 0, 1);
 
         data.normals = new Vector3[24];
         for (int i = 0; i < 6; i++)

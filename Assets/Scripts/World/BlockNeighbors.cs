@@ -45,7 +45,7 @@ public class BlockNeighbors
     {
         Debug.Assert(x >= -m_size && x <= m_size && y >= -m_size && y <= m_size && z >= -m_height && z <= m_height);
 
-        return ((x + m_size) * (2 * m_size + 1) + (y + m_size)) * (2 * m_size + 1) + z;
+        return ((x + m_size) * (2 * m_size + 1) + (y + m_size)) * (2 * m_size + 1) + z + m_size;
     }
 
     BlockNeighbors GetBlockNeighbors(int x, int y, int z, int size, int height = 0)

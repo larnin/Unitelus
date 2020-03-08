@@ -22,6 +22,7 @@ public class PlaceholderWorld : MonoBehaviour
 
     private void Awake()
     {
+        instance = this;
         m_world = WorldGenerator.Generate(m_settings);
     }
 }

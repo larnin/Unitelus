@@ -3,8 +3,8 @@ using System.Collections;
 
 public class PlaceholderPlayer : MonoBehaviour
 {
-    string horizontalAxis = "horizontal";
-    string verticalAxis = "vertical";
+    string horizontalAxis = "Horizontal";
+    string verticalAxis = "Vertical";
 
     [SerializeField] float m_speed = 1;
 

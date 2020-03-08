@@ -45,7 +45,7 @@ public class RendererData
         {
             int[] newTriangles = new int[triangles.Length + data.triangles.Length];
 
-            triangles.CopyTo(triangles, 0);
+            triangles.CopyTo(newTriangles, 0);
 
             for (int i = 0; i < data.triangles.Length; i++)
                 newTriangles[i + triangles.Length] = data.triangles[i] + vertices.Length;

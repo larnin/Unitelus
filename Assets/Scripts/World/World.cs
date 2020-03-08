@@ -90,12 +90,12 @@ public class World
         int maxChunkX;
         int maxChunkY;
 
-        PosToChunkPos(minX, minY, out minChunkX, out minChunkY);
-        PosToChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
+        PosToUnclampedChunkPos(minX, minY, out minChunkX, out minChunkY);
+        PosToUnclampedChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
 
         for(int i = minChunkX; i <= maxChunkX; i++)
         {
-            for(int j = minChunkY; j < maxChunkY; j++)
+            for(int j = minChunkY; j <= maxChunkY; j++)
             {
                 int currentMinX;
                 int currentMinY;
@@ -157,12 +157,12 @@ public class World
         int maxChunkX;
         int maxChunkY;
 
-        PosToChunkPos(x, y, out minChunkX, out minChunkY);
-        PosToChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
+        PosToUnclampedChunkPos(x, y, out minChunkX, out minChunkY);
+        PosToUnclampedChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
 
         for (int i = minChunkX; i <= maxChunkX; i++)
         {
-            for (int j = minChunkY; j < maxChunkY; j++)
+            for (int j = minChunkY; j <= maxChunkY; j++)
             {
                 int currentMinX;
                 int currentMinY;
@@ -222,10 +222,10 @@ public class World
         else
         {
             if (x < 0)
-                outX = x % m_chunkNb + m_chunkNb;
+                outX = x % m_chunkNb + m_chunkNb - 1;
             else outX = x % m_chunkNb;
             if (y < 0)
-                outY = y % m_chunkNb + m_chunkNb;
+                outY = y % m_chunkNb + m_chunkNb - 1;
             else outY = y % m_chunkNb;
         }
     }
@@ -235,10 +235,10 @@ public class World
         if (m_bWorldLoop)
         {
             if (x < 0)
-                x = x % m_chunkNb + m_chunkNb;
+                x = x % m_chunkNb + m_chunkNb - 1;
             else x = x % m_chunkNb;
             if (y < 0)
-                y = y % m_chunkNb + m_chunkNb;
+                y = y % m_chunkNb + m_chunkNb - 1;
             else y = y % m_chunkNb;
 
         }
@@ -247,16 +247,26 @@ public class World
         return x * m_chunkNb + y;
     }
 
+    public void PosToUnclampedChunkPos(int x, int y, out int outX, out int outY)
+    {
+        if (x < 0)
+            outX = (x + 1) / Chunk.chunkSize - 1;
+        else outX = x / Chunk.chunkSize;
+        if (y < 0)
+            outY = (y + 1) / Chunk.chunkSize - 1;
+        else outY = y / Chunk.chunkSize;
+    }
+
     public void PosToChunkPos(int x, int y, out int outX, out int outY)
     {
         if(m_bWorldLoop)
         {
             int worldSize = m_chunkNb * Chunk.chunkSize;
             if (x < 0)
-                x = x % worldSize + worldSize;
+                x = x % worldSize + worldSize - 1;
             else x = x % worldSize;
             if (y < 0)
-                y = y % worldSize + worldSize;
+                y = y % worldSize + worldSize - 1;
             else y = y % worldSize;
         }
         Debug.Assert(x >= 0 && y >= 0);
@@ -277,10 +287,10 @@ public class World
         if (m_bWorldLoop)
         {
             if (x < 0)
-                x = x % worldSize + worldSize;
+                x = x % worldSize + worldSize - 1;
             else x = x % worldSize;
             if (y < 0)
-                y = y % worldSize + worldSize;
+                y = y % worldSize + worldSize - 1;
             else y = y % worldSize;
         }
         Debug.Assert(x >= 0 && y >= 0 && x < worldSize && y < worldSize);
@@ -301,10 +311,10 @@ public class World
         if (m_bWorldLoop)
         {
             if (x < 0)
-                x = x % worldSize + worldSize;
+                x = x % worldSize + worldSize - 1;
             else x = x % worldSize;
             if (y < 0)
-                y = y % worldSize + worldSize;
+                y = y % worldSize + worldSize - 1;
             else y = y % worldSize;
         }
         Debug.Assert(x >= 0 && y >= 0 && x < worldSize && y < worldSize);
