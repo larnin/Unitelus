@@ -60,5 +60,30 @@ public class BlockNeighbors
 
         return b;
     }
+
+    public static BlockNeighbors FromMatrix(Matrix<BlockData> mat, int x, int y, int size)
+    {
+        return FromMatrix(mat, x, y, 0, size, 0);
+    }
+
+    public static BlockNeighbors FromMatrix(Matrix<BlockData> mat, int x, int y, int z, int size, int height)
+    {
+        BlockNeighbors b = new BlockNeighbors(size, height);
+
+        for(int i = -size; i <= size; i++)
+            for(int j = -size; j <= size; j++)
+                for(int k = -height; k <= height; k++)
+                {
+                    int realX = x + i;
+                    int realY = y + j;
+                    int realZ = z + k;
+
+                    if (realX < 0 || realX >= mat.width || realY < 0 || realY >= mat.depth || realZ < 0 || realZ >= mat.height)
+                        b.SetBlock(i, j, k, BlockData.GetDefault());
+                    else b.SetBlock(i, j, k, mat.Get(realX, realY, realZ));
+                }
+
+        return b;
+    }
 }
 

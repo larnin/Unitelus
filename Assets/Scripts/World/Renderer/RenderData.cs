@@ -13,13 +13,13 @@ public class RendererData
     public Vector2[] UVs;
     public Vector3[] normals;
 
-    void Scale(float scale)
+    public void Scale(float scale)
     {
         for (int i = 0; i < vertices.Length; i++)
             vertices[i] *= scale;
     }
 
-    void Scale(Vector3 scale)
+    public void Scale(Vector3 scale)
     {
         for (int i = 0; i < vertices.Length; i++)
         {
@@ -29,7 +29,7 @@ public class RendererData
         }
     }
 
-    void Move(Vector3 dir)
+    public void Move(Vector3 dir)
     {
         for(int i = 0; i < vertices.Length; i++)
         {
@@ -37,7 +37,7 @@ public class RendererData
         }
     }
 
-    void Merge(RendererData data)
+    public void Merge(RendererData data)
     {
         Debug.Assert(material == data.material);
 
@@ -84,7 +84,7 @@ public class RendererData
         }
     }
 
-    bool Validate()
+    public bool Validate()
     {
         if (material == null)
             return false;

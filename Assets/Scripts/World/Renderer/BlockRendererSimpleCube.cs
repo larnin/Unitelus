@@ -10,6 +10,10 @@ public class BlockRendererSimpleCube : BlockRendererBase
     [SerializeField]
     public Material m_material;
 
+    public BlockRendererSimpleCube(int id) : base(id)
+    {
+    }
+
     public override RendererData Render(Vector3 pos, Vector3 scale, BlockNeighbors neighbors)
     {
         Debug.Assert(neighbors.size == 1);
@@ -82,6 +86,9 @@ public class BlockRendererSimpleCube : BlockRendererBase
         for (int i = 0; i < 6; i++)
             for (int j = 0; j < 4; j++)
                 data.normals[i * 4 + j] = data.normals[i];
+
+        data.Scale(scale);
+        data.Move(pos);
 
         return data;
     }

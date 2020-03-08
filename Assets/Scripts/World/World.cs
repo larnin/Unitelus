@@ -118,6 +118,73 @@ public class World
         return b;
     }
 
+    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int depth, int height = 1)
+    {
+        Matrix<BlockData> mat = new Matrix<BlockData>(width, depth, height);
+
+        int maxX = x + width - 1;
+        int maxY = y + depth - 1;
+
+        int minChunkX;
+        int minChunkY;
+        int maxChunkX;
+        int maxChunkY;
+
+        PosToChunkPos(x, y, out minChunkX, out minChunkY);
+        PosToChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
+
+        for (int i = minChunkX; i <= maxChunkX; i++)
+        {
+            for (int j = minChunkY; j < maxChunkY; j++)
+            {
+                int currentMinX;
+                int currentMinY;
+                int currentMaxX;
+                int currentMaxY;
+
+                BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinY);
+                BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxY);
+
+                int localMinX = 0;
+                int localMinY = 0;
+                int localMaxX = Chunk.chunkSize - 1;
+                int localMaxY = Chunk.chunkSize - 1;
+
+                int tileMinX = 0;
+                int tileMinY = 0;
+
+                if (currentMinX < x)
+                    localMinX = x - currentMinX;
+                else tileMinX = currentMinX - x;
+                if (currentMinY < y)
+                    localMinY = y - currentMinY;
+                else tileMinY = currentMinY - y;
+
+                if (localMaxX - localMinX + 1 > width - tileMinX)
+                    localMaxX = width + localMinX - 1 - tileMinX;
+                if (localMaxY - localMinY + 1 > depth - tileMinY)
+                    localMaxY = depth + localMinY - 1 - tileMinY;
+
+                for (int m = 0; m < height; m++)
+                {
+                    var layer = GetChunk(i, j).GetLayer(z + m);
+
+                    for (int k = 0; k <= localMaxX - localMinX; k++)
+                    {
+                        for (int l = 0; l <= localMaxY - localMinY; l++)
+                        {
+                            if (layer == null)
+                                mat.Set(k + tileMinX, l + tileMinY, m, BlockData.GetDefault());
+                            else mat.Set(k + tileMinX, l + tileMinY, m, layer.GetBlock(localMinX + k, localMinY + l));
+                        }
+                    }
+                }
+            }
+        }
+
+        return mat;
+    }
+
     void ClampChunkPos(int x, int y, out int outX, out int outY)
     {
         if(!m_bWorldLoop)

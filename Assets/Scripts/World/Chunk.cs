@@ -53,12 +53,23 @@ public class Chunk
 {
     public const int chunkSize = 16;
 
-    World m_world;
+    World m_world = null;
+    int m_x = 0;
+    int m_y = 0;
+    bool m_updated = false;
+
     Dictionary<int, ChunkLayer> m_layers = new Dictionary<int, ChunkLayer>();
 
-    public Chunk(World world)
+    public World world { get { return m_world; } }
+    public int x { get { return m_x; } }
+    public int y { get { return m_y; } }
+    public bool updated { get { return m_updated; } }
+
+    public Chunk(World world, int x, int y)
     {
         m_world = world;
+        m_x = x;
+        m_y = y;
     }
 
     public BlockData GetBlock(int x, int y, int z)
@@ -89,6 +100,8 @@ public class Chunk
             layer.SetBlock(x, y, bloc);
             m_layers.Add(z, layer);
         }
+
+        m_updated = true;
     }
 
     public ChunkLayer GetLayer(int z)
@@ -115,5 +128,10 @@ public class Chunk
         }
 
         return layers;
+    }
+
+    public void Rendered()
+    {
+        m_updated = false;
     }
 }
