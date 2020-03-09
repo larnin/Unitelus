@@ -15,7 +15,7 @@ public class PlaceholderPlayer : MonoBehaviour
 
     void Update()
     {
-        Vector3 dir = new Vector3(Input.GetAxis(horizontalAxis), Input.GetAxis(verticalAxis), 0) * Time.deltaTime * m_speed;
+        Vector3 dir = new Vector3(Input.GetAxis(horizontalAxis), 0, Input.GetAxis(verticalAxis)) * Time.deltaTime * m_speed;
         var pos = transform.position;
         pos += dir;
         transform.position = pos;

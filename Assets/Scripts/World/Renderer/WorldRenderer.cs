@@ -18,6 +18,8 @@ public class WorldRenderer : MonoBehaviour
 
     List<ChunkInfos> m_chunks = new List<ChunkInfos>();
 
+    Vector3 m_lastPos = new Vector3(1000000, 1000000, 1000000);
+
     private void Awake()
     {
         m_subscriberList.Add(new Event<CenterUpdatedEvent>.Subscriber(OnCenterUpdate));
@@ -32,6 +34,10 @@ public class WorldRenderer : MonoBehaviour
 
     void OnCenterUpdate(CenterUpdatedEvent e)
     {
+        if ((e.pos - m_lastPos).sqrMagnitude < m_moveUpdateDistance * m_moveUpdateDistance)
+            return;
+        m_lastPos = e.pos;
+
         List<ChunkInfos> updatedList = new List<ChunkInfos>();
 
         int minX, minY, maxX, maxY;

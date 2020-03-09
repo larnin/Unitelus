@@ -7,13 +7,13 @@ using UnityEngine;
 
 public class World
 {
-    bool m_bWorldLoop;
+    bool m_worldLoop;
     int m_chunkNb;
     Chunk[] m_chunks;
 
     public World(int chunkNb, bool worldLoop)
     {
-        m_bWorldLoop = worldLoop;
+        m_worldLoop = worldLoop;
         m_chunkNb = chunkNb;
 
         m_chunks = new Chunk[m_chunkNb * m_chunkNb];
@@ -22,6 +22,10 @@ public class World
             for (int j = 0; j < m_chunkNb; j++)
                 m_chunks[ChunkPosToIndex(i, j)] = new Chunk(this, i, j);
     }
+
+    public int size { get { return m_chunkNb * Chunk.chunkSize; } }
+    public int chunkNb { get { return m_chunkNb; } }
+    public bool worldLoop { get { return m_worldLoop; } }
 
     public Chunk GetChunk(int x, int y)
     {
@@ -214,7 +218,7 @@ public class World
 
     void ClampChunkPos(int x, int y, out int outX, out int outY)
     {
-        if(!m_bWorldLoop)
+        if(!m_worldLoop)
         {
             outX = x;
             outY = y;
@@ -232,7 +236,7 @@ public class World
 
     public int ChunkPosToIndex(int x, int y)
     {
-        if (m_bWorldLoop)
+        if (m_worldLoop)
         {
             if (x < 0)
                 x = x % m_chunkNb + m_chunkNb - 1;
@@ -259,7 +263,7 @@ public class World
 
     public void PosToChunkPos(int x, int y, out int outX, out int outY)
     {
-        if(m_bWorldLoop)
+        if(m_worldLoop)
         {
             int worldSize = m_chunkNb * Chunk.chunkSize;
             if (x < 0)
@@ -284,7 +288,7 @@ public class World
     {
         int worldSize = m_chunkNb * Chunk.chunkSize;
 
-        if (m_bWorldLoop)
+        if (m_worldLoop)
         {
             if (x < 0)
                 x = x % worldSize + worldSize - 1;
@@ -295,20 +299,15 @@ public class World
         }
         Debug.Assert(x >= 0 && y >= 0 && x < worldSize && y < worldSize);
 
-        x = x % Chunk.chunkSize;
-        y = y % Chunk.chunkSize;
-
-        Debug.Assert(x < Chunk.chunkSize && y < Chunk.chunkSize);
-
-        outX = x;
-        outY = y;
+        outX = x % Chunk.chunkSize;
+        outY = y % Chunk.chunkSize;
     }
 
     public void PosToBlockPosAndChunkPos(int x, int y, out int outBlockX, out int outBlockY, out int outChunkX, out int outChunkY)
     {
         int worldSize = m_chunkNb * Chunk.chunkSize;
 
-        if (m_bWorldLoop)
+        if (m_worldLoop)
         {
             if (x < 0)
                 x = x % worldSize + worldSize - 1;
@@ -326,14 +325,12 @@ public class World
 
         outBlockX = x % Chunk.chunkSize;
         outBlockY = y % Chunk.chunkSize;
-
-        Debug.Assert(x < Chunk.chunkSize && y < Chunk.chunkSize);
     }
 
     public void BlockPosInChunkToPos(int x, int y, int chunkX, int chunkY, out int outX, out int outY)
     {
         Debug.Assert(x >= 0 && x < Chunk.chunkSize && y >= 0 && y < Chunk.chunkSize);
-        Debug.Assert(m_bWorldLoop || (chunkX >= 0 && chunkX < m_chunkNb && chunkY >= 0 && chunkY < m_chunkNb));
+        Debug.Assert(m_worldLoop || (chunkX >= 0 && chunkX < m_chunkNb && chunkY >= 0 && chunkY < m_chunkNb));
 
         outX = x + chunkX * Chunk.chunkSize;
         outY = y + chunkY * Chunk.chunkSize;

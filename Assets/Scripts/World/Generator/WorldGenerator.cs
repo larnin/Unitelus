@@ -9,11 +9,11 @@ public static class WorldGenerator
 {
     public static World Generate(WorldGeneratorSettings settings)
     {
+        World world = new World(settings.size, true);
+
         List<Perlin> perlins = new List<Perlin>();
         foreach (var p in settings.perlins)
-            perlins.Add(new Perlin(settings.size, p.amplitude, p.frequency, settings.seed + perlins.Count));
-
-        World world = new World(settings.size, true);
+            perlins.Add(new Perlin(world.size, p.amplitude, p.frequency, settings.seed + perlins.Count));
 
         BlockData b;
         b.id = 1;
