@@ -27,119 +27,114 @@ public class World
     public int chunkNb { get { return m_chunkNb; } }
     public bool worldLoop { get { return m_worldLoop; } }
 
-    public Chunk GetChunk(int x, int y)
+    public Chunk GetChunk(int x, int z)
     {
-        return m_chunks[ChunkPosToIndex(x, y)];
+        return m_chunks[ChunkPosToIndex(x, z)];
     }
 
-    public Chunk GetChunkAt(int x, int y)
+    public Chunk GetChunkAt(int x, int z)
     {
         int chunkX;
-        int chunkY;
-        PosToChunkPos(x, y, out chunkX, out chunkY);
+        int chunkZ;
+        PosToChunkPos(x, z, out chunkX, out chunkZ);
 
-        return GetChunk(chunkX, chunkY);
+        return GetChunk(chunkX, chunkZ);
     }
 
     public BlockData GetBlock(int x, int y, int z)
     {
         int chunkX;
-        int chunkY;
+        int chunkZ;
         int blockX;
-        int blockY;
-        PosToBlockPosAndChunkPos(x, y, out blockX, out blockY, out chunkX, out chunkY);
+        int blockZ;
+        PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
 
-        var chunk = GetChunk(chunkX, chunkY);
-        return chunk.GetBlock(blockX, blockY, z);
+        var chunk = GetChunk(chunkX, chunkZ);
+        return chunk.GetBlock(blockX, y, blockZ);
     }
 
     public void SetBlock(int x, int y, int z, BlockData block)
     {
         int chunkX;
-        int chunkY;
+        int chunkZ;
         int blockX;
-        int blockY;
-        PosToBlockPosAndChunkPos(x, y, out blockX, out blockY, out chunkX, out chunkY);
+        int blockZ;
+        PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
 
-        var chunk = GetChunk(chunkX, chunkY);
+        var chunk = GetChunk(chunkX, chunkZ);
         Debug.Assert(chunk != null);
-        chunk.SetBlock(blockX, blockY, z, block);
-    }
-
-    public int GetHeight(int x, int y)
-    {
-        int chunkX;
-        int chunkY;
-        int blockX;
-        int blockY;
-        PosToBlockPosAndChunkPos(x, y, out blockX, out blockY, out chunkX, out chunkY);
-
-        var chunk = GetChunk(chunkX, chunkY);
-        return chunk.GetHeight(blockX, blockY);
+        chunk.SetBlock(blockX, y, blockZ, block);
     }
 
     public BlockNeighbors GetBlockNeighbors(int x, int y, int z, int size, int height = 0)
     {
+        //todo optimize layers to do the same than chunk (not get multiple time the same layer)
+
         BlockNeighbors b = new BlockNeighbors(size, height);
 
         int realSize = size * 2 + 1;
 
         int minX = x - size;
-        int minY = y - size;
+        int minZ = z - size;
         int maxX = x + size;
-        int maxY = y + size;
+        int maxZ = z + size;
 
         int minChunkX;
-        int minChunkY;
+        int minChunkZ;
         int maxChunkX;
-        int maxChunkY;
+        int maxChunkZ;
 
-        PosToUnclampedChunkPos(minX, minY, out minChunkX, out minChunkY);
-        PosToUnclampedChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
+        PosToUnclampedChunkPos(minX, minZ, out minChunkX, out minChunkZ);
+        PosToUnclampedChunkPos(maxX, maxZ, out maxChunkX, out maxChunkZ);
 
         for(int i = minChunkX; i <= maxChunkX; i++)
         {
-            for(int j = minChunkY; j <= maxChunkY; j++)
+            for(int j = minChunkZ; j <= maxChunkZ; j++)
             {
                 int currentMinX;
-                int currentMinY;
+                int currentMinZ;
                 int currentMaxX;
-                int currentMaxY;
+                int currentMaxZ;
 
-                BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinY);
-                BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxY);
+                BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinZ);
+                BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxZ);
 
                 int localMinX = 0;
-                int localMinY = 0;
+                int localMinZ = 0;
                 int localMaxX = Chunk.chunkSize - 1;
-                int localMaxY = Chunk.chunkSize - 1;
+                int localMaxZ = Chunk.chunkSize - 1;
 
                 int tileMinX = 0;
-                int tileMinY = 0;
+                int tileMinZ = 0;
 
                 if (currentMinX < minX)
                     localMinX = minX - currentMinX;
                 else tileMinX = currentMinX - minX;
-                if (currentMinY < minY)
-                    localMinY = minY - currentMinY;
-                else tileMinY = currentMinY - minY;
+                if (currentMinZ < minZ)
+                    localMinZ = minZ - currentMinZ;
+                else tileMinZ = currentMinZ - minZ;
 
                 if (localMaxX - localMinX + 1 > realSize - tileMinX)
                     localMaxX = realSize + localMinX - 1 - tileMinX;
-                if (localMaxY - localMinY + 1 > realSize - tileMinY)
-                    localMaxY = realSize + localMinY - 1 - tileMinY;
+                if (localMaxZ - localMinZ + 1 > realSize - tileMinZ)
+                    localMaxZ = realSize + localMinZ - 1 - tileMinZ;
+
+                var chunk = GetChunk(i, j);
 
                 for (int m = -height; m <= height; m++)
                 {
-                    var layer = GetChunk(i, j).GetLayer(z + m);
+                    int layerIndex, blockY;
+                    chunk.HeightToLayerAndBlock(y + m, out layerIndex, out blockY);
+                    
+                    var layer = chunk.GetLayer(layerIndex);
 
                     for (int k = 0; k <= localMaxX - localMinX; k++)
                     {
-                        for (int l = 0; l <= localMaxY - localMinY; l++)
+                        for (int l = 0; l <= localMaxZ - localMinZ; l++)
                         {
                             if (layer == null)
-                                b.SetBlock(k + tileMinX - size, l + tileMinY - size, m, BlockData.GetDefault());
-                            else b.SetBlock(k + tileMinX - size, l + tileMinY - size, m, layer.GetBlock(localMinX + k, localMinY + l));
+                                b.SetBlock(k + tileMinX - size, m, l + tileMinZ - size, BlockData.GetDefault());
+                            else b.SetBlock(k + tileMinX - size, m, l + tileMinZ - size, layer.GetBlock(localMinX + k, blockY, localMinZ + l));
                         }
                     }
                 }
@@ -149,64 +144,76 @@ public class World
         return b;
     }
 
-    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int depth, int height = 1)
+    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int depth)
     {
-        Matrix<BlockData> mat = new Matrix<BlockData>(width, depth, height);
+        return GetLocalMatrix(x, y, z, width, 1, depth);
+    }
+
+    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int height, int depth)
+    {
+        //todo optimize layers to do the same than chunk (not get multiple time the same layer)
+
+        Matrix<BlockData> mat = new Matrix<BlockData>(width, height, depth);
 
         int maxX = x + width - 1;
-        int maxY = y + depth - 1;
+        int maxZ = z + depth - 1;
 
         int minChunkX;
-        int minChunkY;
+        int minChunkZ;
         int maxChunkX;
-        int maxChunkY;
+        int maxChunkZ;
 
-        PosToUnclampedChunkPos(x, y, out minChunkX, out minChunkY);
-        PosToUnclampedChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
+        PosToUnclampedChunkPos(x, z, out minChunkX, out minChunkZ);
+        PosToUnclampedChunkPos(maxX, maxZ, out maxChunkX, out maxChunkZ);
 
         for (int i = minChunkX; i <= maxChunkX; i++)
         {
-            for (int j = minChunkY; j <= maxChunkY; j++)
+            for (int j = minChunkZ; j <= maxChunkZ; j++)
             {
                 int currentMinX;
-                int currentMinY;
+                int currentMinZ;
                 int currentMaxX;
-                int currentMaxY;
+                int currentMaxZ;
 
-                BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinY);
-                BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxY);
+                BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinZ);
+                BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxZ);
 
                 int localMinX = 0;
-                int localMinY = 0;
+                int localMinZ = 0;
                 int localMaxX = Chunk.chunkSize - 1;
-                int localMaxY = Chunk.chunkSize - 1;
+                int localMaxZ = Chunk.chunkSize - 1;
 
                 int tileMinX = 0;
-                int tileMinY = 0;
+                int tileMinZ = 0;
 
                 if (currentMinX < x)
                     localMinX = x - currentMinX;
                 else tileMinX = currentMinX - x;
-                if (currentMinY < y)
-                    localMinY = y - currentMinY;
-                else tileMinY = currentMinY - y;
+                if (currentMinZ < z)
+                    localMinZ = z - currentMinZ;
+                else tileMinZ = currentMinZ - z;
 
                 if (localMaxX - localMinX + 1 > width - tileMinX)
                     localMaxX = width + localMinX - 1 - tileMinX;
-                if (localMaxY - localMinY + 1 > depth - tileMinY)
-                    localMaxY = depth + localMinY - 1 - tileMinY;
+                if (localMaxZ - localMinZ + 1 > depth - tileMinZ)
+                    localMaxZ = depth + localMinZ - 1 - tileMinZ;
+
+                var chunk = GetChunk(i, j);
 
                 for (int m = 0; m < height; m++)
                 {
-                    var layer = GetChunk(i, j).GetLayer(z + m);
+                    int layerIndex, blockY;
+                    chunk.HeightToLayerAndBlock(y + m, out layerIndex, out blockY);
+
+                    var layer = chunk.GetLayer(layerIndex);
 
                     for (int k = 0; k <= localMaxX - localMinX; k++)
                     {
-                        for (int l = 0; l <= localMaxY - localMinY; l++)
+                        for (int l = 0; l <= localMaxZ - localMinZ; l++)
                         {
                             if (layer == null)
-                                mat.Set(k + tileMinX, l + tileMinY, m, BlockData.GetDefault());
-                            else mat.Set(k + tileMinX, l + tileMinY, m, layer.GetBlock(localMinX + k, localMinY + l));
+                                mat.Set(k + tileMinX, m, l + tileMinZ, BlockData.GetDefault());
+                            else mat.Set(k + tileMinX, m, l + tileMinZ, layer.GetBlock(localMinX + k, blockY, localMinZ + l));
                         }
                     }
                 }
@@ -216,94 +223,94 @@ public class World
         return mat;
     }
 
-    void ClampChunkPos(int x, int y, out int outX, out int outY)
+    void ClampChunkPos(int x, int z, out int outX, out int outZ)
     {
         if(!m_worldLoop)
         {
             outX = x;
-            outY = y;
+            outZ = z;
         }
         else
         {
             if (x < 0)
                 outX = x % m_chunkNb + m_chunkNb - 1;
             else outX = x % m_chunkNb;
-            if (y < 0)
-                outY = y % m_chunkNb + m_chunkNb - 1;
-            else outY = y % m_chunkNb;
+            if (z < 0)
+                outZ = z % m_chunkNb + m_chunkNb - 1;
+            else outZ = z % m_chunkNb;
         }
     }
 
-    public int ChunkPosToIndex(int x, int y)
+    public int ChunkPosToIndex(int x, int z)
     {
         if (m_worldLoop)
         {
             if (x < 0)
                 x = x % m_chunkNb + m_chunkNb - 1;
             else x = x % m_chunkNb;
-            if (y < 0)
-                y = y % m_chunkNb + m_chunkNb - 1;
-            else y = y % m_chunkNb;
+            if (z < 0)
+                z = z % m_chunkNb + m_chunkNb - 1;
+            else z = z % m_chunkNb;
 
         }
-        Debug.Assert(x >= 0 && x < m_chunkNb && y >= 0 && y < m_chunkNb);
+        Debug.Assert(x >= 0 && x < m_chunkNb && z >= 0 && z < m_chunkNb);
 
-        return x * m_chunkNb + y;
+        return x * m_chunkNb + z;
     }
 
-    public void PosToUnclampedChunkPos(int x, int y, out int outX, out int outY)
+    public void PosToUnclampedChunkPos(int x, int z, out int outX, out int outZ)
     {
         if (x < 0)
             outX = (x + 1) / Chunk.chunkSize - 1;
         else outX = x / Chunk.chunkSize;
-        if (y < 0)
-            outY = (y + 1) / Chunk.chunkSize - 1;
-        else outY = y / Chunk.chunkSize;
+        if (z < 0)
+            outZ = (z + 1) / Chunk.chunkSize - 1;
+        else outZ = z / Chunk.chunkSize;
     }
 
-    public void PosToChunkPos(int x, int y, out int outX, out int outY)
+    public void PosToChunkPos(int x, int z, out int outX, out int outZ)
     {
         if(m_worldLoop)
         {
-            int worldSize = m_chunkNb * Chunk.chunkSize;
+            int worldSize = size;
             if (x < 0)
                 x = x % worldSize + worldSize - 1;
             else x = x % worldSize;
-            if (y < 0)
-                y = y % worldSize + worldSize - 1;
-            else y = y % worldSize;
+            if (z < 0)
+                z = z % worldSize + worldSize - 1;
+            else z = z % worldSize;
         }
-        Debug.Assert(x >= 0 && y >= 0);
+        Debug.Assert(x >= 0 && z >= 0);
 
         x = x / Chunk.chunkSize;
-        y = y / Chunk.chunkSize;
+        z = z / Chunk.chunkSize;
 
-        Debug.Assert(x < m_chunkNb && y < m_chunkNb);
+        Debug.Assert(x < m_chunkNb && z < m_chunkNb);
 
         outX = x;
-        outY = y;
+        outZ = z;
     }
 
-    public void PosToBlockPosInChunk(int x, int y, out int outX, out int outY)
+    public void PosToBlockPosInChunk(int x, int z, out int outX, out int outZ)
     {
-        int worldSize = m_chunkNb * Chunk.chunkSize;
+        int worldSize = size;
 
         if (m_worldLoop)
         {
             if (x < 0)
                 x = x % worldSize + worldSize - 1;
             else x = x % worldSize;
-            if (y < 0)
-                y = y % worldSize + worldSize - 1;
-            else y = y % worldSize;
+            if (z < 0)
+                z = z % worldSize + worldSize - 1;
+            else z = z % worldSize;
         }
-        Debug.Assert(x >= 0 && y >= 0 && x < worldSize && y < worldSize);
+        Debug.Assert(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
 
         outX = x % Chunk.chunkSize;
-        outY = y % Chunk.chunkSize;
+        outZ = z % Chunk.chunkSize;
     }
 
-    public void PosToBlockPosAndChunkPos(int x, int y, out int outBlockX, out int outBlockY, out int outChunkX, out int outChunkY)
+    public void PosToBlockPosAndChunkPos(int x, int z, out int outBlockX, out int outBlockZ, out int outChunkX, out int outChunkZ)
     {
         int worldSize = m_chunkNb * Chunk.chunkSize;
 
@@ -312,27 +319,27 @@ public class World
             if (x < 0)
                 x = x % worldSize + worldSize - 1;
             else x = x % worldSize;
-            if (y < 0)
-                y = y % worldSize + worldSize - 1;
-            else y = y % worldSize;
+            if (z < 0)
+                z = z % worldSize + worldSize - 1;
+            else z = z % worldSize;
         }
-        Debug.Assert(x >= 0 && y >= 0 && x < worldSize && y < worldSize);
+        Debug.Assert(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
 
         outChunkX = x / Chunk.chunkSize;
-        outChunkY = y / Chunk.chunkSize;
+        outChunkZ = z / Chunk.chunkSize;
 
-        Debug.Assert(outChunkX < m_chunkNb && outChunkY < m_chunkNb);
+        Debug.Assert(outChunkX < m_chunkNb && outChunkZ < m_chunkNb);
 
         outBlockX = x % Chunk.chunkSize;
-        outBlockY = y % Chunk.chunkSize;
+        outBlockZ = z % Chunk.chunkSize;
     }
 
-    public void BlockPosInChunkToPos(int x, int y, int chunkX, int chunkY, out int outX, out int outY)
+    public void BlockPosInChunkToPos(int x, int z, int chunkX, int chunkZ, out int outX, out int outZ)
     {
-        Debug.Assert(x >= 0 && x < Chunk.chunkSize && y >= 0 && y < Chunk.chunkSize);
-        Debug.Assert(m_worldLoop || (chunkX >= 0 && chunkX < m_chunkNb && chunkY >= 0 && chunkY < m_chunkNb));
+        Debug.Assert(x >= 0 && x < Chunk.chunkSize && z >= 0 && z < Chunk.chunkSize);
+        Debug.Assert(m_worldLoop || (chunkX >= 0 && chunkX < m_chunkNb && chunkZ >= 0 && chunkZ < m_chunkNb));
 
         outX = x + chunkX * Chunk.chunkSize;
-        outY = y + chunkY * Chunk.chunkSize;
+        outZ = z + chunkZ * Chunk.chunkSize;
     }
 }
