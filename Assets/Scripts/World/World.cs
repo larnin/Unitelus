@@ -66,18 +66,14 @@ public class World
         chunk.SetBlock(blockX, y, blockZ, block);
     }
 
-    public BlockNeighbors GetBlockNeighbors(int x, int y, int z, int size, int height = 0)
+    public void GetBlockNeighbors(int x, int y, int z, BlockNeighbors b)
     {
-        //todo optimize layers to do the same than chunk (not get multiple time the same layer)
+        int realSize = b.size * 2 + 1;
 
-        BlockNeighbors b = new BlockNeighbors(size, height);
-
-        int realSize = size * 2 + 1;
-
-        int minX = x - size;
-        int minZ = z - size;
-        int maxX = x + size;
-        int maxZ = z + size;
+        int minX = x - b.size;
+        int minZ = z - b.size;
+        int maxX = x + b.size;
+        int maxZ = z + b.size;
 
         int minChunkX;
         int minChunkZ;
@@ -87,9 +83,9 @@ public class World
         PosToUnclampedChunkPos(minX, minZ, out minChunkX, out minChunkZ);
         PosToUnclampedChunkPos(maxX, maxZ, out maxChunkX, out maxChunkZ);
 
-        for(int i = minChunkX; i <= maxChunkX; i++)
+        for (int i = minChunkX; i <= maxChunkX; i++)
         {
-            for(int j = minChunkZ; j <= maxChunkZ; j++)
+            for (int j = minChunkZ; j <= maxChunkZ; j++)
             {
                 int currentMinX;
                 int currentMinZ;
@@ -121,11 +117,11 @@ public class World
 
                 var chunk = GetChunk(i, j);
 
-                for (int m = -height; m <= height; m++)
+                for (int m = -b.height; m <= b.height; m++)
                 {
                     int layerIndex, blockY;
                     chunk.HeightToLayerAndBlock(y + m, out layerIndex, out blockY);
-                    
+
                     var layer = chunk.GetLayer(layerIndex);
 
                     for (int k = 0; k <= localMaxX - localMinX; k++)
@@ -133,30 +129,32 @@ public class World
                         for (int l = 0; l <= localMaxZ - localMinZ; l++)
                         {
                             if (layer == null)
-                                b.SetBlock(k + tileMinX - size, m, l + tileMinZ - size, BlockData.GetDefault());
-                            else b.SetBlock(k + tileMinX - size, m, l + tileMinZ - size, layer.GetBlock(localMinX + k, blockY, localMinZ + l));
+                                b.SetBlock(k + tileMinX - b.size, m, l + tileMinZ - b.size, BlockData.GetDefault());
+                            else b.SetBlock(k + tileMinX - b.size, m, l + tileMinZ - b.size, layer.GetBlock(localMinX + k, blockY, localMinZ + l));
                         }
                     }
                 }
             }
         }
+    }
+
+    public BlockNeighbors GetBlockNeighbors(int x, int y, int z, int size, int height = 0)
+    {
+        //todo optimize layers to do the same than chunk (not get multiple time the same layer)
+
+        BlockNeighbors b = new BlockNeighbors(size, height);
+
+        GetBlockNeighbors(x, y, z, b);
 
         return b;
     }
 
-    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int depth)
-    {
-        return GetLocalMatrix(x, y, z, width, 1, depth);
-    }
-
-    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int height, int depth)
+    public void GetLocalMatrix(int x, int y, int z, Matrix<BlockData> mat)
     {
         //todo optimize layers to do the same than chunk (not get multiple time the same layer)
 
-        Matrix<BlockData> mat = new Matrix<BlockData>(width, height, depth);
-
-        int maxX = x + width - 1;
-        int maxZ = z + depth - 1;
+        int maxX = x + mat.width - 1;
+        int maxZ = z + mat.depth - 1;
 
         int minChunkX;
         int minChunkZ;
@@ -193,14 +191,14 @@ public class World
                     localMinZ = z - currentMinZ;
                 else tileMinZ = currentMinZ - z;
 
-                if (localMaxX - localMinX + 1 > width - tileMinX)
-                    localMaxX = width + localMinX - 1 - tileMinX;
-                if (localMaxZ - localMinZ + 1 > depth - tileMinZ)
-                    localMaxZ = depth + localMinZ - 1 - tileMinZ;
+                if (localMaxX - localMinX + 1 > mat.width - tileMinX)
+                    localMaxX = mat.width + localMinX - 1 - tileMinX;
+                if (localMaxZ - localMinZ + 1 > mat.depth - tileMinZ)
+                    localMaxZ = mat.depth + localMinZ - 1 - tileMinZ;
 
                 var chunk = GetChunk(i, j);
 
-                for (int m = 0; m < height; m++)
+                for (int m = 0; m < mat.height; m++)
                 {
                     int layerIndex, blockY;
                     chunk.HeightToLayerAndBlock(y + m, out layerIndex, out blockY);
@@ -219,6 +217,18 @@ public class World
                 }
             }
         }
+    }
+
+    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int depth)
+    {
+        return GetLocalMatrix(x, y, z, width, 1, depth);
+    }
+
+    public Matrix<BlockData> GetLocalMatrix(int x, int y, int z, int width, int height, int depth)
+    {
+        Matrix<BlockData> mat = new Matrix<BlockData>(width, height, depth);
+
+        GetLocalMatrix(x, y, z, mat);
 
         return mat;
     }
