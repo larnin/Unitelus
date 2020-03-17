@@ -9,11 +9,10 @@ public class ChunkLayer
 {
     BlockData[] m_blocks = new BlockData[Chunk.chunkSize * Chunk.chunkSize * Chunk.chunkSize];
     int m_blockNb = 0;
+    float m_updateTime = 0;
 
-    public int GetBlockNb()
-    {
-        return m_blockNb;
-    }
+    public float updateTime { get { return m_updateTime; } }
+    public int blockNb { get { return m_blockNb; } }
 
     public bool IsEmpty()
     {
@@ -41,6 +40,8 @@ public class ChunkLayer
             m_blockNb++;
 
         m_blocks[index] = bloc;
+
+        m_updateTime = Time.time;
     }
 
     int PosToIndex(int x, int y, int z)
@@ -56,14 +57,12 @@ public class Chunk
     World m_world = null;
     int m_x = 0;
     int m_z = 0;
-    float m_updateTime = 0;
 
     Dictionary<int, ChunkLayer> m_layers = new Dictionary<int, ChunkLayer>();
 
     public World world { get { return m_world; } }
     public int x { get { return m_x; } }
     public int z { get { return m_z; } }
-    public float updateTime { get { return m_updateTime; } }
 
     public Chunk(World world, int x, int z)
     {
@@ -106,8 +105,6 @@ public class Chunk
             layer.SetBlock(x, b, z, block);
             m_layers.Add(l, layer);
         }
-
-        m_updateTime = Time.time;
     }
 
     public ChunkLayer GetLayerAt(int y)

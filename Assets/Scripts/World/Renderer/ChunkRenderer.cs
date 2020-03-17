@@ -19,7 +19,7 @@ public class ChunkRenderer : MonoBehaviour
     MeshFilter m_meshFilter;
     MeshCollider m_collider;
 
-    List<ChunkRendererPassBase> m_pass = new List<ChunkRendererPassBase>();
+    List<LayerRendererPassBase> m_pass = new List<LayerRendererPassBase>();
 
     private void Start()
     {
@@ -30,7 +30,7 @@ public class ChunkRenderer : MonoBehaviour
         if (m_meshFilter.mesh == null)
             m_meshFilter.mesh = new Mesh();
 
-        m_pass.Add(new ChunkRenderPassBlocks());
+        m_pass.Add(new LayerRenderPassBlocks());
     }
 
     public void Update()

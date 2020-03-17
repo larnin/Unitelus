@@ -14,82 +14,105 @@ public class BlockRendererSimpleCube : BlockRendererBase
     {
     }
 
-    public override RendererData Render(Vector3 pos, Vector3 scale, BlockNeighbors neighbors)
+
+    public override void Render(Vector3 pos, Vector3 scale, BlockNeighbors neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
         Debug.Assert(neighbors.size == 1);
+        var data = meshParams.Allocate(24, 36, m_material);
 
-        RendererData data = new RendererData();
+        WorldVertexDefinition vertex = new WorldVertexDefinition();
+        vertex.pos = new Vector3(0, 0, 0);
+        vertex.uv = new Vector2(0, 0);
+        data.vertices[data.verticesSize] = vertex;
+        vertex.pos = new Vector3(0, 0, 1);
+        vertex.uv = new Vector2(0, 1);
+        data.vertices[data.verticesSize + 1] = vertex;
+        vertex.pos = new Vector3(0, 1, 1);
+        vertex.uv = new Vector2(1, 1);
+        data.vertices[data.verticesSize + 2] = vertex;
+        vertex.pos = new Vector3(0, 1, 0);
+        vertex.uv = new Vector2(1, 0);
+        data.vertices[data.verticesSize + 3] = vertex;
 
-        data.material = m_material;
+        vertex.pos = new Vector3(0, 1, 0);
+        vertex.uv = new Vector2(0, 0);
+        data.vertices[data.verticesSize + 4] = vertex;
+        vertex.pos = new Vector3(0, 1, 1);
+        vertex.uv = new Vector2(0, 1);
+        data.vertices[data.verticesSize + 5] = vertex;
+        vertex.pos = new Vector3(1, 1, 1);
+        vertex.uv = new Vector2(1, 1);
+        data.vertices[data.verticesSize + 6] = vertex;
+        vertex.pos = new Vector3(1, 1, 0);
+        vertex.uv = new Vector2(1, 0);
+        data.vertices[data.verticesSize + 7] = vertex;
 
-        //to not have the same uv on each face
-        data.vertices = new Vector3[24];
-        data.vertices[0]  = new Vector3(0, 0, 0);
-        data.vertices[1]  = new Vector3(0, 0, 1);
-        data.vertices[2]  = new Vector3(0, 1, 1);
-        data.vertices[3]  = new Vector3(0, 1, 0);
-                         
-        data.vertices[4]  = new Vector3(0, 1, 0);
-        data.vertices[5]  = new Vector3(0, 1, 1);
-        data.vertices[6]  = new Vector3(1, 1, 1);
-        data.vertices[7]  = new Vector3(1, 1, 0);
-                         
-        data.vertices[8]  = new Vector3(0, 0, 1);
-        data.vertices[9]  = new Vector3(1, 0, 1);
-        data.vertices[10] = new Vector3(1, 1, 1);
-        data.vertices[11] = new Vector3(0, 1, 1);
+        vertex.pos = new Vector3(0, 0, 1);
+        vertex.uv = new Vector2(0, 0);
+        data.vertices[data.verticesSize + 8] = vertex;
+        vertex.pos = new Vector3(1, 0, 1);
+        vertex.uv = new Vector2(0, 1);
+        data.vertices[data.verticesSize + 9] = vertex;
+        vertex.pos = new Vector3(1, 1, 1);
+        vertex.uv = new Vector2(1, 1);
+        data.vertices[data.verticesSize + 10] = vertex;
+        vertex.pos = new Vector3(0, 1, 1);
+        vertex.uv = new Vector2(1, 0);
+        data.vertices[data.verticesSize + 11] = vertex;
 
-        data.vertices[12] = new Vector3(1, 0, 0);
-        data.vertices[13] = new Vector3(1, 0, 1);
-        data.vertices[14] = new Vector3(0, 0, 1);
-        data.vertices[15] = new Vector3(0, 0, 0);
+        vertex.pos = new Vector3(1, 0, 0);
+        vertex.uv = new Vector2(0, 0);
+        data.vertices[data.verticesSize + 12] = vertex;
+        vertex.pos = new Vector3(1, 0, 1);
+        vertex.uv = new Vector2(0, 1);
+        data.vertices[data.verticesSize + 13] = vertex;
+        vertex.pos = new Vector3(0, 0, 1);
+        vertex.uv = new Vector2(1, 1);
+        data.vertices[data.verticesSize + 14] = vertex;
+        vertex.pos = new Vector3(0, 0, 0);
+        vertex.uv = new Vector2(1, 0);
+        data.vertices[data.verticesSize + 15] = vertex;
 
-        data.vertices[16] = new Vector3(1, 1, 0);
-        data.vertices[17] = new Vector3(1, 1, 1);
-        data.vertices[18] = new Vector3(1, 0, 1);
-        data.vertices[19] = new Vector3(1, 0, 0);
+        vertex.pos = new Vector3(1, 1, 0);
+        vertex.uv = new Vector2(0, 0);
+        data.vertices[data.verticesSize + 16] = vertex;
+        vertex.pos = new Vector3(1, 1, 1);
+        vertex.uv = new Vector2(0, 1);
+        data.vertices[data.verticesSize + 17] = vertex;
+        vertex.pos = new Vector3(1, 0, 1);
+        vertex.uv = new Vector2(1, 1);
+        data.vertices[data.verticesSize + 18] = vertex;
+        vertex.pos = new Vector3(1, 0, 0);
+        vertex.uv = new Vector2(1, 0);
+        data.vertices[data.verticesSize + 19] = vertex;
 
-        data.vertices[20] = new Vector3(0, 1, 0);
-        data.vertices[21] = new Vector3(1, 1, 0);
-        data.vertices[22] = new Vector3(1, 0, 0);
-        data.vertices[23] = new Vector3(0, 0, 0);
+        vertex.pos = new Vector3(0, 1, 0);
+        vertex.uv = new Vector2(0, 0);
+        data.vertices[data.verticesSize + 20] = vertex;
+        vertex.pos = new Vector3(1, 1, 0);
+        vertex.uv = new Vector2(0, 1);
+        data.vertices[data.verticesSize + 21] = vertex;
+        vertex.pos = new Vector3(1, 0, 0);
+        vertex.uv = new Vector2(1, 1);
+        data.vertices[data.verticesSize + 22] = vertex;
+        vertex.pos = new Vector3(0, 0, 0);
+        vertex.uv = new Vector2(1, 0);
+        data.vertices[data.verticesSize + 23] = vertex;
 
-        data.triangles = new int[36];
-        for(int i = 0; i < 6; i++)
+        for(ushort i = 0; i < 6; i++)
         {
-            data.triangles[i * 6] = 4 * i;
-            data.triangles[i * 6 + 1] = 4 * i + 1;
-            data.triangles[i * 6 + 2] = 4 * i + 2;
-            data.triangles[i * 6 + 3] = 4 * i;
-            data.triangles[i * 6 + 4] = 4 * i + 2;
-            data.triangles[i * 6 + 5] = 4 * i + 3;
+            data.indexes[i * 6] = (ushort)(4 * i + data.verticesSize);
+            data.indexes[i * 6 + 1] = (ushort)(4 * i + 1 + data.verticesSize);
+            data.indexes[i * 6 + 2] = (ushort)(4 * i + 2 + data.verticesSize);
+            data.indexes[i * 6 + 3] = (ushort)(4 * i + data.verticesSize);
+            data.indexes[i * 6 + 4] = (ushort)(4 * i + 2 + data.verticesSize);
+            data.indexes[i * 6 + 5] = (ushort)(4 * i + 3 + data.verticesSize);
         }
 
-        data.UVs = new Vector2[24];
-        for(int i = 0; i < 6; i++)
-        {
-            data.UVs[i * 4] = new Vector2(0, 0);
-            data.UVs[i * 4 + 1] = new Vector2(0, 1);
-            data.UVs[i * 4 + 2] = new Vector2(1, 1);
-            data.UVs[i * 4 + 3] = new Vector2(1, 0);
-        }
+        MeshEx.Scale(ref data.vertices, data.verticesSize, 24, scale);
+        MeshEx.Move(ref data.vertices, data.verticesSize, 24, pos);
 
-        Vector3[] normals = new Vector3[6];
-        normals[0] = new Vector3(1, 0, 0);
-        normals[1] = new Vector3(0, -1, 0);
-        normals[2] = new Vector3(0, 0, -1);
-        normals[3] = new Vector3(0, 1, 0);
-        normals[4] = new Vector3(-1, 0, 0);
-        normals[5] = new Vector3(0, 0, 1);
-
-        data.normals = new Vector3[24];
-        for (int i = 0; i < 6; i++)
-            for (int j = 0; j < 4; j++)
-                data.normals[i * 4 + j] = data.normals[i];
-
-        data.Scale(scale);
-        data.Move(pos);
-
-        return data;
+        data.verticesSize += 24;
+        data.indexesSize += 36;
     }
 }

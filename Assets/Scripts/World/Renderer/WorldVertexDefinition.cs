@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -32,4 +33,27 @@ public static class MeshEx
 
         mesh.SetIndexBufferParams(indexNb, IndexFormat.UInt16);
     }
+
+    public static void Scale(ref NativeArray<WorldVertexDefinition> vertices, int startIndex, int size, Vector3 scale)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            var vertex = vertices[startIndex + i];
+            vertex.pos.x *= scale.x;
+            vertex.pos.y *= scale.y;
+            vertex.pos.z *= scale.z;
+            vertices[startIndex + i] = vertex;
+        }
+    }
+
+    public static void Move(ref NativeArray<WorldVertexDefinition> vertices, int startIndex, int size, Vector3 dir)
+    {
+        for (int i = 0; i < size; i++)
+        {
+            var vertex = vertices[startIndex + i];
+            vertex.pos += dir;
+            vertices[startIndex + i] = vertex;
+        }
+    }
 }
+

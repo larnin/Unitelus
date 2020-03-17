@@ -25,10 +25,7 @@ public class MeshParams<T> where T : struct
 {
     const int allocSize = 1000;
 
-    Dictionary<Material, List<MeshParamData<T>>> m_data = new Dictionary<Material, List<MeshParamData<T>>>();
-
-    //used to return stuff without new GC alloc
-    MeshParamData<T> m_returnData = new MeshParamData<T>();
+    public Dictionary<Material, List<MeshParamData<T>>> m_data = new Dictionary<Material, List<MeshParamData<T>>>();
 
     public MeshParamData<T> Allocate(int vertexSize, int indexSize, Material material)
     {
@@ -62,15 +59,7 @@ public class MeshParams<T> where T : struct
         if (element.indexesSize + indexSize > element.indexes.Length)
             IncreaseIndexArray(element, indexSize);
 
-        m_returnData.vertices = element.vertices;
-        m_returnData.verticesSize = element.verticesSize;
-        m_returnData.indexes = element.indexes;
-        m_returnData.indexesSize = element.indexesSize;
-
-        element.verticesSize += vertexSize;
-        element.indexesSize += indexSize;
-
-        return m_returnData;
+        return element;
     }
 
     void AllocateVerticesArray(MeshParamData<T> data, int addVertices)
