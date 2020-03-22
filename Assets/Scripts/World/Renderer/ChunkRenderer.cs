@@ -175,8 +175,6 @@ public class ChunkRenderer : MonoBehaviour
 
         MeshEx.SetWorldMeshParams(mesh, data.verticesSize, data.indexesSize);
         mesh.SetVertexBufferData(data.vertices, 0, 0, data.verticesSize);
-
-        mesh.SetIndexBufferParams(data.indexesSize, UnityEngine.Rendering.IndexFormat.UInt16);
         mesh.SetIndexBufferData(data.indexes, 0, 0, data.indexesSize);
 
         mesh.RecalculateNormals();
