@@ -66,6 +66,32 @@ public class World
         chunk.SetBlock(blockX, y, blockZ, block);
     }
 
+    public int GetTopBlockHeight(int x, int z)
+    {
+        int chunkX;
+        int chunkZ;
+        int blockX;
+        int blockZ;
+        PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
+
+        var chunk = GetChunk(chunkX, chunkZ);
+        Debug.Assert(chunk != null);
+        return chunk.GetTopBlockHeight(blockX, blockZ);
+    }
+
+    public int GetBottomBlockHeight(int x, int z)
+    {
+        int chunkX;
+        int chunkZ;
+        int blockX;
+        int blockZ;
+        PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
+
+        var chunk = GetChunk(chunkX, chunkZ);
+        Debug.Assert(chunk != null);
+        return chunk.GetBottomBlockHeight(blockX, blockZ);
+    }
+
     public void GetBlockNeighbors(int x, int y, int z, BlockNeighbors b)
     {
         int realSize = b.size * 2 + 1;

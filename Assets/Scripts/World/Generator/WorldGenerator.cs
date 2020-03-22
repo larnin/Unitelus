@@ -22,28 +22,28 @@ public static class WorldGenerator
 
         for (int x = 0; x < settings.size * Chunk.chunkSize; x++)
         {
-            for (int y = 0; y < settings.size * Chunk.chunkSize; y++)
+            for (int z = 0; z < settings.size * Chunk.chunkSize; z++)
             {
-                float z = 0;
+                float y = 0;
                 foreach (var p in perlins)
-                    z += p.Get(x, y);
+                    y += p.Get(x, z);
 
-                int zInt = Mathf.FloorToInt(z);
-                world.SetBlock(x, y, zInt, b);
+                int yInt = Mathf.FloorToInt(y);
+                world.SetBlock(x, yInt, z, b);
 
-                minHeight = Mathf.Min(zInt - 1, minHeight);
+                minHeight = Mathf.Min(yInt - 1, minHeight);
             }
         }
 
         for (int x = 0; x < settings.size * Chunk.chunkSize; x++)
         {
-            for (int y = 0; y < settings.size * Chunk.chunkSize; y++)
+            for (int z = 0; z < settings.size * Chunk.chunkSize; z++)
             {
-                int height = world.GetHeight(x, y);
+                int height = world.GetTopBlockHeight(x, z);
 
                 if (height <= minHeight)
                     continue;
-                for(int z = height - 1; z >= minHeight; z--)
+                for(int y = height - 1; y >= minHeight; z--)
                     world.SetBlock(x, y, z, b);
             }
         }
