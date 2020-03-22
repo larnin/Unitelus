@@ -216,6 +216,19 @@ public class Chunk
         return LayerToHeight(layerIndex, i);
     }
 
+    public List<int> GetLayersUptatedAfter(float time)
+    {
+        List<int> layers = new List<int>();
+
+        foreach(var l in m_layers)
+        {
+            if (l.Value.updateTime > time)
+                layers.Add(l.Key);
+        }
+
+        return layers;
+    }
+
     public int HeightToLayer(int height)
     {
         if (height < 0)

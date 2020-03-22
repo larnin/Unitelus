@@ -62,6 +62,66 @@ public class MeshParams<T> where T : struct
         return element;
     }
 
+    //only clean index but not resize the buffers
+    //only remove the sub buffers if there are more than one MeshParamData for one material
+    public void ResetSize()
+    {
+        foreach(var d in m_data)
+        {
+            while(d.Value.Count > 1)
+                d.Value.RemoveAt(1);
+
+            d.Value[0].indexesSize = 0;
+            d.Value[0].verticesSize = 0;
+        }
+    }
+
+    //clear all buffers
+    public void Reset()
+    {
+        m_data.Clear();
+    }
+
+    public List<Material> GetNonEmptyMaterials()
+    {
+        List<Material> materials = new List<Material>();
+
+        foreach(var d in m_data)
+        {
+            if (d.Value[0].vertices.Count() > 0 && d.Value[0].indexes.Count() > 0)
+                materials.Add(d.Key);
+        }
+
+        return materials;
+    }
+
+    public int GetMeshCount(Material material)
+    {
+        List<MeshParamData<T>> data = null;
+        m_data.TryGetValue(material, out data);
+
+        if (data == null)
+            return 0;
+
+        int nb = 0;
+        foreach (var d in data)
+            if (d.verticesSize > 0 && d.indexesSize > 0)
+                nb++;
+
+        return nb;
+    }
+
+    public MeshParamData<T> GetMesh(Material material, int index)
+    {
+        List<MeshParamData<T>> data = null;
+        m_data.TryGetValue(material, out data);
+        if (data == null)
+            return null;
+        if (data.Count <= index)
+            return null;
+        return data[index];
+    }
+
     void AllocateVerticesArray(MeshParamData<T> data, int addVertices)
     {
         Debug.Assert(!data.vertices.IsCreated);

@@ -18,7 +18,7 @@ public struct WorldVertexDefinition
 
 public static class MeshEx
 {
-    static void SetWorldMeshParams(Mesh mesh, int vertexNb, int indexNb)
+    static public void SetWorldMeshParams(Mesh mesh, int vertexNb, int indexNb)
     {
         var layout = new[]
         {
