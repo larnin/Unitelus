@@ -43,7 +43,7 @@ public static class WorldGenerator
 
                 if (height <= minHeight)
                     continue;
-                for(int y = height - 1; y >= minHeight; z--)
+                for(int y = height - 1; y >= minHeight; y--)
                     world.SetBlock(x, y, z, b);
             }
         }

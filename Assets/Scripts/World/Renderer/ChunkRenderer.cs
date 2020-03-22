@@ -70,6 +70,11 @@ public class ChunkRenderer : MonoBehaviour
         m_fUpdateTime = Time.time;
     }
 
+    private void OnDestroy()
+    {
+        m_meshParams.Reset();
+    }
+
     public void SetChunk(Chunk c)
     {
         m_chunk = c;
@@ -165,20 +170,27 @@ public class ChunkRenderer : MonoBehaviour
         var data = m_meshParams.GetMesh(material, index);
 
         var mesh = obj.meshFilter.mesh;
+        mesh.subMeshCount = 1;
+        mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, data.indexesSize, MeshTopology.Triangles));
+
         MeshEx.SetWorldMeshParams(mesh, data.verticesSize, data.indexesSize);
         mesh.SetVertexBufferData(data.vertices, 0, 0, data.verticesSize);
+
+        mesh.SetIndexBufferParams(data.indexesSize, UnityEngine.Rendering.IndexFormat.UInt16);
         mesh.SetIndexBufferData(data.indexes, 0, 0, data.indexesSize);
 
         mesh.RecalculateNormals();
         mesh.RecalculateTangents();
-        mesh.RecalculateBounds();
+
+        //full chunk layer
+        mesh.bounds = new Bounds(new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize) / 2, new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize));
     }
 
     LayerObject CreateNewLayerObject(Material material, int index, int layer)
     {
         LayerObject obj = new LayerObject();
 
-        GameObject o = new GameObject();
+        GameObject o = new GameObject("Layer [" + layer + " " + material.name + "]");
         var transform = o.GetComponent<Transform>();
         obj.meshFilter = o.AddComponent<MeshFilter>();
         obj.meshRenderer = o.AddComponent<MeshRenderer>();
@@ -188,6 +200,8 @@ public class ChunkRenderer : MonoBehaviour
         transform.localPosition = new Vector3(0, layer * m_scaleY * Chunk.chunkSize, 0);
         transform.localRotation = Quaternion.identity;
         transform.localScale = new Vector3(m_scaleX, m_scaleY, m_scaleZ);
+
+        UpdateLayerObject(obj, material, index);
 
         return obj;
     }

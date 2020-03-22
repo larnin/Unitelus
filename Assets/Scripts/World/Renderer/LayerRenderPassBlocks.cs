@@ -9,7 +9,7 @@ public class LayerRenderPassBlocks : LayerRendererPassBase
 {
     public override void Render(Chunk c, int x, int y, int z, float scaleX, float scaleY, float scaleZ, MeshParams<WorldVertexDefinition> meshParams)
     {
-        var layer = c.GetLayer(z);
+        var layer = c.GetLayer(y);
 
         if (layer == null)
             return;

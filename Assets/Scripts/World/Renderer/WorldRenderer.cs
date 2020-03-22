@@ -7,7 +7,7 @@ public class WorldRenderer : MonoBehaviour
     class ChunkInfos
     {
         public int x;
-        public int y;
+        public int z;
         public ChunkRenderer renderer;
     }
 
@@ -40,14 +40,14 @@ public class WorldRenderer : MonoBehaviour
 
         List<ChunkInfos> updatedList = new List<ChunkInfos>();
 
-        int minX, minY, maxX, maxY;
-        GetVisibleChunksQuad(e.pos, out minX, out minY, out maxX, out maxY);
+        int minX, minZ, maxX, maxZ;
+        GetVisibleChunksQuad(e.pos, out minX, out minZ, out maxX, out maxZ);
 
         for(int i = minX; i <= maxX; i++)
         {
-            for(int j = minY; j <= maxY; j++)
+            for(int j = minZ; j <= maxZ; j++)
             {
-                var c = m_chunks.Find(x => { return x.x == i && x.y == j; });
+                var c = m_chunks.Find(x => { return x.x == i && x.z == j; });
                 if (c == null)
                     updatedList.Add(CreateChunk(i, j));
                 else updatedList.Add(c);
@@ -56,7 +56,7 @@ public class WorldRenderer : MonoBehaviour
 
         foreach(var c in m_chunks)
         {
-            bool isAdded = updatedList.Exists(x => { return c.x == x.x && c.y == x.y; });
+            bool isAdded = updatedList.Exists(x => { return c.x == x.x && c.z == x.z; });
             if (!isAdded)
                 RemoveChunk(c);
         }
@@ -79,24 +79,24 @@ public class WorldRenderer : MonoBehaviour
         world.PosToUnclampedChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
     }
 
-    ChunkInfos CreateChunk(int x, int y)
+    ChunkInfos CreateChunk(int x, int z)
     {
         var world = PlaceholderWorld.instance.world;
 
-        var obj = new GameObject("Chunk[" + x + " " + y + "]");
+        var obj = new GameObject("Chunk[" + x + " " + z + "]");
         var renderer = obj.AddComponent<ChunkRenderer>();
-        renderer.SetChunk(world.GetChunk(x, y));
-        renderer.SetPosition(x, y);
+        renderer.SetChunk(world.GetChunk(x, z));
+        renderer.SetPosition(x, z);
 
         var transform = obj.transform;
         transform.parent = this.transform;
         transform.localScale = new Vector3(1, 1, 1);
         transform.localRotation = Quaternion.identity;
-        transform.localPosition = new Vector3(x * Chunk.chunkSize, y * Chunk.chunkSize, 0);
+        transform.localPosition = new Vector3(x * Chunk.chunkSize, 0, z * Chunk.chunkSize);
 
         ChunkInfos infos = new ChunkInfos();
         infos.x = x;
-        infos.y = y;
+        infos.z = z;
         infos.renderer = renderer;
 
         return infos;

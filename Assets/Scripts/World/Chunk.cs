@@ -167,19 +167,31 @@ public class Chunk
         if (!HaveLayer())
             return int.MinValue;
 
-        int layerIndex = GetTopLayerIndex();
-        var layer = m_layers[layerIndex];
-
-        int i = 0;
-        for (i = chunkSize - 1; i >= 0; i--)
+        int topLayerIndex = GetTopLayerIndex();
+        int bottomLayerIndex = GetBottomLayerIndex();
+        int layerIndex;
+        int height = 0;
+        bool found = false;
+        for (layerIndex = topLayerIndex; layerIndex >= bottomLayerIndex; layerIndex--)
         {
-            if (layer.GetBlock(x, i, z) != BlockData.GetDefault())
+            var layer = m_layers[layerIndex];
+
+            height = 0;
+            for (height = chunkSize - 1; height >= 0; height--)
+            {
+                if (layer.GetBlock(x, height, z) != BlockData.GetDefault())
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (found)
                 break;
         }
 
-        Debug.Assert(i >= 0);
+        Debug.Assert(height >= 0);
 
-        return LayerToHeight(layerIndex, i);
+        return LayerToHeight(layerIndex, height);
     }
 
     public int GetBottomLayerIndex()
@@ -201,19 +213,31 @@ public class Chunk
         if (!HaveLayer())
             return int.MaxValue;
 
-        int layerIndex = GetBottomLayerIndex();
-        var layer = m_layers[layerIndex];
-
-        int i = 0;
-        for (i = 0; i < chunkSize; i++)
+        int topLayerIndex = GetTopLayerIndex();
+        int bottomLayerIndex = GetBottomLayerIndex();
+        int layerIndex;
+        int height = 0;
+        bool found = false;
+        for (layerIndex = bottomLayerIndex; layerIndex <= topLayerIndex; layerIndex++)
         {
-            if (layer.GetBlock(x, i, z) != BlockData.GetDefault())
+            var layer = m_layers[layerIndex];
+
+            height = 0;
+            for (height = 0; height < chunkSize; height++)
+            {
+                if (layer.GetBlock(x, height, z) != BlockData.GetDefault())
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (found)
                 break;
         }
 
-        Debug.Assert(i < chunkSize);
+        Debug.Assert(height >= 0);
 
-        return LayerToHeight(layerIndex, i);
+        return LayerToHeight(layerIndex, height);
     }
 
     public List<int> GetLayersUptatedAfter(float time)

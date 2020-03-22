@@ -79,6 +79,10 @@ public class MeshParams<T> where T : struct
     //clear all buffers
     public void Reset()
     {
+        foreach(var d in m_data)
+            foreach (var e in d.Value)
+                e.vertices.Dispose();
+
         m_data.Clear();
     }
 
