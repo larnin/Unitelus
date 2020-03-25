@@ -170,12 +170,14 @@ public class ChunkRenderer : MonoBehaviour
         var data = m_meshParams.GetMesh(material, index);
 
         var mesh = obj.meshFilter.mesh;
-        mesh.subMeshCount = 1;
-        mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, data.indexesSize, MeshTopology.Triangles));
 
         MeshEx.SetWorldMeshParams(mesh, data.verticesSize, data.indexesSize);
+
         mesh.SetVertexBufferData(data.vertices, 0, 0, data.verticesSize);
         mesh.SetIndexBufferData(data.indexes, 0, 0, data.indexesSize);
+
+        mesh.subMeshCount = 1;
+        mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, data.indexesSize, MeshTopology.Triangles));
 
         mesh.RecalculateNormals();
         mesh.RecalculateTangents();
