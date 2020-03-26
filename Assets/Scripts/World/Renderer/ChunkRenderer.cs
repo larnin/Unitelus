@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -110,11 +111,23 @@ public class ChunkRenderer : MonoBehaviour
 
     void UpdateLayer(LayerRender layer)
     {
+        Action<Stopwatch, string> print = (Stopwatch s, string label) =>
+        {
+            var ts = s.Elapsed;
+            string time = String.Format("{0:00}.{1:000}", ts.Seconds, ts.Milliseconds);
+            UnityEngine.Debug.Log(time + " - " + label);
+        };
+
+        var st = Stopwatch.StartNew();
+        UnityEngine.Debug.Log("Render layer [" + m_chunk.x + " " + layer.layerIndex + " " + m_chunk.z + "]");
+
         var meshParams = m_parent.GetMeshParams();
         meshParams.ResetSize();
 
         foreach(var pass in m_pass)
-            pass.Render(m_chunk, m_x, layer.layerIndex, m_z, 1, 1, 1, meshParams);
+            pass.Render(m_chunk, m_x, layer.layerIndex, m_z, meshParams);
+
+        print(st, "After pass");
 
         var materials = meshParams.GetNonEmptyMaterials();
         //remove
@@ -130,6 +143,8 @@ public class ChunkRenderer : MonoBehaviour
                 i--;
             }
         }
+
+        print(st, "After remove");
 
         //add
         foreach(var m in materials)
@@ -162,6 +177,8 @@ public class ChunkRenderer : MonoBehaviour
                 layer.objects.Add(CreateNewLayerObject(m, meshIndex, layer.layerIndex));
         }
 
+        print(st, "After add");
+
         meshParams.ResetSize();
     }
 
@@ -179,9 +196,6 @@ public class ChunkRenderer : MonoBehaviour
 
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, data.indexesSize, MeshTopology.Triangles));
-
-        mesh.RecalculateNormals();
-        mesh.RecalculateTangents();
 
         //full chunk layer
         mesh.bounds = new Bounds(new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize) / 2, new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize));

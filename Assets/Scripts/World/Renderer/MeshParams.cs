@@ -10,7 +10,7 @@ public class MeshParamData<T> where T : struct
 {
     public const int maxVertexSize = ushort.MaxValue - 5;
 
-    public NativeArray<T> vertices;
+    public T[] vertices = null;
     public int verticesSize = 0;
     public ushort[] indexes = null;
     public int indexesSize = 0;
@@ -73,16 +73,13 @@ public class MeshParams<T> where T : struct
 
             d.Value[0].indexesSize = 0;
             d.Value[0].verticesSize = 0;
+
         }
     }
 
     //clear all buffers
     public void Reset()
     {
-        foreach(var d in m_data)
-            foreach (var e in d.Value)
-                e.vertices.Dispose();
-
         m_data.Clear();
     }
 
@@ -128,30 +125,26 @@ public class MeshParams<T> where T : struct
 
     void AllocateVerticesArray(MeshParamData<T> data, int addVertices)
     {
-        Debug.Assert(!data.vertices.IsCreated);
-        Debug.Assert(addVertices <= MeshParamData<T>.maxVertexSize);
-
+        Debug.Assert(data.vertices == null);
         int newSize = addVertices + allocSize;
         if (newSize > MeshParamData<T>.maxVertexSize)
             newSize = MeshParamData<T>.maxVertexSize;
 
-        data.vertices = new NativeArray<T>(newSize, Allocator.Persistent);
+        data.vertices = new T[newSize];
     }
 
     void IncreaseVerticesArray(MeshParamData<T> data, int addVertices)
     {
-        Debug.Assert(data.vertices.IsCreated);
-        Debug.Assert(data.vertices.Length + addVertices <= MeshParamData<T>.maxVertexSize);
+        Debug.Assert(data.vertices != null);
 
         int newSize = data.vertices.Length + addVertices + allocSize;
         if (newSize > MeshParamData<T>.maxVertexSize)
             newSize = MeshParamData<T>.maxVertexSize;
 
-        var newArray = new NativeArray<T>(newSize, Allocator.Persistent);
+        var newArray = new T[newSize];
 
         for (int i = 0; i < data.verticesSize; i++)
             newArray[i] = data.vertices[i];
-        data.vertices.Dispose();
         data.vertices = newArray;
     }
 
