@@ -101,12 +101,12 @@ public class BlockRendererSimpleCube : BlockRendererBase
 
         for(ushort i = 0; i < 6; i++)
         {
-            data.indexes[i * 6] = (ushort)(4 * i + data.verticesSize);
-            data.indexes[i * 6 + 1] = (ushort)(4 * i + 1 + data.verticesSize);
-            data.indexes[i * 6 + 2] = (ushort)(4 * i + 2 + data.verticesSize);
-            data.indexes[i * 6 + 3] = (ushort)(4 * i + data.verticesSize);
-            data.indexes[i * 6 + 4] = (ushort)(4 * i + 2 + data.verticesSize);
-            data.indexes[i * 6 + 5] = (ushort)(4 * i + 3 + data.verticesSize);
+            data.indexes[data.indexesSize + i * 6] = (ushort)(4 * i + data.verticesSize);
+            data.indexes[data.indexesSize + i * 6 + 1] = (ushort)(4 * i + 1 + data.verticesSize);
+            data.indexes[data.indexesSize + i * 6 + 2] = (ushort)(4 * i + 2 + data.verticesSize);
+            data.indexes[data.indexesSize + i * 6 + 3] = (ushort)(4 * i + data.verticesSize);
+            data.indexes[data.indexesSize + i * 6 + 4] = (ushort)(4 * i + 2 + data.verticesSize);
+            data.indexes[data.indexesSize + i * 6 + 5] = (ushort)(4 * i + 3 + data.verticesSize);
         }
 
         MeshEx.Scale(ref data.vertices, data.verticesSize, 24, scale);

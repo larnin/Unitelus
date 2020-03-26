@@ -15,10 +15,9 @@ public class ChunkRenderer : MonoBehaviour
     int m_z = 0;
     float m_fUpdateTime = -1;
 
-    //used to buffer the render of a mesh
-    MeshParams<WorldVertexDefinition> m_meshParams = new MeshParams<WorldVertexDefinition>();
-
     List<LayerRendererPassBase> m_pass = new List<LayerRendererPassBase>();
+
+    WorldRenderer m_parent;
 
     class LayerObject
     {
@@ -33,6 +32,11 @@ public class ChunkRenderer : MonoBehaviour
     }
 
     List<LayerRender> m_layers = new List<LayerRender>();
+
+    public void SetParent(WorldRenderer world)
+    {
+        m_parent = world;
+    }
 
     private void Start()
     {
@@ -68,11 +72,6 @@ public class ChunkRenderer : MonoBehaviour
         }
 
         m_fUpdateTime = Time.time;
-    }
-
-    private void OnDestroy()
-    {
-        m_meshParams.Reset();
     }
 
     public void SetChunk(Chunk c)
@@ -111,12 +110,13 @@ public class ChunkRenderer : MonoBehaviour
 
     void UpdateLayer(LayerRender layer)
     {
-        m_meshParams.ResetSize();
+        var meshParams = m_parent.GetMeshParams();
+        meshParams.ResetSize();
 
         foreach(var pass in m_pass)
-            pass.Render(m_chunk, m_x, layer.layerIndex, m_z, 1, 1, 1, m_meshParams);
+            pass.Render(m_chunk, m_x, layer.layerIndex, m_z, 1, 1, 1, meshParams);
 
-        var materials = m_meshParams.GetNonEmptyMaterials();
+        var materials = meshParams.GetNonEmptyMaterials();
         //remove
         for(int i = 0; i < layer.objects.Count; i++)
         {
@@ -134,7 +134,7 @@ public class ChunkRenderer : MonoBehaviour
         //add
         foreach(var m in materials)
         {
-            int nbMesh = m_meshParams.GetMeshCount(m);
+            int nbMesh = meshParams.GetMeshCount(m);
             int meshIndex = 0;
             
             for(int i = 0; i < layer.objects.Count; i++)
@@ -162,12 +162,13 @@ public class ChunkRenderer : MonoBehaviour
                 layer.objects.Add(CreateNewLayerObject(m, meshIndex, layer.layerIndex));
         }
 
-        m_meshParams.ResetSize();
+        meshParams.ResetSize();
     }
 
     void UpdateLayerObject(LayerObject obj, Material material, int index)
     {
-        var data = m_meshParams.GetMesh(material, index);
+        var meshParams = m_parent.GetMeshParams();
+        var data = meshParams.GetMesh(material, index);
 
         var mesh = obj.meshFilter.mesh;
 

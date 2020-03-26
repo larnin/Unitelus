@@ -20,6 +20,9 @@ public class WorldRenderer : MonoBehaviour
 
     Vector3 m_lastPos = new Vector3(1000000, 1000000, 1000000);
 
+    //used to buffer the render of a mesh
+    MeshParams<WorldVertexDefinition> m_meshParams = new MeshParams<WorldVertexDefinition>();
+
     private void Awake()
     {
         m_subscriberList.Add(new Event<CenterUpdatedEvent>.Subscriber(OnCenterUpdate));
@@ -30,6 +33,7 @@ public class WorldRenderer : MonoBehaviour
     private void OnDestroy()
     {
         m_subscriberList.Unsubscribe();
+        m_meshParams.Reset();
     }
 
     void OnCenterUpdate(CenterUpdatedEvent e)
@@ -64,19 +68,19 @@ public class WorldRenderer : MonoBehaviour
         m_chunks = updatedList;
     }
 
-    void GetVisibleChunksQuad(Vector3 center, out int minChunkX, out int minChunkY, out int maxChunkX, out int maxChunkY)
+    void GetVisibleChunksQuad(Vector3 center, out int minChunkX, out int minChunkZ, out int maxChunkX, out int maxChunkZ)
     {
         var world = PlaceholderWorld.instance.world;
 
         Vector3 localCenter = transform.InverseTransformPoint(center);
 
         int minX = Mathf.FloorToInt(localCenter.x) - m_renderSize;
-        int minY = Mathf.FloorToInt(localCenter.y) - m_renderSize;
+        int minZ = Mathf.FloorToInt(localCenter.z) - m_renderSize;
         int maxX = Mathf.FloorToInt(localCenter.x) + m_renderSize;
-        int maxY = Mathf.FloorToInt(localCenter.y) + m_renderSize;
+        int maxZ = Mathf.FloorToInt(localCenter.z) + m_renderSize;
 
-        world.PosToUnclampedChunkPos(minX, minY, out minChunkX, out minChunkY);
-        world.PosToUnclampedChunkPos(maxX, maxY, out maxChunkX, out maxChunkY);
+        world.PosToUnclampedChunkPos(minX, minZ, out minChunkX, out minChunkZ);
+        world.PosToUnclampedChunkPos(maxX, maxZ, out maxChunkX, out maxChunkZ);
     }
 
     ChunkInfos CreateChunk(int x, int z)
@@ -85,6 +89,7 @@ public class WorldRenderer : MonoBehaviour
 
         var obj = new GameObject("Chunk[" + x + " " + z + "]");
         var renderer = obj.AddComponent<ChunkRenderer>();
+        renderer.SetParent(this);
         renderer.SetChunk(world.GetChunk(x, z));
         renderer.SetPosition(x, z);
 
@@ -105,5 +110,10 @@ public class WorldRenderer : MonoBehaviour
     void RemoveChunk(ChunkInfos c)
     {
         Destroy(c.renderer.gameObject);
+    }
+
+    public MeshParams<WorldVertexDefinition> GetMeshParams()
+    {
+        return m_meshParams;
     }
 }
