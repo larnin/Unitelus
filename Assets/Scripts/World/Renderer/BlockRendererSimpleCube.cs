@@ -92,7 +92,7 @@ public class BlockRendererSimpleCube : BlockRendererBase
         }
 
         for (int i = 0; i < 24; i++)
-            data.vertices[data.verticesSize + i].color = Color.white;
+            data.vertices[data.verticesSize + i].color = new Color32(255, 255, 255, 0);
 
         for(int i = 0; i < 6; i++)
         {

@@ -115,7 +115,7 @@ public class ChunkRenderer : MonoBehaviour
         {
             var ts = s.Elapsed;
             string time = String.Format("{0:00}.{1:000}", ts.Seconds, ts.Milliseconds);
-            UnityEngine.Debug.Log(time + " - " + label);
+            DebugConsole.Log(time + " - " + label);
         };
 
         var st = Stopwatch.StartNew();

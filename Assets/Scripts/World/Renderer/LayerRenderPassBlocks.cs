@@ -29,7 +29,7 @@ public class LayerRenderPassBlocks : LayerRendererPassBase
             for(int j = 0; j < Chunk.chunkSize; j++)
                 for(int k = 0; k < Chunk.chunkSize; k++)
                 {
-                    BlockNeighbors.FromMatrix(m_matrix, i + 1, j + 1, k, m_blockNeighbors);
+                    BlockNeighbors.FromMatrix(m_matrix, i + 1, j + 1, k + 1, m_blockNeighbors);
                     int centerID = m_blockNeighbors.GetCurrent().id;
                     if (centerID == 0)
                         continue;
