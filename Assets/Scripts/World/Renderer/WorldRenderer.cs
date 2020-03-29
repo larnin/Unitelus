@@ -20,9 +20,6 @@ public class WorldRenderer : MonoBehaviour
 
     Vector3 m_lastPos = new Vector3(1000000, 1000000, 1000000);
 
-    //used to buffer the render of a mesh
-    MeshParams<WorldVertexDefinition> m_meshParams = new MeshParams<WorldVertexDefinition>();
-
     private void Awake()
     {
         m_subscriberList.Add(new Event<CenterUpdatedEvent>.Subscriber(OnCenterUpdate));
@@ -33,7 +30,6 @@ public class WorldRenderer : MonoBehaviour
     private void OnDestroy()
     {
         m_subscriberList.Unsubscribe();
-        m_meshParams.Reset();
     }
 
     void OnCenterUpdate(CenterUpdatedEvent e)
@@ -89,7 +85,6 @@ public class WorldRenderer : MonoBehaviour
 
         var obj = new GameObject("Chunk[" + x + " " + z + "]");
         var renderer = obj.AddComponent<ChunkRenderer>();
-        renderer.SetParent(this);
         renderer.SetChunk(world.GetChunk(x, z));
         renderer.SetPosition(x, z);
 
@@ -110,10 +105,5 @@ public class WorldRenderer : MonoBehaviour
     void RemoveChunk(ChunkInfos c)
     {
         Destroy(c.renderer.gameObject);
-    }
-
-    public MeshParams<WorldVertexDefinition> GetMeshParams()
-    {
-        return m_meshParams;
     }
 }

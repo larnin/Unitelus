@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class World
 {
+    readonly object dataLock = new object();
+
     bool m_worldLoop;
     int m_chunkNb;
     Chunk[] m_chunks;
@@ -55,15 +57,18 @@ public class World
 
     public void SetBlock(int x, int y, int z, BlockData block)
     {
-        int chunkX;
-        int chunkZ;
-        int blockX;
-        int blockZ;
-        PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
+        lock(dataLock)
+        {
+            int chunkX;
+            int chunkZ;
+            int blockX;
+            int blockZ;
+            PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
 
-        var chunk = GetChunk(chunkX, chunkZ);
-        Debug.Assert(chunk != null);
-        chunk.SetBlock(blockX, y, blockZ, block);
+            var chunk = GetChunk(chunkX, chunkZ);
+            Debug.Assert(chunk != null);
+            chunk.SetBlock(blockX, y, blockZ, block);
+        }
     }
 
     public int GetTopBlockHeight(int x, int z)
@@ -177,67 +182,70 @@ public class World
 
     public void GetLocalMatrix(int x, int y, int z, Matrix<BlockData> mat)
     {
-        //todo optimize layers to do the same than chunk (not get multiple time the same layer)
-
-        int maxX = x + mat.width - 1;
-        int maxZ = z + mat.depth - 1;
-
-        int minChunkX;
-        int minChunkZ;
-        int maxChunkX;
-        int maxChunkZ;
-
-        PosToUnclampedChunkPos(x, z, out minChunkX, out minChunkZ);
-        PosToUnclampedChunkPos(maxX, maxZ, out maxChunkX, out maxChunkZ);
-
-        for (int i = minChunkX; i <= maxChunkX; i++)
+        lock (dataLock)
         {
-            for (int j = minChunkZ; j <= maxChunkZ; j++)
+            //todo optimize layers to do the same than chunk (not get multiple time the same layer)
+
+            int maxX = x + mat.width - 1;
+            int maxZ = z + mat.depth - 1;
+
+            int minChunkX;
+            int minChunkZ;
+            int maxChunkX;
+            int maxChunkZ;
+
+            PosToUnclampedChunkPos(x, z, out minChunkX, out minChunkZ);
+            PosToUnclampedChunkPos(maxX, maxZ, out maxChunkX, out maxChunkZ);
+
+            for (int i = minChunkX; i <= maxChunkX; i++)
             {
-                int currentMinX;
-                int currentMinZ;
-                int currentMaxX;
-                int currentMaxZ;
-
-                BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinZ);
-                BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxZ);
-
-                int localMinX = 0;
-                int localMinZ = 0;
-                int localMaxX = Chunk.chunkSize - 1;
-                int localMaxZ = Chunk.chunkSize - 1;
-
-                int tileMinX = 0;
-                int tileMinZ = 0;
-
-                if (currentMinX < x)
-                    localMinX = x - currentMinX;
-                else tileMinX = currentMinX - x;
-                if (currentMinZ < z)
-                    localMinZ = z - currentMinZ;
-                else tileMinZ = currentMinZ - z;
-
-                if (localMaxX - localMinX + 1 > mat.width - tileMinX)
-                    localMaxX = mat.width + localMinX - 1 - tileMinX;
-                if (localMaxZ - localMinZ + 1 > mat.depth - tileMinZ)
-                    localMaxZ = mat.depth + localMinZ - 1 - tileMinZ;
-
-                var chunk = GetChunk(i, j);
-
-                for (int m = 0; m < mat.height; m++)
+                for (int j = minChunkZ; j <= maxChunkZ; j++)
                 {
-                    int layerIndex, blockY;
-                    chunk.HeightToLayerAndBlock(y + m, out layerIndex, out blockY);
+                    int currentMinX;
+                    int currentMinZ;
+                    int currentMaxX;
+                    int currentMaxZ;
 
-                    var layer = chunk.GetLayer(layerIndex);
+                    BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinZ);
+                    BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxZ);
 
-                    for (int k = 0; k <= localMaxX - localMinX; k++)
+                    int localMinX = 0;
+                    int localMinZ = 0;
+                    int localMaxX = Chunk.chunkSize - 1;
+                    int localMaxZ = Chunk.chunkSize - 1;
+
+                    int tileMinX = 0;
+                    int tileMinZ = 0;
+
+                    if (currentMinX < x)
+                        localMinX = x - currentMinX;
+                    else tileMinX = currentMinX - x;
+                    if (currentMinZ < z)
+                        localMinZ = z - currentMinZ;
+                    else tileMinZ = currentMinZ - z;
+
+                    if (localMaxX - localMinX + 1 > mat.width - tileMinX)
+                        localMaxX = mat.width + localMinX - 1 - tileMinX;
+                    if (localMaxZ - localMinZ + 1 > mat.depth - tileMinZ)
+                        localMaxZ = mat.depth + localMinZ - 1 - tileMinZ;
+
+                    var chunk = GetChunk(i, j);
+
+                    for (int m = 0; m < mat.height; m++)
                     {
-                        for (int l = 0; l <= localMaxZ - localMinZ; l++)
+                        int layerIndex, blockY;
+                        chunk.HeightToLayerAndBlock(y + m, out layerIndex, out blockY);
+
+                        var layer = chunk.GetLayer(layerIndex);
+
+                        for (int k = 0; k <= localMaxX - localMinX; k++)
                         {
-                            if (layer == null)
-                                mat.Set(k + tileMinX, m, l + tileMinZ, BlockData.GetDefault());
-                            else mat.Set(k + tileMinX, m, l + tileMinZ, layer.GetBlock(localMinX + k, blockY, localMinZ + l));
+                            for (int l = 0; l <= localMaxZ - localMinZ; l++)
+                            {
+                                if (layer == null)
+                                    mat.Set(k + tileMinX, m, l + tileMinZ, BlockData.GetDefault());
+                                else mat.Set(k + tileMinX, m, l + tileMinZ, layer.GetBlock(localMinX + k, blockY, localMinZ + l));
+                            }
                         }
                     }
                 }

@@ -16,10 +16,6 @@ public class ChunkRenderer : MonoBehaviour
     int m_z = 0;
     float m_fUpdateTime = -1;
 
-    List<LayerRendererPassBase> m_pass = new List<LayerRendererPassBase>();
-
-    WorldRenderer m_parent;
-
     class LayerObject
     {
         public MeshFilter meshFilter;
@@ -34,20 +30,21 @@ public class ChunkRenderer : MonoBehaviour
 
     List<LayerRender> m_layers = new List<LayerRender>();
 
-    public void SetParent(WorldRenderer world)
-    {
-        m_parent = world;
-    }
-
-    private void Start()
-    {
-        m_pass.Add(new LayerRenderPassBlocks());
-    }
+    List<int> m_waitingPass = new List<int>();
 
     public void Update()
     {
         if (m_chunk == null)
             return;
+
+        for(int i = 0; i < m_waitingPass.Count(); i++)
+        {
+            if(CheckLayerUpdated(m_waitingPass[i]))
+            {
+                m_waitingPass.RemoveAt(i);
+                i--;
+            }
+        }
 
         for (int i = 0; i < m_layers.Count; i++)
         {
@@ -111,24 +108,21 @@ public class ChunkRenderer : MonoBehaviour
 
     void UpdateLayer(LayerRender layer)
     {
-        Action<Stopwatch, string> print = (Stopwatch s, string label) =>
-        {
-            var ts = s.Elapsed;
-            string time = String.Format("{0:00}.{1:000}", ts.Seconds, ts.Milliseconds);
-            DebugConsole.Log(time + " - " + label);
-        };
+        if (ChunkRendererPool.instance.AddJob(m_x, m_z, layer.layerIndex, m_chunk.world))
+            m_waitingPass.Add(layer.layerIndex);
+    }
 
-        var st = Stopwatch.StartNew();
-        UnityEngine.Debug.Log("Render layer [" + m_chunk.x + " " + layer.layerIndex + " " + m_chunk.z + "]");
+    //return true if updated
+    bool CheckLayerUpdated(int layerIndex)
+    {
+        var layer = m_layers.Find(x => { return x.layerIndex == layerIndex; });
+        if(layer == null)
+            return ChunkRendererPool.instance.FreeJob(m_x, m_z, layer.layerIndex, m_chunk.world);
 
-        var meshParams = m_parent.GetMeshParams();
-        meshParams.ResetSize();
-
-        foreach(var pass in m_pass)
-            pass.Render(m_chunk, m_x, layer.layerIndex, m_z, meshParams);
-
-        print(st, "After pass");
-
+        var meshParams = ChunkRendererPool.instance.GetJobData(m_x, m_z, layer.layerIndex, m_chunk.world);
+        if (meshParams == null)
+            return false;
+        
         var materials = meshParams.GetNonEmptyMaterials();
         //remove
         for(int i = 0; i < layer.objects.Count; i++)
@@ -143,9 +137,7 @@ public class ChunkRenderer : MonoBehaviour
                 i--;
             }
         }
-
-        print(st, "After remove");
-
+        
         //add
         foreach(var m in materials)
         {
@@ -168,23 +160,22 @@ public class ChunkRenderer : MonoBehaviour
                 }
                 else
                 {
-                    UpdateLayerObject(obj, m, meshIndex);
+                    UpdateLayerObject(obj, m, meshIndex, meshParams);
                     meshIndex++;
                 }
             }
 
             for (; meshIndex < nbMesh; meshIndex++)
-                layer.objects.Add(CreateNewLayerObject(m, meshIndex, layer.layerIndex));
+                layer.objects.Add(CreateNewLayerObject(m, meshIndex, layer.layerIndex, meshParams));
         }
 
-        print(st, "After add");
+        ChunkRendererPool.instance.FreeJob(m_x, m_z, layer.layerIndex, m_chunk.world);
 
-        meshParams.ResetSize();
+        return true;
     }
 
-    void UpdateLayerObject(LayerObject obj, Material material, int index)
+    void UpdateLayerObject(LayerObject obj, Material material, int index, MeshParams<WorldVertexDefinition> meshParams)
     {
-        var meshParams = m_parent.GetMeshParams();
         var data = meshParams.GetMesh(material, index);
 
         var mesh = obj.meshFilter.mesh;
@@ -201,7 +192,7 @@ public class ChunkRenderer : MonoBehaviour
         mesh.bounds = new Bounds(new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize) / 2, new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize));
     }
 
-    LayerObject CreateNewLayerObject(Material material, int index, int layer)
+    LayerObject CreateNewLayerObject(Material material, int index, int layer, MeshParams<WorldVertexDefinition> meshParams)
     {
         LayerObject obj = new LayerObject();
 
@@ -216,7 +207,7 @@ public class ChunkRenderer : MonoBehaviour
         transform.localRotation = Quaternion.identity;
         transform.localScale = new Vector3(m_scaleX, m_scaleY, m_scaleZ);
 
-        UpdateLayerObject(obj, material, index);
+        UpdateLayerObject(obj, material, index, meshParams);
 
         return obj;
     }
