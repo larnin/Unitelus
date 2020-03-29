@@ -16,5 +16,5 @@ public abstract class BlockRendererBase
         m_id = id;
     }
 
-    public abstract void Render(Vector3 pos, BlockNeighbors neighbors, MeshParams<WorldVertexDefinition> meshParams);
+    public abstract void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams);
 }

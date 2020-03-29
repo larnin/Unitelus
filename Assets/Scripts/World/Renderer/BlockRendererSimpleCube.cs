@@ -15,9 +15,8 @@ public class BlockRendererSimpleCube : BlockRendererBase
     }
 
 
-    public override void Render(Vector3 pos, BlockNeighbors neighbors, MeshParams<WorldVertexDefinition> meshParams)
+    public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
-        Debug.Assert(neighbors.size == 1);
         var data = meshParams.Allocate(24, 36, m_material);
 
         data.vertices[data.verticesSize].pos = new Vector3(0, 0, 0) + pos;
