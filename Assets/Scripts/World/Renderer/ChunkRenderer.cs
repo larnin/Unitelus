@@ -28,20 +28,26 @@ public class ChunkRenderer : MonoBehaviour
         public int layerIndex = 0;
     }
 
+    class WaitingJob
+    {
+        public int layerIndex = 0;
+        public int jobID = 0;
+    }
+
     List<LayerRender> m_layers = new List<LayerRender>();
 
-    List<int> m_waitingPass = new List<int>();
+    List<WaitingJob> m_waitingJobs = new List<WaitingJob>();
 
     public void Update()
     {
         if (m_chunk == null)
             return;
 
-        for(int i = 0; i < m_waitingPass.Count(); i++)
+        for(int i = 0; i < m_waitingJobs.Count(); i++)
         {
-            if(CheckLayerUpdated(m_waitingPass[i]))
+            if(CheckLayerUpdated(m_waitingJobs[i]))
             {
-                m_waitingPass.RemoveAt(i);
+                m_waitingJobs.RemoveAt(i);
                 i--;
             }
         }
@@ -108,68 +114,69 @@ public class ChunkRenderer : MonoBehaviour
 
     void UpdateLayer(LayerRender layer)
     {
-        if (ChunkRendererPool.instance.AddJob(m_x, m_z, layer.layerIndex, m_chunk.world))
-            m_waitingPass.Add(layer.layerIndex);
+        int jobID = ChunkRendererPool.instance.AddJob(m_x, m_z, layer.layerIndex, m_chunk.world);
+        var item = m_waitingJobs.Find(x => { return x.jobID == jobID; });
+        if(item == null)
+        {
+            WaitingJob job = new WaitingJob();
+            job.jobID = jobID;
+            job.layerIndex = layer.layerIndex;
+            m_waitingJobs.Add(job);
+        }
     }
 
     //return true if updated
-    bool CheckLayerUpdated(int layerIndex)
+    bool CheckLayerUpdated(WaitingJob job)
     {
-        var layer = m_layers.Find(x => { return x.layerIndex == layerIndex; });
-        if(layer == null)
-            return ChunkRendererPool.instance.FreeJob(m_x, m_z, layer.layerIndex, m_chunk.world);
+        var layer = m_layers.Find(x => { return x.layerIndex == job.layerIndex; });
+        if (layer == null)
+        {
+            ChunkRendererPool.instance.FreeJob(job.jobID);
+            return true;
+        }
 
-        var meshParams = ChunkRendererPool.instance.GetJobData(m_x, m_z, layer.layerIndex, m_chunk.world);
+        var meshParams = ChunkRendererPool.instance.GetJobData(job.jobID);
         if (meshParams == null)
+        {
+            //no job ? create it again !
+            if (!ChunkRendererPool.instance.HaveJob(job.jobID))
+                job.jobID = ChunkRendererPool.instance.AddJob(m_x, m_z, job.layerIndex, m_chunk.world);
             return false;
+        }
         
         var materials = meshParams.GetNonEmptyMaterials();
+        int nbMesh = 0;
+        foreach (var m in materials)
+            nbMesh += meshParams.GetMeshCount(m);
+
         //remove
-        for(int i = 0; i < layer.objects.Count; i++)
+        while (layer.objects.Count > nbMesh)
         {
-            var m = layer.objects[i].meshRenderer.material;
-            if (!materials.Exists(x => { return x == m; }))
+            var l = layer.objects[layer.objects.Count - 1];
+            if(l.meshFilter.mesh != null)
+                Destroy(l.meshFilter.mesh);
+            Destroy(l.meshFilter.gameObject);
+            layer.objects.RemoveAt(layer.objects.Count - 1);
+        }
+
+        //add
+        while(layer.objects.Count < nbMesh)
+            layer.objects.Add(CreateNewLayerObject(layer.layerIndex));
+
+        //set
+        int meshIndex = 0;
+        foreach(var m in materials)
+        {
+            nbMesh = meshParams.GetMeshCount(m);
+
+            for(int i = 0; i < nbMesh; i++)
             {
-                if (layer.objects[i].meshFilter.mesh != null)
-                    Destroy(layer.objects[i].meshFilter.mesh);
-                Destroy(layer.objects[i].meshFilter.gameObject);
-                layer.objects.RemoveAt(i);
-                i--;
+                var obj = layer.objects[meshIndex];
+                UpdateLayerObject(obj, m, i, meshParams);
             }
         }
         
-        //add
-        foreach(var m in materials)
-        {
-            int nbMesh = meshParams.GetMeshCount(m);
-            int meshIndex = 0;
-            
-            for(int i = 0; i < layer.objects.Count; i++)
-            {
-                var obj = layer.objects[i];
-                if (obj.meshRenderer.material != m)
-                    continue;
-
-                if(meshIndex >= nbMesh)
-                {
-                    if (obj.meshFilter.mesh != null)
-                        Destroy(obj.meshFilter.mesh);
-                    Destroy(obj.meshFilter.gameObject);
-                    layer.objects.RemoveAt(i);
-                    i--;
-                }
-                else
-                {
-                    UpdateLayerObject(obj, m, meshIndex, meshParams);
-                    meshIndex++;
-                }
-            }
-
-            for (; meshIndex < nbMesh; meshIndex++)
-                layer.objects.Add(CreateNewLayerObject(m, meshIndex, layer.layerIndex, meshParams));
-        }
-
-        ChunkRendererPool.instance.FreeJob(m_x, m_z, layer.layerIndex, m_chunk.world);
+        ChunkRendererPool.instance.FreeJob(job.jobID);
 
         return true;
     }
@@ -177,6 +184,8 @@ public class ChunkRenderer : MonoBehaviour
     void UpdateLayerObject(LayerObject obj, Material material, int index, MeshParams<WorldVertexDefinition> meshParams)
     {
         var data = meshParams.GetMesh(material, index);
+
+        obj.meshRenderer.material = material;
 
         var mesh = obj.meshFilter.mesh;
 
@@ -192,22 +201,19 @@ public class ChunkRenderer : MonoBehaviour
         mesh.bounds = new Bounds(new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize) / 2, new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize));
     }
 
-    LayerObject CreateNewLayerObject(Material material, int index, int layer, MeshParams<WorldVertexDefinition> meshParams)
+    LayerObject CreateNewLayerObject(int layer)
     {
         LayerObject obj = new LayerObject();
 
-        GameObject o = new GameObject("Layer [" + layer + " " + material.name + "]");
+        GameObject o = new GameObject("Layer " + layer );
         var transform = o.GetComponent<Transform>();
         obj.meshFilter = o.AddComponent<MeshFilter>();
         obj.meshRenderer = o.AddComponent<MeshRenderer>();
-        obj.meshRenderer.material = material;
         obj.meshFilter.mesh = new Mesh();
         transform.parent = this.transform;
         transform.localPosition = new Vector3(0, layer * m_scaleY * Chunk.chunkSize, 0);
         transform.localRotation = Quaternion.identity;
         transform.localScale = new Vector3(m_scaleX, m_scaleY, m_scaleZ);
-
-        UpdateLayerObject(obj, material, index, meshParams);
 
         return obj;
     }

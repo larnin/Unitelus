@@ -17,11 +17,17 @@ public class ChunkRenderPoolBehaviour : MonoBehaviour
     {
         ChunkRendererPool.instance.Stop();
     }
+
+    private void Update()
+    {
+        ChunkRendererPool.instance.UpdateEndedJobs();
+    }
 }
 
 public class ChunkRendererPool
 {
     const int m_dataPoolSize = 8;
+    const int m_endedMaxFrames = 5;
 
     static ChunkRendererPool m_instance;
     public static ChunkRendererPool instance
@@ -42,6 +48,8 @@ public class ChunkRendererPool
         public World world = null;
         public MeshParams<WorldVertexDefinition> data = null;
         public bool aborted = false;
+        public int taskID = 0;
+        public int endedFrames = 0;
     }
 
     bool m_stopped = false;
@@ -60,42 +68,68 @@ public class ChunkRendererPool
 
     Thread m_thread;
 
+    int m_nextTaskID = 0;
+
     public ChunkRendererPool()
     {
         for (int i = 0; i < m_dataPoolSize; i++)
             m_freeDatas.Add(new MeshParams<WorldVertexDefinition>());
     }
 
-    public bool AddJob(int x, int z, int layer, World world)
+    public int AddJob(int x, int z, int layer, World world)
     {
-        lock (m_waitingJobs)
+        lock (m_waitingJobsLock)
         {
             var currentItem = m_waitingJobs.Find(v => { return x == v.x && z == v.z && layer == v.layer && world == v.world; });
             if (currentItem != null)
-                return false;
+                return currentItem.taskID;
             var job = new Job();
             job.x = x;
             job.z = z;
             job.layer = layer;
             job.world = world;
+            job.taskID = m_nextTaskID++;
             m_waitingJobs.Add(job);
-            return true;
+            return job.taskID;
         }
     }
 
-    public MeshParams<WorldVertexDefinition> GetJobData(int x, int z, int layer, World world)
+    public MeshParams<WorldVertexDefinition> GetJobData(int taskID)
     {
         lock (m_endedJobsLock)
         {
-            var item = m_endedJobs.Find(v => { return x == v.x && z == v.z && layer == v.layer && world == v.world; });
+            var item = m_endedJobs.Find(v => { return taskID == v.taskID; });
             if (item == null)
                 return null;
             return item.data;
         }
     }
 
+    public bool HaveJob(int taskID)
+    {
+        lock(m_waitingJobsLock)
+        {
+            lock(m_doingJobLock)
+            {
+                lock(m_endedJobsLock)
+                {
+                    foreach (var j in m_waitingJobs)
+                        if (j.taskID == taskID)
+                            return true;
+                    if (m_doingJob != null && m_doingJob.taskID == taskID && !m_doingJob.aborted)
+                        return true;
+                    foreach (var j in m_endedJobs)
+                        if (j.taskID == taskID)
+                            return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     //free the oldest job that match
-    public bool FreeJob(int x, int z, int layer, World world)
+    public bool FreeJob(int taskID)
     {
         lock (m_waitingJobsLock)
         {
@@ -107,7 +141,7 @@ public class ChunkRendererPool
                     {
                         var j = m_endedJobs[i];
 
-                        if (j.x == x && j.z == z && j.layer == layer && j.world == world)
+                        if (j.taskID == taskID)
                         {
                             m_endedJobs.RemoveAt(i);
                             CleanData(j.data);
@@ -115,7 +149,7 @@ public class ChunkRendererPool
                         }
                     }
 
-                    if (m_doingJob != null && m_doingJob.x == x && m_doingJob.z == z && m_doingJob.layer == layer && m_doingJob.world == world && !m_doingJob.aborted)
+                    if (m_doingJob != null && m_doingJob.taskID == taskID && !m_doingJob.aborted)
                     {
                         m_doingJob.aborted = true;
                         return true;
@@ -124,7 +158,7 @@ public class ChunkRendererPool
                     for (int i = 0; i < m_waitingJobs.Count; i++)
                     {
                         var j = m_waitingJobs[i];
-                        if (j.x == x && j.z == z && j.layer == layer && j.world == world)
+                        if (j.taskID == taskID)
                         {
                             m_waitingJobs.RemoveAt(i);
                             return true;
@@ -134,6 +168,24 @@ public class ChunkRendererPool
             }
         }
         return false;
+    }
+
+    public void UpdateEndedJobs()
+    {
+        lock(m_endedJobsLock)
+        {
+            for(int i = 0; i < m_endedJobs.Count; i++)
+            {
+                m_endedJobs[i].endedFrames++;
+
+                if(m_endedJobs[i].endedFrames > m_endedMaxFrames)
+                {
+                    CleanData(m_endedJobs[i].data);
+                    m_endedJobs.RemoveAt(i);
+                    i--;
+                }
+            }
+        }
     }
 
     void CleanData(MeshParams<WorldVertexDefinition> data)
@@ -168,7 +220,7 @@ public class ChunkRendererPool
         {
             bool haveJob = false;
             //assume that m_waitingJobs && m_freeDatas sizes will not go down until use 
-            lock (m_waitingJobs)
+            lock (m_waitingJobsLock)
             {
                 haveJob = m_waitingJobs.Count > 0;
             }
@@ -199,7 +251,7 @@ public class ChunkRendererPool
         if (data == null)
             return;
 
-        lock (m_waitingJobs)
+        lock (m_waitingJobsLock)
         {
             Job job = null;
 
@@ -231,10 +283,11 @@ public class ChunkRendererPool
         DoJob();
 
         //move task to ended task
-        lock(m_endedJobsLock)
+        lock(m_doingJobLock)
         {
-            lock(m_doingJobLock)
+            lock (m_endedJobsLock)
             {
+
                 if(m_doingJob.aborted)
                     CleanData(m_doingJob.data);
                 else m_endedJobs.Add(m_doingJob);
