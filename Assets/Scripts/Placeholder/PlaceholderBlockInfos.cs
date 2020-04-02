@@ -5,22 +5,13 @@ using Sirenix.OdinInspector;
 
 public class PlaceholderBlockInfos : SerializedMonoBehaviour
 {
-    public List<BlockRendererBase> m_blockRenderer = new List<BlockRendererBase>();
-
-    static PlaceholderBlockInfos m_instance = null;
-    public static PlaceholderBlockInfos instance
-    {
-        get { return m_instance; }
-        private set
-        {
-            if (m_instance != null)
-                Debug.LogError("2 PlaceholderBlockInfos instancied");
-            m_instance = value;
-        }
-    }
+    public List<BlockTypeBase> m_blockRenderer = new List<BlockTypeBase>();
 
     private void Awake()
     {
-        instance = this;
+        foreach(var b in m_blockRenderer)
+        {
+            BlockTypeList.instance.Set(b.id, b);
+        }
     }
 }

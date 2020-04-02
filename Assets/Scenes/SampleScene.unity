@@ -299,7 +299,6 @@ MonoBehaviour:
     SerializedBytes: 
     ReferencedUnityObjects:
     - {fileID: 2100000, guid: e391dab9ace65444895fe0315f15d0bd, type: 2}
-    - {fileID: 2100000, guid: 922aa6dde5d5e994aaf2338f184e180b, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -307,32 +306,20 @@ MonoBehaviour:
     SerializationNodes:
     - Name: m_blockRenderer
       Entry: 7
-      Data: 0|System.Collections.Generic.List`1[[BlockRendererBase, Assembly-CSharp]],
+      Data: 0|System.Collections.Generic.List`1[[BlockTypeBase, Assembly-CSharp]],
         mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 1
     - Name: 
       Entry: 7
-      Data: 1|BlockRendererSimpleCube, Assembly-CSharp
+      Data: 1|BlockTypeCube, Assembly-CSharp
     - Name: m_id
       Entry: 3
       Data: 1
     - Name: m_material
       Entry: 10
       Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 2|BlockRendererSimpleCube, Assembly-CSharp
-    - Name: m_id
-      Entry: 3
-      Data: 2
-    - Name: m_material
-      Entry: 10
-      Data: 1
     - Name: 
       Entry: 8
       Data: 

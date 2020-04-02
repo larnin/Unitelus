@@ -38,8 +38,7 @@ public class LayerRenderPassBlocks : LayerRendererPassBase
 
                     Vector3 pos = new Vector3(i, j, k);
 
-                    if (PlaceholderBlockInfos.instance.m_blockRenderer.Count >= centerID)
-                        PlaceholderBlockInfos.instance.m_blockRenderer[centerID - 1].Render(pos, m_view, meshParams);
+                    BlockTypeList.instance.Get(centerID).Render(pos, m_view, meshParams);
                 }
     }
 }

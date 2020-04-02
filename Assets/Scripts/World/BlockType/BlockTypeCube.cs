@@ -5,15 +5,20 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class BlockRendererSimpleCube : BlockRendererBase
+public class BlockTypeCube : BlockTypeBase
 {
     [SerializeField]
     public Material m_material;
 
-    public BlockRendererSimpleCube(int id) : base(id)
+    public BlockTypeCube(int id) : base(id)
     {
     }
 
+    public override bool IsFaceFull(BlockFace face)
+    {
+        //full all the times
+        return true;
+    }
 
     public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
