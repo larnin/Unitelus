@@ -263,7 +263,7 @@ public class Chunk
     public int HeightToBlockInLayer(int height)
     {
         if (height < 0)
-            return height % chunkSize + chunkSize - 1;
+            return (height % chunkSize + chunkSize) % chunkSize;
         return height % chunkSize;
     }
 
@@ -272,7 +272,7 @@ public class Chunk
         if(height < 0)
         {
             layer = (height - chunkSize + 1) / chunkSize;
-            block = height % chunkSize + chunkSize - 1;
+            block = (height % chunkSize + chunkSize) % chunkSize;
         }
         else
         {

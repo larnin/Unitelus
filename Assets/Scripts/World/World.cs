@@ -277,10 +277,10 @@ public class World
         else
         {
             if (x < 0)
-                outX = x % m_chunkNb + m_chunkNb - 1;
+                outX = (x % m_chunkNb + m_chunkNb) % m_chunkNb;
             else outX = x % m_chunkNb;
             if (z < 0)
-                outZ = z % m_chunkNb + m_chunkNb - 1;
+                outZ = (z % m_chunkNb + m_chunkNb) % m_chunkNb;
             else outZ = z % m_chunkNb;
         }
     }
@@ -290,10 +290,10 @@ public class World
         if (m_worldLoop)
         {
             if (x < 0)
-                x = x % m_chunkNb + m_chunkNb - 1;
+                x = (x % m_chunkNb + m_chunkNb) % m_chunkNb;
             else x = x % m_chunkNb;
             if (z < 0)
-                z = z % m_chunkNb + m_chunkNb - 1;
+                z = (z % m_chunkNb + m_chunkNb) % m_chunkNb;
             else z = z % m_chunkNb;
 
         }
@@ -318,10 +318,10 @@ public class World
         {
             int worldSize = size;
             if (x < 0)
-                x = x % worldSize + worldSize - 1;
+                x = (x % worldSize + worldSize) % worldSize;
             else x = x % worldSize;
             if (z < 0)
-                z = z % worldSize + worldSize - 1;
+                z = (z % worldSize + worldSize) % worldSize;
             else z = z % worldSize;
         }
         Debug.Assert(x >= 0 && z >= 0);
@@ -342,10 +342,10 @@ public class World
         if (m_worldLoop)
         {
             if (x < 0)
-                x = x % worldSize + worldSize - 1;
+                x = (x % worldSize + worldSize) % worldSize;
             else x = x % worldSize;
             if (z < 0)
-                z = z % worldSize + worldSize - 1;
+                z = (z % worldSize + worldSize) % worldSize;
             else z = z % worldSize;
         }
         Debug.Assert(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
@@ -361,10 +361,10 @@ public class World
         if (m_worldLoop)
         {
             if (x < 0)
-                x = x % worldSize + worldSize - 1;
+                x = (x % worldSize + worldSize) % worldSize;
             else x = x % worldSize;
             if (z < 0)
-                z = z % worldSize + worldSize - 1;
+                z = (z % worldSize + worldSize) % worldSize;
             else z = z % worldSize;
         }
         Debug.Assert(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
