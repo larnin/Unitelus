@@ -17,6 +17,11 @@ public class BlockTypeEmpty : BlockTypeBase
         return false;
     }
 
+    public override bool IsFull()
+    {
+        return false;
+    }
+
     public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
         //do nothing here, it's an empty block
