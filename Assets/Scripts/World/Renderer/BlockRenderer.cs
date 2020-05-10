@@ -7,43 +7,55 @@ using UnityEngine;
 
 public class BlockRendererData
 {
+    public int id;
     public Material material;
     public Rotation rotation;
     public Rect[] facesUV;
+    public bool allowDrawSelfFaces;
 
-    public BlockRendererData(Material mat, Rotation rot = Rotation.Rot0)
+    public BlockRendererData(int _id, Material mat, Rotation rot = Rotation.Rot0, bool _allowDrawSelfFaces = false)
     {
+        id = _id;
         material = mat;
         facesUV = new Rect[] { new Rect(0, 0, 1, 1) };
         rotation = rot;
+        allowDrawSelfFaces = _allowDrawSelfFaces;
     }
 
-    public BlockRendererData(Material mat, Rect[] _facesUV, Rotation rot = Rotation.Rot0)
+    public BlockRendererData(int _id, Material mat, Rect[] _facesUV, Rotation rot = Rotation.Rot0, bool _allowDrawSelfFaces = false)
     {
+        id = _id;
         material = mat;
         facesUV = _facesUV;
         rotation = rot;
+        allowDrawSelfFaces = _allowDrawSelfFaces;
     }
 
-    public BlockRendererData(Material mat, Rect faceUV, Rotation rot = Rotation.Rot0)
+    public BlockRendererData(int _id, Material mat, Rect faceUV, Rotation rot = Rotation.Rot0, bool _allowDrawSelfFaces = false)
     {
+        id = _id;
         material = mat;
         facesUV = new Rect[1] { faceUV };
         rotation = rot;
+        allowDrawSelfFaces = _allowDrawSelfFaces;
     }
 
-    public BlockRendererData(Material mat, Rect topUV, Rect downUV, Rect sideUV, Rotation rot = Rotation.Rot0)
+    public BlockRendererData(int _id, Material mat, Rect topUV, Rect downUV, Rect sideUV, Rotation rot = Rotation.Rot0, bool _allowDrawSelfFaces = false)
     {
+        id = _id;
         material = mat;
         facesUV = new Rect[3] { topUV, downUV, sideUV };
         rotation = rot;
+        allowDrawSelfFaces = _allowDrawSelfFaces;
     }
 
-    public BlockRendererData(Material mat, Rect topUV, Rect downUV, Rect leftUV, Rect rightUV, Rect frontUV, Rect backUV, Rotation rot = Rotation.Rot0)
+    public BlockRendererData(int _id, Material mat, Rect topUV, Rect downUV, Rect leftUV, Rect rightUV, Rect frontUV, Rect backUV, Rotation rot = Rotation.Rot0, bool _allowDrawSelfFaces = false)
     {
+        id = _id;
         material = mat;
         facesUV = new Rect[6] { topUV, downUV, leftUV, rightUV, frontUV, backUV };
         rotation = rot;
+        allowDrawSelfFaces = _allowDrawSelfFaces;
     }
 
     public Rect GetFaceUV(BlockFace face)
@@ -101,19 +113,30 @@ public static class BlockRenderer
         bool front = !BlockTypeList.instance.Get(neighbors.Get(0, 0, 1).id).IsFaceFull(BlockFace.Back);
         bool back = !BlockTypeList.instance.Get(neighbors.Get(0, 0, -1).id).IsFaceFull(BlockFace.Front);
 
+        if(!blockData.allowDrawSelfFaces)
+        {
+            left &= neighbors.Get(1, 0, 0).id != blockData.id;
+            right &= neighbors.Get(-1, 0, 0).id != blockData.id;
+            up &= neighbors.Get(0, 1, 0).id != blockData.id;
+            down &= neighbors.Get(0, -1, 0).id != blockData.id;
+            front &= neighbors.Get(0, 0, 1).id != blockData.id;
+            back &= neighbors.Get(0, 0, -1).id != blockData.id;
+        }
+
         int vertexIndex = 0;
         int nb = 0;
 
         if (right)
         {
+            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Right, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(0, 0);
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 0, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(0, 1);
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(0, 1, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(1, 1);
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 1, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(1, 0);
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
             for (int i = 0; i < 4; i++)
             {
                 data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(-1, 0, 0);
@@ -125,33 +148,36 @@ public static class BlockRenderer
 
         if (up)
         {
+            var rect = blockData.GetFaceUV(BlockFace.Up);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(0, 0);
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 1, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(0, 1);
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 1, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(1, 1);
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(1, 1, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(1, 0);
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y);
             for (int i = 0; i < 4; i++)
             {
                 data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, 1, 0);
                 data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(1, 0, 0, -1);
             }
+            RotateUV(data, data.verticesSize + vertexIndex, 4, (int)blockData.rotation);
             vertexIndex += 4;
             nb++;
         }
 
         if (front)
         {
+            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Front, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(0, 0);
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 0, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(0, 1);
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 1, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(1, 1);
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 1, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(1, 0);
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
             for (int i = 0; i < 4; i++)
             {
                 data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, 0, 1);
@@ -163,33 +189,36 @@ public static class BlockRenderer
 
         if (down)
         {
+            var rect = blockData.GetFaceUV(BlockFace.Down);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(0, 0);
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 0, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(0, 1);
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(0, 0, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(1, 1);
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 0, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(1, 0);
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
             for (int i = 0; i < 4; i++)
             {
                 data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, -1, 0);
                 data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(1, 0, 0, 1);
             }
+            RotateUV(data, data.verticesSize + vertexIndex, 4, (int)blockData.rotation);
             vertexIndex += 4;
             nb++;
         }
 
         if (left)
         {
+            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Left, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 1, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(0, 0);
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(0, 1);
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 1) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(1, 1);
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(1, 0, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(1, 0);
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
             for (int i = 0; i < 4; i++)
             {
                 data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(1, 0, 0);
@@ -201,14 +230,15 @@ public static class BlockRenderer
 
         if (back)
         {
+            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Back, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(0, 0);
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(0, 1);
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(1, 1);
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 0, 0) + pos;
-            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(1, 0);
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
             for (int i = 0; i < 4; i++)
             {
                 data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, 0, -1);
@@ -258,5 +288,18 @@ public static class BlockRenderer
     public static void DrawSmallPyramid(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
 
+    }
+
+    static void RotateUV(MeshParamData<WorldVertexDefinition> data, int index, int size, int nb)
+    {
+        while (nb > 0)
+        {
+            Vector2 uv = data.vertices[index].uv;
+            for (int i = 0; i < size - 1; i++)
+                data.vertices[index + i].uv = data.vertices[index + i + 1].uv;
+            data.vertices[index + size - 1].uv = uv;
+
+            nb--;
+        }
     }
 }

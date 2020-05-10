@@ -141,7 +141,7 @@ public class BlockTypeSmoothed : BlockTypeBase
         }
 
         if (m_data == null)
-            m_data = new BlockRendererData(m_material);
+            m_data = new BlockRendererData(id, m_material);
         m_data.rotation = rotation;
 
         switch(shape)

@@ -48,6 +48,8 @@ public static class WorldGenerator
             }
         }
 
+        world.SetBlock(0, 10, 0, b);
+
         return world;
     }
 }
