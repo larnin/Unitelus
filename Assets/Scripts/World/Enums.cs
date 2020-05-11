@@ -59,6 +59,19 @@ public static class RotationEx
 
         return offset;
     }
+
+    public static Vector2 RotateOffset(Vector2 offset, Rotation rot)
+    {
+        while (rot > Rotation.Rot0)
+        {
+            var temp = offset.x;
+            offset.x = offset.y;
+            offset.y = -temp;
+            rot--;
+        }
+
+        return offset;
+    }
 }
 
 public enum BlockFace

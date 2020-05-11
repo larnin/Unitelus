@@ -137,11 +137,6 @@ public static class BlockRenderer
             data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 1, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
-            for (int i = 0; i < 4; i++)
-            {
-                data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(-1, 0, 0);
-                data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(0, 1, 0, -1);
-            }
             vertexIndex += 4;
             nb++;
         }
@@ -157,11 +152,6 @@ public static class BlockRenderer
             data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(1, 1, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y);
-            for (int i = 0; i < 4; i++)
-            {
-                data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, 1, 0);
-                data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(1, 0, 0, -1);
-            }
             RotateUV(data, data.verticesSize + vertexIndex, 4, (int)blockData.rotation);
             vertexIndex += 4;
             nb++;
@@ -178,11 +168,6 @@ public static class BlockRenderer
             data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 1, 1) + pos;
             data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
-            for (int i = 0; i < 4; i++)
-            {
-                data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, 0, 1);
-                data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(1, 0, 0, 1);
-            }
             vertexIndex += 4;
             nb++;
         }
@@ -198,11 +183,6 @@ public static class BlockRenderer
             data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
-            for (int i = 0; i < 4; i++)
-            {
-                data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, -1, 0);
-                data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(1, 0, 0, 1);
-            }
             RotateUV(data, data.verticesSize + vertexIndex, 4, (int)blockData.rotation);
             vertexIndex += 4;
             nb++;
@@ -219,11 +199,6 @@ public static class BlockRenderer
             data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(1, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
-            for (int i = 0; i < 4; i++)
-            {
-                data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(1, 0, 0);
-                data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(0, 1, 0, 1);
-            }
             vertexIndex += 4;
             nb++;
         }
@@ -239,27 +214,16 @@ public static class BlockRenderer
             data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
-            for (int i = 0; i < 4; i++)
-            {
-                data.vertices[data.verticesSize + vertexIndex + i].normal = new Vector3(0, 0, -1);
-                data.vertices[data.verticesSize + vertexIndex + i].tangent = new Vector4(1, 0, 0, -1);
-            }
             vertexIndex += 4;
             nb++;
         }
 
-        for (int i = 0; i < vertexIndex; i++)
-            data.vertices[data.verticesSize + i].color = new Color32(255, 255, 255, 0);
+        SetColor(data, data.verticesSize, vertexIndex, new Color32(255, 255, 255, 0));
 
-        for (int i = 0; i < nb; i++)
-        {
-            data.indexes[data.indexesSize + i * 6] = (ushort)(4 * i + data.verticesSize);
-            data.indexes[data.indexesSize + i * 6 + 1] = (ushort)(4 * i + 1 + data.verticesSize);
-            data.indexes[data.indexesSize + i * 6 + 2] = (ushort)(4 * i + 2 + data.verticesSize);
-            data.indexes[data.indexesSize + i * 6 + 3] = (ushort)(4 * i + data.verticesSize);
-            data.indexes[data.indexesSize + i * 6 + 4] = (ushort)(4 * i + 2 + data.verticesSize);
-            data.indexes[data.indexesSize + i * 6 + 5] = (ushort)(4 * i + 3 + data.verticesSize);
-        }
+        SetQuadsIndexs(data, data.verticesSize, data.indexesSize, nb);
+
+        BakeNormals(data, data.indexesSize, nb * 2);
+        BakeTangents(data, data.indexesSize, nb * 2);
 
         data.verticesSize += vertexIndex;
         data.indexesSize += nb * 6;
@@ -267,11 +231,29 @@ public static class BlockRenderer
 
     public static void DrawAntiTetrahedral(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
-
+        
     }
 
     public static void DrawHalfCubic(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
+        var data = meshParams.Allocate(24, 36, blockData.material);
+
+        bool left = !BlockTypeList.instance.Get(neighbors.Get(1, 0, 0).id).IsFaceFull(BlockFace.Right);
+        bool right = !BlockTypeList.instance.Get(neighbors.Get(-1, 0, 0).id).IsFaceFull(BlockFace.Left);
+        bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
+        bool back = !BlockTypeList.instance.Get(neighbors.Get(0, 0, -1).id).IsFaceFull(BlockFace.Front);
+
+        if (!blockData.allowDrawSelfFaces)
+        {
+            var leftDir = RotationEx.RotationToDir(RotationEx.AddRotations(blockData.rotation, Rotation.Rot270));
+            var rightDir = RotationEx.RotationToDir(RotationEx.AddRotations(blockData.rotation, Rotation.Rot90));
+            var backDir = RotationEx.RotationToDir(RotationEx.AddRotations(blockData.rotation, Rotation.Rot180));
+            left &= neighbors.Get(leftDir.x, 0, leftDir.y).id != blockData.id;
+            right &= neighbors.Get(rightDir.x, 0, rightDir.y).id != blockData.id;
+            down &= neighbors.Get(0, -1, 0).id != blockData.id;
+            back &= neighbors.Get(backDir.x, 0, backDir.y).id != blockData.id;
+        }
+
 
     }
 
@@ -300,6 +282,114 @@ public static class BlockRenderer
             data.vertices[index + size - 1].uv = uv;
 
             nb--;
+        }
+    }
+
+    static void RotatePos(MeshParamData<WorldVertexDefinition> data, int index, int size, Rotation rot)
+    {
+        for(int i = 0; i < size; i++)
+        {
+            var pos = data.vertices[index + i].pos;
+            var rotatedPos = RotationEx.RotateOffset(new Vector2(pos.x - 0.5f, pos.z - 0.5f), rot);
+            pos.x = rotatedPos.x + 0.5f;
+            pos.z = rotatedPos.y + 0.5f;
+            data.vertices[index + i].pos = pos;
+        }
+    }
+
+    static void SetColor(MeshParamData<WorldVertexDefinition> data, int index, int size, Color32 color)
+    {
+        for (int i = 0; i < size; i++)
+            data.vertices[index + i].color = color;
+    }
+
+    static void SetQuadsIndexs(MeshParamData<WorldVertexDefinition> data, int vertexIndex, int indexIndex, int quadNb)
+    {
+        for(int i = 0; i < quadNb; i++)
+        {
+            data.indexes[indexIndex + i * 6] = (ushort)(4 * i + vertexIndex);
+            data.indexes[indexIndex + i * 6 + 1] = (ushort)(4 * i + 1 + vertexIndex);
+            data.indexes[indexIndex + i * 6 + 2] = (ushort)(4 * i + 2 + vertexIndex);
+            data.indexes[indexIndex + i * 6 + 3] = (ushort)(4 * i + vertexIndex);
+            data.indexes[indexIndex + i * 6 + 4] = (ushort)(4 * i + 2 + vertexIndex);
+            data.indexes[indexIndex + i * 6 + 5] = (ushort)(4 * i + 3 + vertexIndex);
+        }
+    }
+
+    static void SetTrianglesIndexs(MeshParamData<WorldVertexDefinition> data, int vertexIndex, int indexIndex, int triangleNb)
+    {
+        for (int i = 0; i < triangleNb; i++)
+        {
+            data.indexes[indexIndex + i * 3] = (ushort)(3 * i + vertexIndex);
+            data.indexes[indexIndex + i * 3 + 1] = (ushort)(3 * i + 1 + vertexIndex);
+            data.indexes[indexIndex + i * 3 + 2] = (ushort)(3 * i + 2 + vertexIndex);
+        }
+    }
+
+    static void BakeNormals(MeshParamData<WorldVertexDefinition> data, int index, int triangleNb)
+    {
+        //https://math.stackexchange.com/questions/305642/how-to-find-surface-normal-of-a-triangle
+
+        for (int i = 0; i < triangleNb; i++)
+        {
+            int i1 = data.indexes[index + i * 3];
+            int i2 = data.indexes[index + i * 3 + 1];
+            int i3 = data.indexes[index + i * 3 + 2];
+
+            var p1 = data.vertices[i1].pos;
+            var p2 = data.vertices[i2].pos;
+            var p3 = data.vertices[i3].pos;
+
+            var v = p2 - p1;
+            var w = p3 - p1;
+
+            var n = new Vector3(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
+
+            data.vertices[i1].normal = n;
+            data.vertices[i2].normal = n;
+            data.vertices[i3].normal = n;
+        }
+    }
+
+    static void BakeTangents(MeshParamData<WorldVertexDefinition> data, int index, int triangleNb)
+    {
+        //https://forum.unity.com/threads/how-to-calculate-mesh-tangents.38984/#post-285069
+        //with a small simplification : 
+        // Each vertex are linked to only one triangle. If one vertex is on multiple triangle, the combined surface is flat, we don't need to combine tangent
+
+        for (int i = 0; i < triangleNb; i++)
+        {
+            int i1 = data.indexes[index + i * 3];
+            int i2 = data.indexes[index + i * 3 + 1];
+            int i3 = data.indexes[index + i * 3 + 2];
+
+            var v1 = data.vertices[i1];
+            var v2 = data.vertices[i2];
+            var v3 = data.vertices[i3];
+
+            float x1 = v2.pos.x - v1.pos.x;
+            float x2 = v3.pos.x - v1.pos.x;
+            float y1 = v2.pos.y - v1.pos.y;
+            float y2 = v3.pos.y - v1.pos.y;
+            float z1 = v2.pos.z - v1.pos.z;
+            float z2 = v3.pos.z - v1.pos.z;
+            float s1 = v2.uv.x - v1.uv.x;
+            float s2 = v3.uv.x - v1.uv.x;
+            float t1 = v2.uv.y - v1.uv.y;
+            float t2 = v3.uv.y - v1.uv.y;
+
+            float r = 1.0f / (s1 * t2 - s2 * t1);
+            var sdir = new Vector3((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+            var tdir = new Vector3((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+
+            var tmp = (sdir - v1.normal * Vector3.Dot(v1.normal, sdir)).normalized;
+            var w = (Vector3.Dot(Vector3.Cross(v1.normal, sdir), tdir) < 0.0f) ? -1.0f : 1.0f;
+
+            var tan = new Vector4(tmp.x, tmp.y, tmp.z, w);
+
+            data.vertices[i1].tangent = tan;
+            data.vertices[i2].tangent = tan;
+            data.vertices[i3].tangent = tan;
         }
     }
 }
