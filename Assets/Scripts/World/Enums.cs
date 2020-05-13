@@ -47,13 +47,25 @@ public static class RotationEx
         return a;
     }
 
+    public static Rotation SubRotations(Rotation a, Rotation b)
+    {
+        while (b > Rotation.Rot0)
+        {
+            if (a == Rotation.Rot0)
+                a = Rotation.Rot270;
+            else a--;
+            b--;
+        }
+        return a;
+    }
+
     public static Vector2Int RotateOffset(Vector2Int offset, Rotation rot)
     {
         while (rot > Rotation.Rot0)
         {
-            var temp = offset.x;
+            var temp = -offset.x;
             offset.x = offset.y;
-            offset.y = -temp;
+            offset.y = temp;
             rot--;
         }
 
@@ -64,9 +76,9 @@ public static class RotationEx
     {
         while (rot > Rotation.Rot0)
         {
-            var temp = offset.x;
+            var temp = -offset.x;
             offset.x = offset.y;
-            offset.y = -temp;
+            offset.y = temp;
             rot--;
         }
 
@@ -91,9 +103,9 @@ public static class BlockFaceEx
         switch (face)
         {
             case BlockFace.Left:
-                return new Vector3(1, 0, 0);
-            case BlockFace.Right:
                 return new Vector3(-1, 0, 0);
+            case BlockFace.Right:
+                return new Vector3(1, 0, 0);
             case BlockFace.Up:
                 return new Vector3(0, 1, 0);
             case BlockFace.Down:
@@ -105,6 +117,27 @@ public static class BlockFaceEx
         }
         Debug.Assert(false);
         return new Vector3(0, 0, 0);
+    }
+
+    static public Vector3Int FaceToDirInt(BlockFace face)
+    {
+        switch (face)
+        {
+            case BlockFace.Left:
+                return new Vector3Int(-1, 0, 0);
+            case BlockFace.Right:
+                return new Vector3Int(1, 0, 0);
+            case BlockFace.Up:
+                return new Vector3Int(0, 1, 0);
+            case BlockFace.Down:
+                return new Vector3Int(0, -1, 0);
+            case BlockFace.Front:
+                return new Vector3Int(0, 0, 1);
+            case BlockFace.Back:
+                return new Vector3Int(0, 0, -1);
+        }
+        Debug.Assert(false);
+        return new Vector3Int(0, 0, 0);
     }
 
     public static BlockFace DirToFace(Vector3 dir)
@@ -143,15 +176,15 @@ public static class BlockFaceEx
             switch(face)
             {
                 case BlockFace.Back:
-                    face = BlockFace.Right;
-                    break;
-                case BlockFace.Front:
                     face = BlockFace.Left;
                     break;
-                case BlockFace.Left:
+                case BlockFace.Right:
                     face = BlockFace.Back;
                     break;
-                case BlockFace.Right:
+                case BlockFace.Front:
+                    face = BlockFace.Right;
+                    break;
+                case BlockFace.Left:
                     face = BlockFace.Front;
                     break;
                 default:

@@ -126,7 +126,8 @@ public class BlockTypeSmoothed : BlockTypeBase
                 {
                     found = true;
                     shape = b.shape;
-                    rotation = RotationEx.AddRotations(b.rotation, (Rotation)rot);
+                    rotation = RotationEx.SubRotations(b.rotation, (Rotation)rot);
+                    break;
                 }
             }
 
@@ -141,7 +142,10 @@ public class BlockTypeSmoothed : BlockTypeBase
         }
 
         if (m_data == null)
-            m_data = new BlockRendererData(id, m_material);
+            m_data = new BlockRendererData(id, m_material
+                , new Rect(0.25f, 0, 0.25f, 1)
+                , new Rect(0.5f, 0, 0.25f, 1)
+                , new Rect(0.0f, 0, 0.25f, 1));
         m_data.rotation = rotation;
 
         switch(shape)
@@ -174,15 +178,15 @@ public class BlockTypeSmoothed : BlockTypeBase
     {
         List<BlockShape> shapes = new List<BlockShape>();
 
-        shapes.Add(new BlockShape(new int[]
-            {2,2,2,2,2,2,2,2,2
-            ,2,0,2,0,2,0,2,0,2
-            ,2,2,2,2,0,2,2,2,2}
-            , ShapeType.SmallPyramid));
+        //shapes.Add(new BlockShape(new int[]
+        //    {2,2,2,2,2,2,2,2,2
+        //    ,2,0,2,0,2,0,2,0,2
+        //    ,2,2,2,2,0,2,2,2,2}
+        //    , ShapeType.SmallPyramid));
 
         shapes.Add(new BlockShape(new int[]
             {2,2,2,2,2,2,2,2,2
-            ,2,1,2,1,2,0,2,1,2
+            ,2,1,2,1,2,1,2,0,2
             ,2,2,2,2,0,2,2,2,2}
             , ShapeType.HalfCubic));
 

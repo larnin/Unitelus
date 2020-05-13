@@ -48,7 +48,20 @@ public static class WorldGenerator
             }
         }
 
+        world.SetBlock(0, 10, -1, b);
+        world.SetBlock(1, 10, -1, b);
         world.SetBlock(0, 10, 0, b);
+        world.SetBlock(1, 10, 0, b);
+        world.SetBlock(0, 10, 1, b);
+        world.SetBlock(1, 10, 1, b);
+
+
+        world.SetBlock(4, 10, 0, b);
+        world.SetBlock(4, 10, 1, b);
+        world.SetBlock(5, 10, 0, b);
+        world.SetBlock(5, 10, 1, b);
+        world.SetBlock(6, 10, 0, b);
+        world.SetBlock(6, 10, 1, b);
 
         return world;
     }

@@ -236,25 +236,121 @@ public static class BlockRenderer
 
     public static void DrawHalfCubic(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
-        var data = meshParams.Allocate(24, 36, blockData.material);
+        //3 square and 2 triangles
+        // each square have 4 vertex and 6 index
+        // each triangle have 3 vertex and 3 index
+        var data = meshParams.Allocate(18, 24, blockData.material);
 
-        bool left = !BlockTypeList.instance.Get(neighbors.Get(1, 0, 0).id).IsFaceFull(BlockFace.Right);
-        bool right = !BlockTypeList.instance.Get(neighbors.Get(-1, 0, 0).id).IsFaceFull(BlockFace.Left);
+        var rot = blockData.rotation;
+
+        var leftFace = BlockFaceEx.Rotate(BlockFace.Left, rot);
+        var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rot);
+        var backFace = BlockFaceEx.Rotate(BlockFace.Back, rot);
+
+        var leftDir = BlockFaceEx.FaceToDirInt(leftFace);
+        var rightDir = BlockFaceEx.FaceToDirInt(rightFace);
+        var backDir = BlockFaceEx.FaceToDirInt(backFace);
+
+        bool left = !BlockTypeList.instance.Get(neighbors.Get(leftDir.x, 0, leftDir.z).id).IsFaceFull(BlockFaceEx.Rotate(leftFace, Rotation.Rot180));
+        bool right = !BlockTypeList.instance.Get(neighbors.Get(rightDir.x, 0, rightDir.z).id).IsFaceFull(BlockFaceEx.Rotate(rightFace, Rotation.Rot180));
+        bool back = !BlockTypeList.instance.Get(neighbors.Get(backDir.x, 0, backDir.z).id).IsFaceFull(BlockFaceEx.Rotate(backFace, Rotation.Rot180));
         bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
-        bool back = !BlockTypeList.instance.Get(neighbors.Get(0, 0, -1).id).IsFaceFull(BlockFace.Front);
 
         if (!blockData.allowDrawSelfFaces)
         {
-            var leftDir = RotationEx.RotationToDir(RotationEx.AddRotations(blockData.rotation, Rotation.Rot270));
-            var rightDir = RotationEx.RotationToDir(RotationEx.AddRotations(blockData.rotation, Rotation.Rot90));
-            var backDir = RotationEx.RotationToDir(RotationEx.AddRotations(blockData.rotation, Rotation.Rot180));
-            left &= neighbors.Get(leftDir.x, 0, leftDir.y).id != blockData.id;
-            right &= neighbors.Get(rightDir.x, 0, rightDir.y).id != blockData.id;
+            left &= neighbors.Get(leftDir.x, 0, leftDir.z).id != blockData.id;
+            right &= neighbors.Get(rightDir.x, 0, rightDir.z).id != blockData.id;
+            back &= neighbors.Get(backDir.x, 0, backDir.z).id != blockData.id;
             down &= neighbors.Get(0, -1, 0).id != blockData.id;
-            back &= neighbors.Get(backDir.x, 0, backDir.y).id != blockData.id;
         }
 
+        int vertexIndex = 0;
+        int nbSquare = 0;
+        int nbTriangle = 0;
 
+        if (down)
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Down);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(0, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
+            vertexIndex += 4;
+            nbSquare++;
+        }
+
+        if (back)
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Back);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
+            vertexIndex += 4;
+            nbSquare++;
+        }
+
+        //top face is drawn in all cases
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Up);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y);
+            vertexIndex += 4;
+            nbSquare++;
+        }
+
+        if (left)
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Left);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            vertexIndex += 3;
+            nbTriangle++;
+        }
+
+        if (right)
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Right);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(0, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            vertexIndex += 3;
+            nbTriangle++;
+        }
+
+        SetColor(data, data.verticesSize, vertexIndex, new Color32(255, 255, 255, 0));
+
+        SetQuadsIndexs(data, data.verticesSize, data.indexesSize, nbSquare);
+        SetTrianglesIndexs(data, data.verticesSize + 4 * nbSquare, data.indexesSize + 6 * nbSquare, nbTriangle);
+
+        RotatePos(data, data.verticesSize, vertexIndex, pos, rot);
+
+        BakeNormals(data, data.indexesSize, nbSquare * 2 + nbTriangle);
+        BakeTangents(data, data.indexesSize, nbSquare * 2 + nbTriangle);
+
+        data.verticesSize += vertexIndex;
+        data.indexesSize += nbSquare * 6 + nbTriangle * 3;
     }
 
     public static void DrawHorizontalHalfCubic(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
@@ -285,15 +381,15 @@ public static class BlockRenderer
         }
     }
 
-    static void RotatePos(MeshParamData<WorldVertexDefinition> data, int index, int size, Rotation rot)
+    static void RotatePos(MeshParamData<WorldVertexDefinition> data, int index, int size, Vector3 origin, Rotation rot)
     {
         for(int i = 0; i < size; i++)
         {
-            var pos = data.vertices[index + i].pos;
+            var pos = data.vertices[index + i].pos - origin;
             var rotatedPos = RotationEx.RotateOffset(new Vector2(pos.x - 0.5f, pos.z - 0.5f), rot);
             pos.x = rotatedPos.x + 0.5f;
             pos.z = rotatedPos.y + 0.5f;
-            data.vertices[index + i].pos = pos;
+            data.vertices[index + i].pos = pos + origin;
         }
     }
 
