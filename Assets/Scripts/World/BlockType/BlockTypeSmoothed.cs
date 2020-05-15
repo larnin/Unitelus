@@ -198,7 +198,7 @@ public class BlockTypeSmoothed : BlockTypeBase
 
         shapes.Add(new BlockShape(new int[]
             {2,2,2,2,2,2,2,2,2
-            ,2,0,2,1,2,0,2,1,2
+            ,2,1,2,0,2,1,2,0,2
             ,2,2,2,2,0,2,2,2,2}
             , ShapeType.Thetrahedral));
 

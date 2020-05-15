@@ -103,9 +103,9 @@ public static class BlockFaceEx
         switch (face)
         {
             case BlockFace.Left:
-                return new Vector3(-1, 0, 0);
-            case BlockFace.Right:
                 return new Vector3(1, 0, 0);
+            case BlockFace.Right:
+                return new Vector3(-1, 0, 0);
             case BlockFace.Up:
                 return new Vector3(0, 1, 0);
             case BlockFace.Down:
@@ -124,9 +124,9 @@ public static class BlockFaceEx
         switch (face)
         {
             case BlockFace.Left:
-                return new Vector3Int(-1, 0, 0);
-            case BlockFace.Right:
                 return new Vector3Int(1, 0, 0);
+            case BlockFace.Right:
+                return new Vector3Int(-1, 0, 0);
             case BlockFace.Up:
                 return new Vector3Int(0, 1, 0);
             case BlockFace.Down:
@@ -176,16 +176,16 @@ public static class BlockFaceEx
             switch(face)
             {
                 case BlockFace.Back:
-                    face = BlockFace.Left;
-                    break;
-                case BlockFace.Right:
-                    face = BlockFace.Back;
-                    break;
-                case BlockFace.Front:
                     face = BlockFace.Right;
                     break;
-                case BlockFace.Left:
+                case BlockFace.Right:
                     face = BlockFace.Front;
+                    break;
+                case BlockFace.Front:
+                    face = BlockFace.Left;
+                    break;
+                case BlockFace.Left:
+                    face = BlockFace.Back;
                     break;
                 default:
                     Debug.Assert(false);

@@ -360,7 +360,95 @@ public static class BlockRenderer
 
     public static void DrawThetrahedral(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
+        //4 triangles
+        // each triangle have 3 vertex and 3 index
+        var data = meshParams.Allocate(12, 12, blockData.material);
 
+        var rot = blockData.rotation;
+
+        var leftFace = BlockFaceEx.Rotate(BlockFace.Left, rot);
+        var backFace = BlockFaceEx.Rotate(BlockFace.Back, rot);
+
+        var leftDir = BlockFaceEx.FaceToDirInt(leftFace);
+        var backDir = BlockFaceEx.FaceToDirInt(backFace);
+
+        bool left = !BlockTypeList.instance.Get(neighbors.Get(leftDir.x, 0, leftDir.z).id).IsFaceFull(BlockFaceEx.Rotate(leftFace, Rotation.Rot180));
+        bool back = !BlockTypeList.instance.Get(neighbors.Get(backDir.x, 0, backDir.z).id).IsFaceFull(BlockFaceEx.Rotate(backFace, Rotation.Rot180));
+        bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
+
+        if (!blockData.allowDrawSelfFaces)
+        {
+            left &= neighbors.Get(leftDir.x, 0, leftDir.z).id != blockData.id;
+            back &= neighbors.Get(backDir.x, 0, backDir.z).id != blockData.id;
+            down &= neighbors.Get(0, -1, 0).id != blockData.id;
+        }
+
+        int vertexIndex = 0;
+        int nb = 0;
+
+        if (down)
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Down);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y);
+            vertexIndex += 3;
+            nb++;
+        }
+
+        if (back)
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Back);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            vertexIndex += 3;
+            nb++;
+        }
+        
+        if (left)
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Left);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            vertexIndex += 3;
+            nb++;
+        }
+        
+        //top face is drawn in all cases
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Up);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            vertexIndex += 3;
+            nb++;
+        }
+
+        SetColor(data, data.verticesSize, vertexIndex, new Color32(255, 255, 255, 0));
+        
+        SetTrianglesIndexs(data, data.verticesSize, data.indexesSize, nb);
+
+        RotatePos(data, data.verticesSize, vertexIndex, pos, rot);
+
+        BakeNormals(data, data.indexesSize, nb);
+        BakeTangents(data, data.indexesSize, nb);
+
+        data.verticesSize += vertexIndex;
+        data.indexesSize += nb * 3;
     }
 
     public static void DrawSmallPyramid(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
