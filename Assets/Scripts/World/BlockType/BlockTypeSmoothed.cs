@@ -205,7 +205,7 @@ public class BlockTypeSmoothed : BlockTypeBase
         shapes.Add(new BlockShape(new int[]
             {2,2,2,2,2,2,2,2,2
             ,1,1,0,1,2,1,1,1,1
-            ,2,2,2,2,1,2,2,2,2}
+            ,2,2,2,2,2,2,2,2,2}
             , ShapeType.AntiTetrahedral));
 
         shapes.Add(new BlockShape(new int[] 
