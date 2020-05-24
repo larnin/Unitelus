@@ -255,7 +255,7 @@ public static class BlockRenderer
         bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
         bool up = !BlockTypeList.instance.Get(neighbors.Get(0, 1, 0).id).IsFaceFull(BlockFace.Down);
 
-        if (!blockData.allowDrawSelfFaces && false)
+        if (!blockData.allowDrawSelfFaces)
         {
             left &= neighbors.Get(leftDir.x, 0, leftDir.z).id != blockData.id;
             right &= neighbors.Get(rightDir.x, 0, rightDir.z).id != blockData.id;
