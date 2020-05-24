@@ -74,7 +74,7 @@ public class ChunkRenderer : MonoBehaviour
             }
             UpdateLayer(layer);
         }
-
+        
         m_fUpdateTime = Time.time;
     }
 

@@ -52,6 +52,29 @@ public class ChunkRendererPool
         public int endedFrames = 0;
     }
 
+    class DoingJobStatus
+    {
+        public bool working = false;
+        public int x = 0;
+        public int z = 0;
+        public int layer = 0;
+        public World world = null;
+        public bool aborted = false;
+        public int taskID = 0;
+
+        public void CloneJob(Job job)
+        {
+            working = true;
+            world = job.world;
+            x = job.x;
+            z = job.z;
+            layer = job.layer;
+            taskID = job.taskID;
+            aborted = job.aborted;
+        }
+
+    }
+
     bool m_stopped = false;
 
     readonly object m_freeDatasLock = new object();
@@ -62,6 +85,8 @@ public class ChunkRendererPool
 
     readonly object m_doingJobLock = new object();
     Job m_doingJob = null;
+    readonly object m_doingJobStatusLock = new object();
+    DoingJobStatus m_doingJobStatus = new DoingJobStatus();
 
     readonly object m_endedJobsLock = new object();
     List<Job> m_endedJobs = new List<Job>();
@@ -109,14 +134,14 @@ public class ChunkRendererPool
     {
         lock(m_waitingJobsLock)
         {
-            lock(m_doingJobLock)
+            lock(m_doingJobStatusLock)
             {
                 lock(m_endedJobsLock)
                 {
                     foreach (var j in m_waitingJobs)
                         if (j.taskID == taskID)
                             return true;
-                    if (m_doingJob != null && m_doingJob.taskID == taskID && !m_doingJob.aborted)
+                    if (m_doingJobStatus.working && m_doingJobStatus.taskID == taskID && !m_doingJobStatus.aborted)
                         return true;
                     foreach (var j in m_endedJobs)
                         if (j.taskID == taskID)
@@ -133,7 +158,7 @@ public class ChunkRendererPool
     {
         lock (m_waitingJobsLock)
         {
-            lock (m_doingJobLock)
+            lock (m_doingJobStatusLock)
             {
                 lock (m_endedJobsLock)
                 {
@@ -149,9 +174,9 @@ public class ChunkRendererPool
                         }
                     }
 
-                    if (m_doingJob != null && m_doingJob.taskID == taskID && !m_doingJob.aborted)
+                    if(m_doingJobStatus.working && m_doingJobStatus.taskID == taskID && !m_doingJobStatus.aborted)
                     {
-                        m_doingJob.aborted = true;
+                        m_doingJobStatus.aborted = true;
                         return true;
                     }
 
@@ -273,10 +298,14 @@ public class ChunkRendererPool
             data.ResetSize();
             job.data = data;
 
-            lock(m_doingJobLock)
+            lock (m_doingJobStatusLock)
             {
-                Debug.Assert(m_doingJob == null);
-                m_doingJob = job;
+                lock (m_doingJobLock)
+                {
+                    Debug.Assert(m_doingJob == null);
+                    m_doingJob = job;
+                    m_doingJobStatus.CloneJob(m_doingJob);
+                }
             }
         }
 
@@ -285,6 +314,12 @@ public class ChunkRendererPool
         //move task to ended task
         lock(m_doingJobLock)
         {
+            lock(m_doingJobStatusLock)
+            {
+                m_doingJobStatus.working = false;
+                m_doingJob.aborted = m_doingJobStatus.aborted;
+            }
+
             lock (m_endedJobsLock)
             {
 
