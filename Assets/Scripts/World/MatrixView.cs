@@ -29,6 +29,16 @@ public class MatrixView<T>
         Set(mat, x, z);
     }
 
+    public MatrixView(MatrixView<T> mat, int x, int y, int z)
+    {
+        Set(mat, x, y, z);
+    }
+
+    public MatrixView(MatrixView<T> mat, int x, int z)
+    {
+        Set(mat, x, z);
+    }
+
     public void Set(Matrix<T> mat, int x, int y, int z)
     {
         m_mat = mat;
@@ -38,6 +48,19 @@ public class MatrixView<T>
     }
 
     public void Set(Matrix<T> mat, int x, int z)
+    {
+        Set(mat, x, 0, z);
+    }
+
+    public void Set(MatrixView<T> mat, int x, int y, int z)
+    {
+        m_mat = mat.mat;
+        m_x = mat.x + x;
+        m_y = mat.y + y;
+        m_z = mat.z + z;
+    }
+
+    public void Set(MatrixView<T> mat, int x, int z)
     {
         Set(mat, x, 0, z);
     }

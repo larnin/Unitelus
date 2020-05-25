@@ -5,9 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
+/* Data : 8bits
+ * [0-1] - Rotation
+ * [2-6] - Shape type : up to 32 type
+ * [7] - Don't override
+ * */
+
 public class BlockTypeSmoothed : BlockTypeBase
 {
-    enum ShapeType
+    public enum ShapeType
     {
         Cubic,
         AntiTetrahedral,
@@ -64,9 +70,10 @@ public class BlockTypeSmoothed : BlockTypeBase
     {
 
     }
-
-    public override bool IsFaceFull(BlockFace face)
+    
+    public override bool IsFaceFull(BlockFace face, byte data = 0)
     {
+        //todo
         return false;
     }
 
@@ -77,73 +84,13 @@ public class BlockTypeSmoothed : BlockTypeBase
 
     public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
-        Matrix<bool> blocks = new Matrix<bool>(3, 3, 3);
-
-        for(int i = -1; i <= 1; i++)
-            for(int j = -1; j <= 1; j++)
-                for(int k = -1; k <= 1; k++)
-                {
-                    var b = neighbors.Get(i, j, k);
-
-                    blocks.Set(i + 1, j + 1, k + 1, b.id == id || BlockTypeList.instance.Get(b.id).IsFull());
-                }
-
         ShapeType shape = ShapeType.Cubic;
         Rotation rotation = Rotation.Rot0;
-        bool found = false;
-
-        foreach(var b in m_shapes)
-        {
-            foreach(var rot in Enum.GetValues(typeof(Rotation)))
-            {
-                bool validBlock = true;
-
-                for (int i = -1; i <= 1; i++)
-                {
-                    for (int j = -1; j <= 1; j++)
-                    {
-                        for (int k = -1; k <= 1; k++)
-                        {
-                            bool block = blocks.Get(i + 1, j + 1, k + 1);
-                            int state = b.GetState(i, j, k, (Rotation)rot);
-                            if (state == 2)
-                                continue;
-
-                            if ((state == 0 && !block) || (state == 1 && block))
-                                continue;
-
-                            validBlock = false;
-                            break;
-                        }
-                        if (!validBlock)
-                            break;
-                    }
-                    if (!validBlock)
-                        break;
-                }
-
-                if(validBlock)
-                {
-                    found = true;
-                    shape = b.shape;
-                    rotation = RotationEx.SubRotations(b.rotation, (Rotation)rot);
-                    break;
-                }
-            }
-
-            if (found)
-                break;
-        }
-
-        if(!found)
-        {
-            Debug.Assert(false);
-            return;
-        }
+        GetBlockType(neighbors, out shape, out rotation);
 
         if (m_data == null)
-            m_data = new BlockRendererData(id, m_material
-                , new Rect(0.25f, 0, 0.25f, 1)
+            m_data = new BlockRendererData(id, m_material);
+            m_data.SetFaceUV(new Rect(0.25f, 0, 0.25f, 1)
                 , new Rect(0.5f, 0, 0.25f, 1)
                 , new Rect(0.0f, 0, 0.25f, 1));
         m_data.rotation = rotation;
@@ -173,6 +120,107 @@ public class BlockTypeSmoothed : BlockTypeBase
                 break;
         }
     }
+
+    public static void GetBlockType(MatrixView<BlockData> neighbors, out ShapeType shape, out Rotation rotation)
+    {
+        ushort id = neighbors.Get(0, 0, 0).id;
+
+        Matrix<bool> blocks = new Matrix<bool>(3, 3, 3);
+
+        for (int i = -1; i <= 1; i++)
+            for (int j = -1; j <= 1; j++)
+                for (int k = -1; k <= 1; k++)
+                {
+                    var b = neighbors.Get(i, j, k);
+
+                    blocks.Set(i + 1, j + 1, k + 1, b.id == id || BlockTypeList.instance.Get(b.id).IsFull());
+                }
+
+        foreach (var b in m_shapes)
+        {
+            foreach (var rot in Enum.GetValues(typeof(Rotation)))
+            {
+                bool validBlock = true;
+
+                for (int i = -1; i <= 1; i++)
+                {
+                    for (int j = -1; j <= 1; j++)
+                    {
+                        for (int k = -1; k <= 1; k++)
+                        {
+                            bool block = blocks.Get(i + 1, j + 1, k + 1);
+                            int state = b.GetState(i, j, k, (Rotation)rot);
+                            if (state == 2)
+                                continue;
+
+                            if ((state == 0 && !block) || (state == 1 && block))
+                                continue;
+
+                            validBlock = false;
+                            break;
+                        }
+                        if (!validBlock)
+                            break;
+                    }
+                    if (!validBlock)
+                        break;
+                }
+
+                if (validBlock)
+                {
+                    shape = b.shape;
+                    rotation = RotationEx.SubRotations(b.rotation, (Rotation)rot);
+                    return;
+                }
+            }
+        }
+        
+        Debug.Assert(false);
+        shape = ShapeType.Cubic;
+        rotation = Rotation.Rot0;
+    }
+
+    public override BlockData UpdateBlock(MatrixView<BlockData> neighbors)
+    {
+        var data = neighbors.Get(0, 0, 0);
+
+        if(IsNoOverrideData(data.data))
+            return neighbors.Get(0, 0, 0);
+
+        ShapeType shape;
+        Rotation rotation;
+
+        GetBlockType(neighbors, out shape, out rotation);
+        data.data = MakeData(rotation, shape, false);
+        return data;
+    }
+
+    public static byte MakeData(Rotation rot, ShapeType shape, bool noOverride)
+    {
+        byte b = 0;
+        b |= (byte)rot;
+        b |= (byte)((byte)shape << 2);
+        if (noOverride)
+            b |= 1 << 7;
+
+        return b;
+    }
+
+    public static Rotation GetRotationData(byte data)
+    {
+        return (Rotation)(data & 0b00000011);
+    }
+
+    public static ShapeType GetShapeTypeData(byte data)
+    {
+        return (ShapeType)((data & 0b01111100) >> 2);
+    }
+
+    public static bool IsNoOverrideData(byte data)
+    {
+        return (data & 0b10000000) != 0;
+    }
+
 
     static List<BlockShape> GenerateShapes()
     {

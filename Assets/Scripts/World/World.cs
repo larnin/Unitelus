@@ -55,9 +55,60 @@ public class World
         return chunk.GetBlock(blockX, y, blockZ);
     }
 
-    public void SetBlock(int x, int y, int z, BlockData block)
+    public void SetBlock(int x, int y, int z, BlockData block, bool updateData = true)
     {
-        lock(dataLock)
+        if (updateData)
+        {
+            //create a local 5*5*5 matrix
+            var matrix = GetLocalMatrix(x - 2, y - 2, z - 2, 5, 5, 5);
+            var view = new MatrixView<BlockData>(matrix, 2, 2, 2);
+            view.Set(0, 0, 0, block);
+
+            Vector3Int[] updatePositions = new Vector3Int[]
+            {
+                //center
+                new Vector3Int(2, 2, 2),
+                //cross
+                new Vector3Int(2, 1, 2),
+                new Vector3Int(1, 2, 2),
+                new Vector3Int(2, 2, 1),
+                new Vector3Int(3, 2, 2),
+                new Vector3Int(2, 2, 3),
+                new Vector3Int(2, 3, 2),
+                //borders
+                new Vector3Int(1, 1, 2), //down
+                new Vector3Int(2, 1, 1),
+                new Vector3Int(3, 1, 2),
+                new Vector3Int(2, 1, 3),
+                new Vector3Int(1, 2, 1), //midle
+                new Vector3Int(3, 2, 1),
+                new Vector3Int(1, 2, 3),
+                new Vector3Int(3, 2, 3),
+                new Vector3Int(1, 3, 2), //up
+                new Vector3Int(2, 3, 1),
+                new Vector3Int(3, 3, 2),
+                new Vector3Int(2, 3, 3),
+                //corners
+                new Vector3Int(1, 1, 1), //down
+                new Vector3Int(1, 1, 3),
+                new Vector3Int(3, 1, 1),
+                new Vector3Int(3, 1, 3),
+                new Vector3Int(1, 3, 1), //up
+                new Vector3Int(1, 3, 3),
+                new Vector3Int(3, 3, 1),
+                new Vector3Int(3, 3, 3),
+            };
+            
+            foreach(var pos in updatePositions)
+            {
+                view.SetPos(pos.x, pos.y, pos.z);
+                view.Set(0, 0, 0, BlockTypeList.instance.Get(view.Get(0, 0, 0).id).UpdateBlock(view));
+            }
+
+            //only update the 3*3* center of the matrix
+            SetBlocks(x - 1, y - 1, z - 1, matrix, 1, 1, 1, 3, 3, 3, false);
+        }
+        else
         {
             int chunkX;
             int chunkZ;
@@ -67,7 +118,86 @@ public class World
 
             var chunk = GetChunk(chunkX, chunkZ);
             Debug.Assert(chunk != null);
-            chunk.SetBlock(blockX, y, blockZ, block);
+
+            lock (dataLock)
+            {
+                chunk.SetBlock(blockX, y, blockZ, block);
+            }
+        }
+    }
+
+    public void SetBlocks(int x, int y, int z, Matrix<BlockData> blocks, bool updateData = true)
+    {
+        SetBlocks(x, y, z, blocks, 0, 0, 0, blocks.width, blocks.height, blocks.width, updateData);
+    }
+
+    public void SetBlocks(int x, int y, int z, Matrix<BlockData> blocks, int blocksX, int blocksY, int blocksZ, int blocksSizeX, int blocksSizeY, int blocksSizeZ, bool updateData = true)
+    {
+        Debug.Assert(blocksX + blocksSizeX <= blocks.width);
+        Debug.Assert(blocksY + blocksSizeY <= blocks.height);
+        Debug.Assert(blocksZ + blocksSizeZ <= blocks.depth);
+
+        if (updateData)
+        {
+            Debug.Assert(false);
+            //todo i'm too lasy to do that shit now
+        }
+        else
+        {
+            lock (dataLock)
+            {
+                int maxX = x + blocksSizeX - 1;
+                int maxZ = z + blocksSizeZ - 1;
+
+                int minChunkX;
+                int minChunkZ;
+                int maxChunkX;
+                int maxChunkZ;
+
+                PosToUnclampedChunkPos(x, z, out minChunkX, out minChunkZ);
+                PosToUnclampedChunkPos(maxX, maxZ, out maxChunkX, out maxChunkZ);
+
+                for (int i = minChunkX; i <= maxChunkX; i++)
+                {
+                    for (int j = minChunkZ; j <= maxChunkZ; j++)
+                    {
+                        int currentMinX;
+                        int currentMinZ;
+                        int currentMaxX;
+                        int currentMaxZ;
+
+                        BlockPosInChunkToPos(0, 0, i, j, out currentMinX, out currentMinZ);
+                        BlockPosInChunkToPos(Chunk.chunkSize - 1, Chunk.chunkSize - 1, i, j, out currentMaxX, out currentMaxZ);
+
+                        int localMinX = 0;
+                        int localMinZ = 0;
+                        int localMaxX = Chunk.chunkSize - 1;
+                        int localMaxZ = Chunk.chunkSize - 1;
+
+                        int tileMinX = 0;
+                        int tileMinZ = 0;
+
+                        if (currentMinX < x)
+                            localMinX = x - currentMinX;
+                        else tileMinX = currentMinX - x;
+                        if (currentMinZ < z)
+                            localMinZ = z - currentMinZ;
+                        else tileMinZ = currentMinZ - z;
+
+                        if (localMaxX - localMinX + 1 > blocksSizeX - tileMinX)
+                            localMaxX = blocksSizeX + localMinX - 1 - tileMinX;
+                        if (localMaxZ - localMinZ + 1 > blocksSizeZ - tileMinZ)
+                            localMaxZ = blocksSizeZ + localMinZ - 1 - tileMinZ;
+
+                        var chunk = GetChunk(i, j);
+
+                        for (int m = 0; m < blocksSizeY; m++)
+                            for (int k = 0; k <= localMaxX - localMinX; k++)
+                                for (int l = 0; l <= localMaxZ - localMinZ; l++)
+                                    chunk.SetBlock(localMinX + k, y + m, localMinZ + l, blocks.Get(blocksX + k + tileMinX, blocksY + m, blocksZ + l + tileMinZ));
+                    }
+                }
+            }
         }
     }
 

@@ -12,7 +12,7 @@ public class BlockTypeEmpty : BlockTypeBase
 
     }
 
-    public override bool IsFaceFull(BlockFace face)
+    public override bool IsFaceFull(BlockFace face, byte data = 0)
     {
         return false;
     }
@@ -25,5 +25,10 @@ public class BlockTypeEmpty : BlockTypeBase
     public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
         //do nothing here, it's an empty block
+    }
+
+    public override BlockData UpdateBlock(MatrixView<BlockData> neighbors)
+    {
+        return neighbors.Get(0, 0, 0);
     }
 }

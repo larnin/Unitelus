@@ -6,24 +6,27 @@ using System.Threading.Tasks;
 
 public struct BlockData
 {
-    public int id;
+    public UInt16 id;
+    public byte data;
 
-    BlockData(int _id)
+    BlockData(UInt16 _id, byte _data = 0)
     {
         id = _id;
+        data = _data;
     }
 
     public static BlockData GetDefault()
     {
         BlockData b;
         b.id = 0;
+        b.data = 0;
 
         return b;
     }
 
     public static bool operator ==(BlockData a, BlockData b)
     {
-        return a.id == b.id;
+        return a.id == b.id && a.data == b.data;
     }
 
     public static bool operator !=(BlockData a, BlockData b)
@@ -44,6 +47,9 @@ public struct BlockData
 
     public override int GetHashCode()
     {
-        return 1877310944 + id.GetHashCode();
+        var hashCode = 1213751429;
+        hashCode = hashCode * -1521134295 + id.GetHashCode();
+        hashCode = hashCode * -1521134295 + data.GetHashCode();
+        return hashCode;
     }
 }

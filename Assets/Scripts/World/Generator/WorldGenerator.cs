@@ -17,6 +17,7 @@ public static class WorldGenerator
 
         BlockData b;
         b.id = 1;
+        b.data = 0;
 
         int minHeight = int.MaxValue;
 
@@ -29,7 +30,7 @@ public static class WorldGenerator
                     y += p.Get(x, z);
 
                 int yInt = Mathf.FloorToInt(y);
-                world.SetBlock(x, yInt, z, b);
+                world.SetBlock(x, yInt, z, b, false);
 
                 minHeight = Mathf.Min(yInt - 1, minHeight);
             }
@@ -44,25 +45,71 @@ public static class WorldGenerator
                 if (height <= minHeight)
                     continue;
                 for(int y = height - 1; y >= minHeight; y--)
-                    world.SetBlock(x, y, z, b);
+                    world.SetBlock(x, y, z, b, false);
             }
         }
 
-        world.SetBlock(0, 10, -1, b);
-        world.SetBlock(1, 10, -1, b);
-        world.SetBlock(0, 10, 0, b);
-        world.SetBlock(1, 10, 0, b);
-        world.SetBlock(0, 10, 1, b);
-        world.SetBlock(1, 10, 1, b);
+        world.SetBlock(0, 10, -1, b, false);
+        world.SetBlock(1, 10, -1, b, false);
+        world.SetBlock(0, 10, 0, b, false);
+        world.SetBlock(1, 10, 0, b, false);
+        world.SetBlock(0, 10, 1, b, false);
+        world.SetBlock(1, 10, 1, b, false);
 
 
-        world.SetBlock(4, 10, 0, b);
-        world.SetBlock(4, 10, 1, b);
-        world.SetBlock(5, 10, 0, b);
-        world.SetBlock(5, 10, 1, b);
-        world.SetBlock(6, 10, 0, b);
-        world.SetBlock(6, 10, 1, b);
+        world.SetBlock(4, 10, 0, b, false);
+        world.SetBlock(4, 10, 1, b, false);
+        world.SetBlock(5, 10, 0, b, false);
+        world.SetBlock(5, 10, 1, b, false);
+        world.SetBlock(6, 10, 0, b, false);
+        world.SetBlock(6, 10, 1, b, false);
+
+        UpdateWorldData(world);
 
         return world;
+    }
+
+    static void UpdateWorldData(World world)
+    {
+        Matrix<BlockData> mat = new Matrix<BlockData>(Chunk.chunkSize + 2, Chunk.chunkSize + 2, Chunk.chunkSize + 2);
+        MatrixView<BlockData> view = new MatrixView<BlockData>(mat, 0, 0, 0);
+
+        for(int i = 0; i < world.chunkNb; i++)
+        {
+            for(int j = 0; j < world.chunkNb; j++)
+            {
+                var chunk = world.GetChunk(i, j);
+                var layers = chunk.GetLayers();
+
+                foreach (var l in layers)
+                {
+                    world.GetLocalMatrix(i * Chunk.chunkSize - 1, l * Chunk.chunkSize - 1, j * Chunk.chunkSize - 1, mat);
+
+                    for (int x = 0; x < Chunk.chunkSize; x++)
+                    {
+                        for (int y = 0; y < Chunk.chunkSize; y++)
+                        {
+                            for (int z = 0; z < Chunk.chunkSize; z++)
+                            {
+                                view.SetPos(x + 1, y + 1, z + 1);
+                                view.Set(0, 0, 0, BlockTypeList.instance.Get(view.Get(0, 0, 0).id).UpdateBlock(view));
+                            }
+                        }
+                    }
+
+                    for (int y = 0; y < Chunk.chunkSize; y++)
+                    {
+                        int height = chunk.LayerToHeight(l, y);
+                        for (int x = 0; x < Chunk.chunkSize; x++)
+                        {
+                            for (int z = 0; z < Chunk.chunkSize; z++)
+                            {
+                                chunk.SetBlock(x, height, z, mat.Get(x + 1, y + 1, z + 1));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

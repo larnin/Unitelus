@@ -18,6 +18,8 @@ public abstract class BlockTypeBase
 
     public abstract void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams);
 
-    public abstract bool IsFaceFull(BlockFace face);
+    public abstract bool IsFaceFull(BlockFace face, byte data = 0);
     public abstract bool IsFull();
+
+    public abstract BlockData UpdateBlock(MatrixView<BlockData> neighbors);
 }
