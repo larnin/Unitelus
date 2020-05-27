@@ -73,7 +73,20 @@ public class BlockTypeSmoothed : BlockTypeBase
     
     public override bool IsFaceFull(BlockFace face, byte data = 0)
     {
-        //todo
+        ShapeType shape = GetShapeTypeData(data);
+        Rotation rotation = GetRotationData(data);
+
+        face = BlockFaceEx.RotateInv(face, rotation);
+
+        if (shape == ShapeType.Cubic)
+            return true;
+
+        if (shape == ShapeType.AntiTetrahedral)
+            return face == BlockFace.Down || face == BlockFace.Front || face == BlockFace.Right;
+
+        if(shape == ShapeType.HalfCubic)
+            return face == BlockFace.Down || face == BlockFace.Back;
+
         return false;
     }
 
@@ -84,9 +97,9 @@ public class BlockTypeSmoothed : BlockTypeBase
 
     public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
-        ShapeType shape = ShapeType.Cubic;
-        Rotation rotation = Rotation.Rot0;
-        GetBlockType(neighbors, out shape, out rotation);
+        var block = neighbors.Get(0, 0, 0);
+        ShapeType shape = GetShapeTypeData(block.data);
+        Rotation rotation = GetRotationData(block.data);
 
         if (m_data == null)
             m_data = new BlockRendererData(id, m_material);
@@ -94,6 +107,8 @@ public class BlockTypeSmoothed : BlockTypeBase
                 , new Rect(0.5f, 0, 0.25f, 1)
                 , new Rect(0.0f, 0, 0.25f, 1));
         m_data.rotation = rotation;
+
+        SetDrawFacesFromNeighbors(m_data, neighbors);
 
         switch(shape)
         {
@@ -119,6 +134,23 @@ public class BlockTypeSmoothed : BlockTypeBase
                 Debug.Assert(false);
                 break;
         }
+    }
+
+    void SetDrawFacesFromNeighbors(BlockRendererData data, MatrixView<BlockData> neighbors)
+    {
+        var left = neighbors.Get(1, 0, 0);
+        var right = neighbors.Get(-1, 0, 0);
+        var up = neighbors.Get(0, 1, 0);
+        var down = neighbors.Get(0, -1, 0);
+        var front = neighbors.Get(0, 0, 1);
+        var back = neighbors.Get(0, 0, -1);
+
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(left.id).IsFaceFull(BlockFace.Right, left.data), BlockFace.Left);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(right.id).IsFaceFull(BlockFace.Left, right.data), BlockFace.Right);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(up.id).IsFaceFull(BlockFace.Down, up.data), BlockFace.Up);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(down.id).IsFaceFull(BlockFace.Up, down.data), BlockFace.Down);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(front.id).IsFaceFull(BlockFace.Back, front.data), BlockFace.Front);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(back.id).IsFaceFull(BlockFace.Front, back.data), BlockFace.Back);
     }
 
     public static void GetBlockType(MatrixView<BlockData> neighbors, out ShapeType shape, out Rotation rotation)
@@ -191,6 +223,7 @@ public class BlockTypeSmoothed : BlockTypeBase
         Rotation rotation;
 
         GetBlockType(neighbors, out shape, out rotation);
+        rotation = Rotation.Rot90;
         data.data = MakeData(rotation, shape, false);
         return data;
     }
