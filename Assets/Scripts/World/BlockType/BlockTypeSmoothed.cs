@@ -98,22 +98,22 @@ public class BlockTypeSmoothed : BlockTypeBase
         switch(shape)
         {
             case ShapeType.AntiTetrahedral:
-                BlockRenderer.DrawAntiTetrahedral(pos, neighbors, meshParams, m_data);
+                BlockRenderer.DrawAntiTetrahedral(pos, meshParams, m_data);
                 break;
             case ShapeType.Cubic:
-                BlockRenderer.DrawCubic(pos, neighbors, meshParams, m_data);
+                BlockRenderer.DrawCubic(pos, meshParams, m_data);
                 break;
             case ShapeType.HalfCubic:
-                BlockRenderer.DrawHalfCubic(pos, neighbors, meshParams, m_data);
+                BlockRenderer.DrawHalfCubic(pos, meshParams, m_data);
                 break;
             case ShapeType.HorizontalHalfCubic:
-                BlockRenderer.DrawHorizontalHalfCubic(pos, neighbors, meshParams, m_data);
+                BlockRenderer.DrawHorizontalHalfCubic(pos, meshParams, m_data);
                 break;
             case ShapeType.SmallPyramid:
-                BlockRenderer.DrawSmallPyramid(pos, neighbors, meshParams, m_data);
+                BlockRenderer.DrawSmallPyramid(pos, meshParams, m_data);
                 break;
             case ShapeType.Thetrahedral:
-                BlockRenderer.DrawThetrahedral(pos, neighbors, meshParams, m_data);
+                BlockRenderer.DrawThetrahedral(pos, meshParams, m_data);
                 break;
             default:
                 Debug.Assert(false);

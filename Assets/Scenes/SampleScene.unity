@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bc5fb330b22bae409b801f19fdd19f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_speed: 5
+  m_speed: 50
 --- !u!4 &193629025
 Transform:
   m_ObjectHideFlags: 0
@@ -249,7 +249,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c334b9744088fe4290a450c8f6624ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_renderSize: 10
+  m_renderSize: 100
   m_moveUpdateDistance: 2
 --- !u!4 &210816805
 Transform:

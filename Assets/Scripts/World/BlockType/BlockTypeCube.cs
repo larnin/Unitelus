@@ -42,7 +42,14 @@ public class BlockTypeCube : BlockTypeBase
 
         m_data.rotation = (Rotation)(new UniformIntDistribution(0, 4).Next(new StaticRandomGenerator<DefaultRandomGenerator>()));
 
-        BlockRenderer.DrawCubic(pos, neighbors, meshParams, m_data);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(neighbors.Get(1, 0, 0).id).IsFaceFull(BlockFace.Right), BlockFace.Left);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(neighbors.Get(-1, 0, 0).id).IsFaceFull(BlockFace.Left), BlockFace.Right);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(neighbors.Get(0, 1, 0).id).IsFaceFull(BlockFace.Down), BlockFace.Up);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up), BlockFace.Down);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(neighbors.Get(0, 0, 1).id).IsFaceFull(BlockFace.Back), BlockFace.Front);
+        m_data.SetFaceDraw(!BlockTypeList.instance.Get(neighbors.Get(0, 0, -1).id).IsFaceFull(BlockFace.Front), BlockFace.Back);
+
+        BlockRenderer.DrawCubic(pos, meshParams, m_data);
     }
 
     public override BlockData UpdateBlock(MatrixView<BlockData> neighbors)

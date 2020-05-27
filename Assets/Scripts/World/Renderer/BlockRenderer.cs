@@ -7,31 +7,14 @@ using UnityEngine;
 
 public static class BlockRenderer
 {
-    public static void DrawCubic(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
+    public static void DrawCubic(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
         var data = meshParams.Allocate(24, 36, blockData.material);
-
-        bool left = !BlockTypeList.instance.Get(neighbors.Get(1, 0, 0).id).IsFaceFull(BlockFace.Right);
-        bool right = !BlockTypeList.instance.Get(neighbors.Get(-1, 0, 0).id).IsFaceFull(BlockFace.Left);
-        bool up = !BlockTypeList.instance.Get(neighbors.Get(0, 1, 0).id).IsFaceFull(BlockFace.Down);
-        bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
-        bool front = !BlockTypeList.instance.Get(neighbors.Get(0, 0, 1).id).IsFaceFull(BlockFace.Back);
-        bool back = !BlockTypeList.instance.Get(neighbors.Get(0, 0, -1).id).IsFaceFull(BlockFace.Front);
-
-        if(!blockData.allowDrawSelfFaces)
-        {
-            left &= neighbors.Get(1, 0, 0).id != blockData.id;
-            right &= neighbors.Get(-1, 0, 0).id != blockData.id;
-            up &= neighbors.Get(0, 1, 0).id != blockData.id;
-            down &= neighbors.Get(0, -1, 0).id != blockData.id;
-            front &= neighbors.Get(0, 0, 1).id != blockData.id;
-            back &= neighbors.Get(0, 0, -1).id != blockData.id;
-        }
 
         int vertexIndex = 0;
         int nb = 0;
 
-        if (right)
+        if (blockData.GetFaceDraw(BlockFace.Right))
         {
             var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Right, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
@@ -46,7 +29,7 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (up)
+        if (blockData.GetFaceDraw(BlockFace.Up))
         {
             var rect = blockData.GetFaceUV(BlockFace.Up);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
@@ -62,7 +45,7 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (front)
+        if (blockData.GetFaceDraw(BlockFace.Front))
         {
             var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Front, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 1) + pos;
@@ -77,7 +60,7 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (down)
+        if (blockData.GetFaceDraw(BlockFace.Down))
         {
             var rect = blockData.GetFaceUV(BlockFace.Down);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
@@ -93,7 +76,7 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (left)
+        if (blockData.GetFaceDraw(BlockFace.Left))
         {
             var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Left, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 1, 0) + pos;
@@ -108,7 +91,7 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (back)
+        if (blockData.GetFaceDraw(BlockFace.Back))
         {
             var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Back, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
@@ -134,7 +117,7 @@ public static class BlockRenderer
         data.indexesSize += nb * 6;
     }
 
-    public static void DrawAntiTetrahedral(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
+    public static void DrawAntiTetrahedral(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
         //3 square and 4 triangles
         // each square have 4 vertex and 6 index
@@ -143,39 +126,12 @@ public static class BlockRenderer
 
         var rot = blockData.rotation;
 
-        var leftFace = BlockFaceEx.Rotate(BlockFace.Left, rot);
-        var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rot);
-        var backFace = BlockFaceEx.Rotate(BlockFace.Back, rot);
-        var frontFace = BlockFaceEx.Rotate(BlockFace.Front, rot);
-
-        var leftDir = BlockFaceEx.FaceToDirInt(leftFace);
-        var rightDir = BlockFaceEx.FaceToDirInt(rightFace);
-        var backDir = BlockFaceEx.FaceToDirInt(backFace);
-        var frontDir = BlockFaceEx.FaceToDirInt(frontFace);
-
-        bool left = !BlockTypeList.instance.Get(neighbors.Get(leftDir.x, 0, leftDir.z).id).IsFaceFull(BlockFaceEx.Rotate(leftFace, Rotation.Rot180));
-        bool right = !BlockTypeList.instance.Get(neighbors.Get(rightDir.x, 0, rightDir.z).id).IsFaceFull(BlockFaceEx.Rotate(rightFace, Rotation.Rot180));
-        bool back = !BlockTypeList.instance.Get(neighbors.Get(backDir.x, 0, backDir.z).id).IsFaceFull(BlockFaceEx.Rotate(backFace, Rotation.Rot180));
-        bool front = !BlockTypeList.instance.Get(neighbors.Get(frontDir.x, 0, frontDir.z).id).IsFaceFull(BlockFaceEx.Rotate(frontFace, Rotation.Rot180));
-        bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
-        bool up = !BlockTypeList.instance.Get(neighbors.Get(0, 1, 0).id).IsFaceFull(BlockFace.Down);
-
-        if (!blockData.allowDrawSelfFaces)
-        {
-            left &= neighbors.Get(leftDir.x, 0, leftDir.z).id != blockData.id;
-            right &= neighbors.Get(rightDir.x, 0, rightDir.z).id != blockData.id;
-            back &= neighbors.Get(backDir.x, 0, backDir.z).id != blockData.id;
-            front &= neighbors.Get(frontDir.x, 0, frontDir.z).id != blockData.id;
-            down &= neighbors.Get(0, -1, 0).id != blockData.id;
-            up &= neighbors.Get(0, 1, 0).id != blockData.id;
-        }
-
         int vertexIndex = 0;
         int nbSquare = 0;
         int nbTriangle = 0;
 
 
-        if (right)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Right, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Right);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
@@ -192,7 +148,7 @@ public static class BlockRenderer
 
         
 
-        if (front)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Front, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Front);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 1) + pos;
@@ -207,7 +163,7 @@ public static class BlockRenderer
             nbSquare++;
         }
 
-        if (down)
+        if (blockData.GetFaceDraw(BlockFace.Down))
         {
             var rect = blockData.GetFaceUV(BlockFace.Down);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
@@ -222,7 +178,7 @@ public static class BlockRenderer
             nbSquare++;
         }
 
-        if (up)
+        if (blockData.GetFaceDraw(BlockFace.Up))
         {
             var rect = blockData.GetFaceUV(BlockFace.Up);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
@@ -235,7 +191,7 @@ public static class BlockRenderer
             nbTriangle++;
         }
 
-        if (left)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Left, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Left);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
@@ -248,7 +204,7 @@ public static class BlockRenderer
             nbTriangle++;
         }
 
-        if (back)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Back, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Back);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
@@ -290,7 +246,7 @@ public static class BlockRenderer
 
     }
 
-    public static void DrawHalfCubic(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
+    public static void DrawHalfCubic(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
         //3 square and 2 triangles
         // each square have 4 vertex and 6 index
@@ -299,32 +255,11 @@ public static class BlockRenderer
 
         var rot = blockData.rotation;
 
-        var leftFace = BlockFaceEx.Rotate(BlockFace.Left, rot);
-        var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rot);
-        var backFace = BlockFaceEx.Rotate(BlockFace.Back, rot);
-
-        var leftDir = BlockFaceEx.FaceToDirInt(leftFace);
-        var rightDir = BlockFaceEx.FaceToDirInt(rightFace);
-        var backDir = BlockFaceEx.FaceToDirInt(backFace);
-
-        bool left = !BlockTypeList.instance.Get(neighbors.Get(leftDir.x, 0, leftDir.z).id).IsFaceFull(BlockFaceEx.Rotate(leftFace, Rotation.Rot180));
-        bool right = !BlockTypeList.instance.Get(neighbors.Get(rightDir.x, 0, rightDir.z).id).IsFaceFull(BlockFaceEx.Rotate(rightFace, Rotation.Rot180));
-        bool back = !BlockTypeList.instance.Get(neighbors.Get(backDir.x, 0, backDir.z).id).IsFaceFull(BlockFaceEx.Rotate(backFace, Rotation.Rot180));
-        bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
-
-        if (!blockData.allowDrawSelfFaces)
-        {
-            left &= neighbors.Get(leftDir.x, 0, leftDir.z).id != blockData.id;
-            right &= neighbors.Get(rightDir.x, 0, rightDir.z).id != blockData.id;
-            back &= neighbors.Get(backDir.x, 0, backDir.z).id != blockData.id;
-            down &= neighbors.Get(0, -1, 0).id != blockData.id;
-        }
-
         int vertexIndex = 0;
         int nbSquare = 0;
         int nbTriangle = 0;
 
-        if (down)
+        if (blockData.GetFaceDraw(BlockFace.Down))
         {
             var rect = blockData.GetFaceUV(BlockFace.Down);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
@@ -339,7 +274,7 @@ public static class BlockRenderer
             nbSquare++;
         }
 
-        if (back)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Back, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Back);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
@@ -369,7 +304,7 @@ public static class BlockRenderer
             nbSquare++;
         }
 
-        if (left)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Left, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Left);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
@@ -382,7 +317,7 @@ public static class BlockRenderer
             nbTriangle++;
         }
 
-        if (right)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Right, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Right);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
@@ -409,12 +344,12 @@ public static class BlockRenderer
         data.indexesSize += nbSquare * 6 + nbTriangle * 3;
     }
 
-    public static void DrawHorizontalHalfCubic(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
+    public static void DrawHorizontalHalfCubic(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
 
     }
 
-    public static void DrawThetrahedral(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
+    public static void DrawThetrahedral(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
         //4 triangles
         // each triangle have 3 vertex and 3 index
@@ -422,27 +357,10 @@ public static class BlockRenderer
 
         var rot = blockData.rotation;
 
-        var leftFace = BlockFaceEx.Rotate(BlockFace.Left, rot);
-        var backFace = BlockFaceEx.Rotate(BlockFace.Back, rot);
-
-        var leftDir = BlockFaceEx.FaceToDirInt(leftFace);
-        var backDir = BlockFaceEx.FaceToDirInt(backFace);
-
-        bool left = !BlockTypeList.instance.Get(neighbors.Get(leftDir.x, 0, leftDir.z).id).IsFaceFull(BlockFaceEx.Rotate(leftFace, Rotation.Rot180));
-        bool back = !BlockTypeList.instance.Get(neighbors.Get(backDir.x, 0, backDir.z).id).IsFaceFull(BlockFaceEx.Rotate(backFace, Rotation.Rot180));
-        bool down = !BlockTypeList.instance.Get(neighbors.Get(0, -1, 0).id).IsFaceFull(BlockFace.Up);
-
-        if (!blockData.allowDrawSelfFaces)
-        {
-            left &= neighbors.Get(leftDir.x, 0, leftDir.z).id != blockData.id;
-            back &= neighbors.Get(backDir.x, 0, backDir.z).id != blockData.id;
-            down &= neighbors.Get(0, -1, 0).id != blockData.id;
-        }
-
         int vertexIndex = 0;
         int nb = 0;
 
-        if (down)
+        if (blockData.GetFaceDraw(BlockFace.Down))
         {
             var rect = blockData.GetFaceUV(BlockFace.Down);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
@@ -455,7 +373,7 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (back)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Back, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Back);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
@@ -468,7 +386,7 @@ public static class BlockRenderer
             nb++;
         }
         
-        if (left)
+        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Left, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Left);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
@@ -507,7 +425,7 @@ public static class BlockRenderer
         data.indexesSize += nb * 3;
     }
 
-    public static void DrawSmallPyramid(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
+    public static void DrawSmallPyramid(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
 
     }

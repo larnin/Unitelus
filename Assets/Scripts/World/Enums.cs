@@ -197,4 +197,36 @@ public static class BlockFaceEx
 
         return face;
     }
+
+    //rotate in the other direction
+    public static BlockFace RotateInv(BlockFace face, Rotation rot)
+    {
+        if (face == BlockFace.Up || face == BlockFace.Down)
+            return face;
+        while (rot > Rotation.Rot0)
+        {
+            switch (face)
+            {
+                case BlockFace.Back:
+                    face = BlockFace.Left;
+                    break;
+                case BlockFace.Right:
+                    face = BlockFace.Back;
+                    break;
+                case BlockFace.Front:
+                    face = BlockFace.Right;
+                    break;
+                case BlockFace.Left:
+                    face = BlockFace.Front;
+                    break;
+                default:
+                    Debug.Assert(false);
+                    break;
+            }
+
+            rot--;
+        }
+
+        return face;
+    }
 }
