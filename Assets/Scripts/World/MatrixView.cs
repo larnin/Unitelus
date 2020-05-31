@@ -77,6 +77,16 @@ public class MatrixView<T>
         SetPos(x, 0, z);
     }
 
+    public T GetCenter()
+    {
+        return Get(0, 0, 0);
+    }
+
+    public T Get(Vector3Int pos)
+    {
+        return Get(pos.x, pos.y, pos.z);
+    }
+
     public T Get(int x, int y, int z)
     {
         Debug.Assert(m_mat != null);
@@ -92,6 +102,11 @@ public class MatrixView<T>
     public T Get(int x, int z)
     {
         return Get(x, 0, z);
+    }
+
+    public void Set(Vector3Int pos, T value)
+    {
+        Set(pos.x, pos.y, pos.z, value);
     }
 
     public void Set(int x, int y, int z, T value)

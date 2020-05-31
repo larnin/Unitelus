@@ -92,7 +92,7 @@ public static class WorldGenerator
                             for (int z = 0; z < Chunk.chunkSize; z++)
                             {
                                 view.SetPos(x + 1, y + 1, z + 1);
-                                view.Set(0, 0, 0, BlockTypeList.instance.Get(view.Get(0, 0, 0).id).UpdateBlock(view));
+                                view.Set(0, 0, 0, BlockTypeList.instance.Get(view.GetCenter().id).UpdateBlock(view));
                             }
                         }
                     }

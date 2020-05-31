@@ -29,6 +29,6 @@ public class BlockTypeEmpty : BlockTypeBase
 
     public override BlockData UpdateBlock(MatrixView<BlockData> neighbors)
     {
-        return neighbors.Get(0, 0, 0);
+        return neighbors.GetCenter();
     }
 }

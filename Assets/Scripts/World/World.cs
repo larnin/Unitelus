@@ -102,7 +102,7 @@ public class World
             foreach(var pos in updatePositions)
             {
                 view.SetPos(pos.x, pos.y, pos.z);
-                view.Set(0, 0, 0, BlockTypeList.instance.Get(view.Get(0, 0, 0).id).UpdateBlock(view));
+                view.Set(0, 0, 0, BlockTypeList.instance.Get(view.GetCenter().id).UpdateBlock(view));
             }
 
             //only update the 3*3* center of the matrix

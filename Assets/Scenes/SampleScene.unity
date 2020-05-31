@@ -298,7 +298,7 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
-    - {fileID: 2100000, guid: f4e7efe8b9e16504fab88a23f482174f, type: 2}
+    - {fileID: 2100000, guid: 41dfad8152c0aa94fa2b20034179799b, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -313,7 +313,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 1|BlockTypeSmoothed, Assembly-CSharp
+      Data: 1|BlockTypeCube, Assembly-CSharp
     - Name: m_id
       Entry: 3
       Data: 1
