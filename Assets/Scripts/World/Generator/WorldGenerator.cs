@@ -49,20 +49,23 @@ public static class WorldGenerator
             }
         }
 
-        world.SetBlock(0, 10, -1, b, false);
-        world.SetBlock(1, 10, -1, b, false);
-        world.SetBlock(0, 10, 0, b, false);
-        world.SetBlock(1, 10, 0, b, false);
-        world.SetBlock(0, 10, 1, b, false);
-        world.SetBlock(1, 10, 1, b, false);
+        //world.SetBlock(0, 10, -1, b, false);
+        //world.SetBlock(1, 10, -1, b, false);
+        //world.SetBlock(0, 10, 0, b, false);
+        //world.SetBlock(1, 10, 0, b, false);
+        //world.SetBlock(0, 10, 1, b, false);
+        //world.SetBlock(1, 10, 1, b, false);
 
 
-        world.SetBlock(4, 10, 0, b, false);
-        world.SetBlock(4, 10, 1, b, false);
-        world.SetBlock(5, 10, 0, b, false);
-        world.SetBlock(5, 10, 1, b, false);
-        world.SetBlock(6, 10, 0, b, false);
-        world.SetBlock(6, 10, 1, b, false);
+        //world.SetBlock(4, 10, 0, b, false);
+        //world.SetBlock(4, 10, 1, b, false);
+        //world.SetBlock(5, 10, 0, b, false);
+        //world.SetBlock(5, 10, 1, b, false);
+        //world.SetBlock(6, 10, 0, b, false);
+        //world.SetBlock(6, 10, 1, b, false);
+
+        world.SetBlock(16, 7, 0, b, false);
+        world.SetBlock(15, 7, 0, b, false);
 
         UpdateWorldData(world);
 

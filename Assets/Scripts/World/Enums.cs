@@ -88,8 +88,8 @@ public static class RotationEx
 
 public enum BlockFace
 {
-    Left,   //x+
-    Right,  //x-
+    Left,   //x-
+    Right,  //x+
     Up,     //y+
     Down,   //y-
     Front,  //z+

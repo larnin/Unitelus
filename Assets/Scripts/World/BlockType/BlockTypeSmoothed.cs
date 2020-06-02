@@ -110,7 +110,7 @@ public class BlockTypeSmoothed : BlockTypeBase
 
         SetDrawFacesFromNeighbors(m_data, neighbors);
 
-        switch(shape)
+        switch (shape)
         {
             case ShapeType.AntiTetrahedral:
                 BlockRenderer.DrawAntiTetrahedral(pos, meshParams, m_data);
@@ -270,7 +270,6 @@ public class BlockTypeSmoothed : BlockTypeBase
         Rotation rotation;
 
         GetBlockType(neighbors, out shape, out rotation);
-        rotation = Rotation.Rot90;
         data.data = MakeData(rotation, shape, false);
         return data;
     }

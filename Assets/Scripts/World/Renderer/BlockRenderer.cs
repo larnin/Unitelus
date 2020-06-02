@@ -14,9 +14,9 @@ public static class BlockRenderer
         int vertexIndex = 0;
         int nb = 0;
 
-        if (blockData.GetFaceDraw(BlockFace.Right))
+        if (blockData.GetFaceDraw(BlockFace.Left))
         {
-            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Right, blockData.rotation));
+            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Left, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 0, 1) + pos;
@@ -76,9 +76,9 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (blockData.GetFaceDraw(BlockFace.Left))
+        if (blockData.GetFaceDraw(BlockFace.Right))
         {
-            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Left, blockData.rotation));
+            var rect = blockData.GetFaceUV(BlockFaceEx.Rotate(BlockFace.Right, blockData.rotation));
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 1, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y + rect.height);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 1) + pos;
@@ -131,9 +131,9 @@ public static class BlockRenderer
         int nbTriangle = 0;
 
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Right, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Left, rot)))
         {
-            var rect = blockData.GetFaceUV(BlockFace.Right);
+            var rect = blockData.GetFaceUV(BlockFace.Left);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 0, 1) + pos;
@@ -148,7 +148,7 @@ public static class BlockRenderer
 
         
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Front, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Front, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Front);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 1) + pos;
@@ -191,9 +191,9 @@ public static class BlockRenderer
             nbTriangle++;
         }
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Left, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Right, rot)))
         {
-            var rect = blockData.GetFaceUV(BlockFace.Left);
+            var rect = blockData.GetFaceUV(BlockFace.Right);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 1) + pos;
@@ -204,7 +204,7 @@ public static class BlockRenderer
             nbTriangle++;
         }
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Back, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Back, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Back);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
@@ -274,7 +274,7 @@ public static class BlockRenderer
             nbSquare++;
         }
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Back, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Back, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Back);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
@@ -304,9 +304,9 @@ public static class BlockRenderer
             nbSquare++;
         }
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Left, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Right, rot)))
         {
-            var rect = blockData.GetFaceUV(BlockFace.Left);
+            var rect = blockData.GetFaceUV(BlockFace.Right);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;
@@ -317,9 +317,9 @@ public static class BlockRenderer
             nbTriangle++;
         }
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Right, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Left, rot)))
         {
-            var rect = blockData.GetFaceUV(BlockFace.Right);
+            var rect = blockData.GetFaceUV(BlockFace.Left);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 0, 1) + pos;
@@ -373,7 +373,7 @@ public static class BlockRenderer
             nb++;
         }
 
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Back, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Back, rot)))
         {
             var rect = blockData.GetFaceUV(BlockFace.Back);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 0, 0) + pos;
@@ -386,9 +386,9 @@ public static class BlockRenderer
             nb++;
         }
         
-        if (blockData.GetFaceDraw(BlockFaceEx.RotateInv(BlockFace.Left, rot)))
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Right, rot)))
         {
-            var rect = blockData.GetFaceUV(BlockFace.Left);
+            var rect = blockData.GetFaceUV(BlockFace.Right);
             data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
             data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y);
             data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;

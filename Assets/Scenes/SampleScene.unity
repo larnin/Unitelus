@@ -249,7 +249,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c334b9744088fe4290a450c8f6624ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_renderSize: 100
+  m_renderSize: 20
   m_moveUpdateDistance: 2
 --- !u!4 &210816805
 Transform:
@@ -298,7 +298,7 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
-    - {fileID: 2100000, guid: 41dfad8152c0aa94fa2b20034179799b, type: 2}
+    - {fileID: 2100000, guid: f4e7efe8b9e16504fab88a23f482174f, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -313,7 +313,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 1|BlockTypeCube, Assembly-CSharp
+      Data: 1|BlockTypeSmoothed, Assembly-CSharp
     - Name: m_id
       Entry: 3
       Data: 1
