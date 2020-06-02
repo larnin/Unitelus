@@ -163,15 +163,14 @@ public class BlockTypeSmoothed : BlockTypeBase
         ShapeType shape = GetShapeTypeData(current.data);
         Rotation rotation = GetRotationData(current.data);
         
-        if(shape == ShapeType.HalfCubic && false)
+        if(shape == ShapeType.HalfCubic)
         {
             var leftFace = BlockFaceEx.Rotate(BlockFace.Left, rotation);
             var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rotation);
 
             if(m_data.GetFaceDraw(leftFace))
             {
-                var leftDir = BlockFaceEx.FaceToDirInt(leftFace);
-                var leftBlock = neighbors.Get(leftDir.x, leftDir.y, leftDir.z);
+                var leftBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(leftFace));
 
                 ShapeType leftShape = GetShapeTypeData(leftBlock.data);
                 Rotation leftRotation = GetRotationData(leftBlock.data);
@@ -181,12 +180,14 @@ public class BlockTypeSmoothed : BlockTypeBase
 
                 if (leftShape == ShapeType.Tetrahedral && leftRotation == rotation)
                     m_data.SetFaceDraw(false, leftFace);
+
+                if (leftShape == ShapeType.AntiTetrahedral && RotationEx.SubRotations(leftRotation, Rotation.Rot90) == rotation)
+                    m_data.SetFaceDraw(false, leftFace);
             }
 
             if(m_data.GetFaceDraw(rightFace))
             {
-                var rightDir = BlockFaceEx.FaceToDirInt(rightFace);
-                var rightBlock = neighbors.Get(rightDir.x, rightDir.y, rightDir.z);
+                var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
 
                 ShapeType rightShape = GetShapeTypeData(rightBlock.data);
                 Rotation rightRotation = GetRotationData(rightBlock.data);
@@ -194,7 +195,112 @@ public class BlockTypeSmoothed : BlockTypeBase
                 if (rightShape == ShapeType.HalfCubic && rightRotation == rotation)
                     m_data.SetFaceDraw(false, rightFace);
 
-                if (rightShape == ShapeType.Tetrahedral && RotationEx.SubRotations(rightRotation, Rotation.Rot90) == rotation)
+                if (rightShape == ShapeType.Tetrahedral && RotationEx.AddRotations(rightRotation, Rotation.Rot90) == rotation)
+                    m_data.SetFaceDraw(false, rightFace);
+
+                if (rightShape == ShapeType.AntiTetrahedral && RotationEx.AddRotations(rightRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, rightFace);
+            }
+        }
+
+        if(shape == ShapeType.Tetrahedral)
+        {
+            var backFace = BlockFaceEx.Rotate(BlockFace.Back, rotation);
+            var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rotation);
+
+            if (m_data.GetFaceDraw(BlockFace.Down))
+            {
+                var downBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Down));
+
+                ShapeType downShape = GetShapeTypeData(downBlock.data);
+                Rotation downRotation = GetRotationData(downBlock.data);
+
+                if (downShape == ShapeType.AntiTetrahedral && RotationEx.AddRotations(downRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, BlockFace.Down);
+            }
+
+            if(m_data.GetFaceDraw(backFace))
+            {
+                var backBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(backFace));
+
+                ShapeType backShape = GetShapeTypeData(backBlock.data);
+                Rotation backRotation = GetRotationData(backBlock.data);
+
+                if (backShape == ShapeType.HalfCubic && RotationEx.SubRotations(backRotation, Rotation.Rot90) == rotation)
+                    m_data.SetFaceDraw(false, backFace);
+
+                if (backShape == ShapeType.Tetrahedral && RotationEx.SubRotations(backRotation, Rotation.Rot90) == rotation)
+                    m_data.SetFaceDraw(false, backFace);
+
+                if (backShape == ShapeType.AntiTetrahedral && RotationEx.AddRotations(backRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, backFace);
+            }
+
+            if(m_data.GetFaceDraw(rightFace))
+            {
+                var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
+
+                ShapeType rightShape = GetShapeTypeData(rightBlock.data);
+                Rotation rightRotation = GetRotationData(rightBlock.data);
+
+                if (rightShape == ShapeType.HalfCubic && rightRotation == rotation)
+                    m_data.SetFaceDraw(false, rightFace);
+
+                if (rightShape == ShapeType.Tetrahedral && RotationEx.AddRotations(rightRotation, Rotation.Rot90) == rotation)
+                    m_data.SetFaceDraw(false, rightFace);
+
+                if (rightShape == ShapeType.AntiTetrahedral && RotationEx.AddRotations(rightRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, rightFace);
+            }
+        }
+
+        if(shape == ShapeType.AntiTetrahedral)
+        {
+            var backFace = BlockFaceEx.Rotate(BlockFace.Back, rotation);
+            var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rotation);
+
+            if (m_data.GetFaceDraw(BlockFace.Up))
+            {
+                var upBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Up));
+
+                ShapeType upShape = GetShapeTypeData(upBlock.data);
+                Rotation upRotation = GetRotationData(upBlock.data);
+
+                if (upShape == ShapeType.Tetrahedral && RotationEx.AddRotations(upRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, BlockFace.Up);
+            }
+
+            if (m_data.GetFaceDraw(backFace))
+            {
+                var backBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(backFace));
+
+                ShapeType backShape = GetShapeTypeData(backBlock.data);
+                Rotation backRotation = GetRotationData(backBlock.data);
+
+                if (backShape == ShapeType.HalfCubic && RotationEx.AddRotations(backRotation, Rotation.Rot90) == rotation)
+                    m_data.SetFaceDraw(false, backFace);
+
+                if (backShape == ShapeType.Tetrahedral && RotationEx.AddRotations(backRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, backFace);
+
+                if (backShape == ShapeType.AntiTetrahedral && RotationEx.AddRotations(backRotation, Rotation.Rot90) == rotation)
+                    m_data.SetFaceDraw(false, backFace);
+            }
+
+            if (m_data.GetFaceDraw(rightFace))
+            {
+                var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
+
+                ShapeType rightShape = GetShapeTypeData(rightBlock.data);
+                Rotation rightRotation = GetRotationData(rightBlock.data);
+
+                if (rightShape == ShapeType.HalfCubic && RotationEx.AddRotations(rightRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, rightFace);
+
+                if (rightShape == ShapeType.Tetrahedral && RotationEx.AddRotations(rightRotation, Rotation.Rot180) == rotation)
+                    m_data.SetFaceDraw(false, rightFace);
+
+                if (rightShape == ShapeType.AntiTetrahedral && RotationEx.SubRotations(rightRotation, Rotation.Rot180) == rotation)
                     m_data.SetFaceDraw(false, rightFace);
             }
         }
