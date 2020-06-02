@@ -7,9 +7,9 @@ using UnityEngine;
 
 public class BlockTypeEmpty : BlockTypeBase
 {
-    public BlockTypeEmpty(int id) : base(id)
+    public BlockTypeEmpty() : base()
     {
-
+        type = BlockType.Empty;
     }
 
     public override bool IsFaceFull(BlockFace face, byte data = 0)

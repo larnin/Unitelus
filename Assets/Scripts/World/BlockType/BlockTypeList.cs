@@ -22,7 +22,7 @@ public class BlockTypeList
 
     BlockTypeList()
     {
-        Set(0, new BlockTypeEmpty(0));
+        Set(0, new BlockTypeEmpty());
     }
 
     public void Set(int id, BlockTypeBase block)

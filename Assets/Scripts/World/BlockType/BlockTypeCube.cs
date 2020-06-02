@@ -13,8 +13,9 @@ public class BlockTypeCube : BlockTypeBase
 
     BlockRendererData m_data;
 
-    public BlockTypeCube(int id) : base(id)
+    public BlockTypeCube()
     {
+        type = BlockType.Cube;
     }
 
     public override bool IsFaceFull(BlockFace face, byte data = 0)

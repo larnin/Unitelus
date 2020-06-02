@@ -5,15 +5,26 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
+public enum BlockType
+{
+    NoType,
+    Cube,
+    Empty,
+    Smoothed,
+}
+
 public abstract class BlockTypeBase
 {
     [SerializeField] int m_id;
+    [SerializeField] BlockType m_type;
 
     public int id { get { return m_id; } }
+    public BlockType type { get { return m_type; } protected set { m_type = value; } }
 
-    public BlockTypeBase(int id)
+    public BlockTypeBase()
     {
-        m_id = id;
+        m_id = 0;
+        m_type = BlockType.NoType;
     }
 
     public abstract void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams);
