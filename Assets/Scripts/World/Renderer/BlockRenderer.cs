@@ -346,7 +346,100 @@ public static class BlockRenderer
 
     public static void DrawHorizontalHalfCubic(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)
     {
+        //3 square and 2 triangles
+        // each square have 4 vertex and 6 index
+        // each triangle have 3 vertex and 3 index
+        var data = meshParams.Allocate(18, 24, blockData.material);
 
+        var rot = blockData.rotation;
+
+        int vertexIndex = 0;
+        int nbSquare = 0;
+        int nbTriangle = 0;
+
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Right, rot)))
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Right);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
+            vertexIndex += 4;
+            nbSquare++;
+        }
+
+        if (blockData.GetFaceDraw(BlockFaceEx.Rotate(BlockFace.Back, rot)))
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Back);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x, rect.y);
+            vertexIndex += 4;
+            nbSquare++;
+        }
+
+        //diagonal face is drawn in all cases
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Front);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(0, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 3].pos = new Vector3(1, 1, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 3].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            vertexIndex += 4;
+            nbSquare++;
+        }
+
+        if (blockData.GetFaceDraw(BlockFace.Down))
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Down);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(1, 0, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(0, 0, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x, rect.y);
+            vertexIndex += 3;
+            nbTriangle++;
+        }
+
+        if (blockData.GetFaceDraw(BlockFace.Up))
+        {
+            var rect = blockData.GetFaceUV(BlockFace.Up);
+            data.vertices[data.verticesSize + vertexIndex].pos = new Vector3(1, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex].uv = new Vector2(rect.x + rect.width, rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 1].pos = new Vector3(0, 1, 0) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 1].uv = new Vector2(rect.x , rect.y);
+            data.vertices[data.verticesSize + vertexIndex + 2].pos = new Vector3(1, 1, 1) + pos;
+            data.vertices[data.verticesSize + vertexIndex + 2].uv = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            vertexIndex += 3;
+            nbTriangle++;
+        }
+
+        SetColor(data, data.verticesSize, vertexIndex, new Color32(255, 255, 255, 0));
+
+        SetQuadsIndexs(data, data.verticesSize, data.indexesSize, nbSquare);
+        SetTrianglesIndexs(data, data.verticesSize + 4 * nbSquare, data.indexesSize + 6 * nbSquare, nbTriangle);
+
+        RotatePos(data, data.verticesSize, vertexIndex, pos, rot);
+
+        BakeNormals(data, data.indexesSize, nbSquare * 2 + nbTriangle);
+        BakeTangents(data, data.indexesSize, nbSquare * 2 + nbTriangle);
+
+        data.verticesSize += vertexIndex;
+        data.indexesSize += nbSquare * 6 + nbTriangle * 3;
     }
 
     public static void DrawThetrahedral(Vector3 pos, MeshParams<WorldVertexDefinition> meshParams, BlockRendererData blockData)

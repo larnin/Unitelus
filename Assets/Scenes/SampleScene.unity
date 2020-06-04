@@ -200,11 +200,11 @@ MonoBehaviour:
     seed: 0
     size: 4
     perlins:
-    - amplitude: 4
+    - amplitude: 16
       frequency: 4
-    - amplitude: 2
+    - amplitude: 8
       frequency: 8
-    - amplitude: 1
+    - amplitude: 4
       frequency: 16
 --- !u!4 &206087259
 Transform:
@@ -317,6 +317,9 @@ MonoBehaviour:
     - Name: m_id
       Entry: 3
       Data: 1
+    - Name: m_type
+      Entry: 3
+      Data: 3
     - Name: m_material
       Entry: 10
       Data: 0

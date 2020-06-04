@@ -64,8 +64,8 @@ public static class WorldGenerator
         //world.SetBlock(6, 10, 0, b, false);
         //world.SetBlock(6, 10, 1, b, false);
 
-        world.SetBlock(16, 7, 0, b, false);
-        world.SetBlock(15, 7, 0, b, false);
+        //world.SetBlock(16, 7, 0, b, false);
+        //world.SetBlock(15, 7, 0, b, false);
 
         UpdateWorldData(world);
 

@@ -87,6 +87,9 @@ public class BlockTypeSmoothed : BlockTypeBase
         if(shape == ShapeType.HalfCubic)
             return face == BlockFace.Down || face == BlockFace.Back;
 
+        if (shape == ShapeType.HorizontalHalfCubic)
+            return face == BlockFace.Back || face == BlockFace.Right;
+
         return false;
     }
 
@@ -225,6 +228,9 @@ public class BlockTypeSmoothed : BlockTypeBase
 
                     if (downShape == ShapeType.AntiTetrahedral && RotationEx.AddRotations(downRotation, Rotation.Rot180) == rotation)
                         m_data.SetFaceDraw(false, BlockFace.Down);
+
+                    if (downShape == ShapeType.HorizontalHalfCubic && downRotation == rotation)
+                        m_data.SetFaceDraw(false, BlockFace.Down);
                 }
             }
 
@@ -285,6 +291,9 @@ public class BlockTypeSmoothed : BlockTypeBase
 
                     if (upShape == ShapeType.Tetrahedral && RotationEx.AddRotations(upRotation, Rotation.Rot180) == rotation)
                         m_data.SetFaceDraw(false, BlockFace.Up);
+
+                    if (upShape == ShapeType.HorizontalHalfCubic && RotationEx.AddRotations(upRotation, Rotation.Rot180) == rotation)
+                        m_data.SetFaceDraw(false, BlockFace.Up);
                 }
             }
 
@@ -325,6 +334,43 @@ public class BlockTypeSmoothed : BlockTypeBase
 
                     if (rightShape == ShapeType.AntiTetrahedral && RotationEx.SubRotations(rightRotation, Rotation.Rot180) == rotation)
                         m_data.SetFaceDraw(false, rightFace);
+                }
+            }
+        }
+
+        if(shape == ShapeType.HorizontalHalfCubic)
+        {
+            if(m_data.GetFaceDraw(BlockFace.Up))
+            {
+                var upBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Up));
+
+                if(BlockTypeList.instance.Get(upBlock.id).type == BlockType.Smoothed)
+                {
+                    ShapeType upShape = GetShapeTypeData(upBlock.data);
+                    Rotation upRotation = GetRotationData(upBlock.data);
+
+                    if (upShape == ShapeType.HorizontalHalfCubic && upRotation == rotation)
+                        m_data.SetFaceDraw(false, BlockFace.Up);
+
+                    if (upShape == ShapeType.Tetrahedral && upRotation == rotation)
+                        m_data.SetFaceDraw(false, BlockFace.Up);
+                }
+            }
+
+            if(m_data.GetFaceDraw(BlockFace.Down))
+            {
+                var downBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Down));
+
+                if(BlockTypeList.instance.Get(downBlock.id).type == BlockType.Smoothed)
+                {
+                    ShapeType downShape = GetShapeTypeData(downBlock.data);
+                    Rotation downRotation = GetRotationData(downBlock.data);
+
+                    if (downShape == ShapeType.HorizontalHalfCubic && downRotation == rotation)
+                        m_data.SetFaceDraw(false, BlockFace.Down);
+
+                    if (downShape == ShapeType.AntiTetrahedral && RotationEx.AddRotations(downRotation, Rotation.Rot180) == rotation)
+                        m_data.SetFaceDraw(false, BlockFace.Down);
                 }
             }
         }
@@ -449,7 +495,7 @@ public class BlockTypeSmoothed : BlockTypeBase
 
         shapes.Add(new BlockShape(new int[]
             {2,2,2,2,2,2,2,2,2
-            ,2,0,2,1,2,0,2,1,2
+            ,2,1,2,0,2,1,2,0,2
             ,2,2,2,2,1,2,2,2,2}
             , ShapeType.HorizontalHalfCubic));
 
