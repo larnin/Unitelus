@@ -113,6 +113,9 @@ public static class BlockRenderer
         BakeNormals(data, data.indexesSize, nb * 2);
         BakeTangents(data, data.indexesSize, nb * 2);
 
+        if (blockData.collision)
+            CloneCollisions(meshParams, data, vertexIndex, nb * 6);
+
         data.verticesSize += vertexIndex;
         data.indexesSize += nb * 6;
     }
@@ -241,6 +244,9 @@ public static class BlockRenderer
         BakeNormals(data, data.indexesSize, nbSquare * 2 + nbTriangle);
         BakeTangents(data, data.indexesSize, nbSquare * 2 + nbTriangle);
 
+        if (blockData.collision)
+            CloneCollisions(meshParams, data, vertexIndex, nbSquare * 6 + nbTriangle * 3);
+
         data.verticesSize += vertexIndex;
         data.indexesSize += nbSquare * 6 + nbTriangle * 3;
 
@@ -340,6 +346,9 @@ public static class BlockRenderer
         BakeNormals(data, data.indexesSize, nbSquare * 2 + nbTriangle);
         BakeTangents(data, data.indexesSize, nbSquare * 2 + nbTriangle);
 
+        if (blockData.collision)
+            CloneCollisions(meshParams, data, vertexIndex, nbSquare * 6 + nbTriangle * 3);
+
         data.verticesSize += vertexIndex;
         data.indexesSize += nbSquare * 6 + nbTriangle * 3;
     }
@@ -438,6 +447,9 @@ public static class BlockRenderer
         BakeNormals(data, data.indexesSize, nbSquare * 2 + nbTriangle);
         BakeTangents(data, data.indexesSize, nbSquare * 2 + nbTriangle);
 
+        if (blockData.collision)
+            CloneCollisions(meshParams, data, vertexIndex, nbSquare * 6 + nbTriangle * 3);
+
         data.verticesSize += vertexIndex;
         data.indexesSize += nbSquare * 6 + nbTriangle * 3;
     }
@@ -513,6 +525,9 @@ public static class BlockRenderer
 
         BakeNormals(data, data.indexesSize, nb);
         BakeTangents(data, data.indexesSize, nb);
+
+        if (blockData.collision)
+            CloneCollisions(meshParams, data, vertexIndex, nb * 3);
 
         data.verticesSize += vertexIndex;
         data.indexesSize += nb * 3;
@@ -642,5 +657,21 @@ public static class BlockRenderer
             data.vertices[i2].tangent = tan;
             data.vertices[i3].tangent = tan;
         }
+    }
+
+    static void CloneCollisions(MeshParams<WorldVertexDefinition> meshParams, MeshParamData<WorldVertexDefinition> data, int nbVertex, int nbIndex)
+    {
+        var collisionData = meshParams.AllocateCollider(nbVertex, nbIndex);
+
+        for (int i = 0; i < nbVertex; i++)
+        {
+            collisionData.vertices[collisionData.verticesSize + i].pos = data.vertices[data.verticesSize + i].pos;
+            collisionData.vertices[collisionData.verticesSize + i].normal = data.vertices[data.verticesSize + i].normal;
+        }
+        for (int i = 0; i < nbIndex; i++)
+            collisionData.indexes[collisionData.indexesSize + i] = (ushort)(data.indexes[data.indexesSize + i] - data.verticesSize + collisionData.verticesSize);
+
+        collisionData.verticesSize += nbVertex;
+        collisionData.indexesSize += nbIndex;
     }
 }

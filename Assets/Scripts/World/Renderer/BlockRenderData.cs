@@ -10,15 +10,17 @@ public class BlockRendererData
     public int id;
     public Material material;
     public Rotation rotation;
+    public bool collision;
     Rect[] facesUV;
     bool[] facesDraw;
 
-    public BlockRendererData(int _id, Material mat, Rotation rot = Rotation.Rot0)
+    public BlockRendererData(int _id, Material mat, Rotation rot = Rotation.Rot0, bool _collision = true)
     {
         id = _id;
         material = mat;
         var rect = new Rect(0, 0, 1, 1);
         rotation = rot;
+        collision = _collision;
 
         facesUV = new Rect[Enum.GetValues(typeof(BlockFace)).Length];
         for (int i = 0; i < facesUV.Length; i++)

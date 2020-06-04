@@ -25,6 +25,7 @@ public class ChunkRenderer : MonoBehaviour
     class LayerRender
     {
         public List<LayerObject> objects = new List<LayerObject>();
+        public List<MeshCollider> colliders = new List<MeshCollider>();
         public int layerIndex = 0;
     }
 
@@ -148,6 +149,7 @@ public class ChunkRenderer : MonoBehaviour
         int nbMesh = 0;
         foreach (var m in materials)
             nbMesh += meshParams.GetMeshCount(m);
+        int nbColliderMesh = meshParams.GetColliderMeshCount();
 
         //remove
         while (layer.objects.Count > nbMesh)
@@ -159,9 +161,21 @@ public class ChunkRenderer : MonoBehaviour
             layer.objects.RemoveAt(layer.objects.Count - 1);
         }
 
+        while(layer.colliders.Count > nbColliderMesh)
+        {
+            var l = layer.colliders[layer.colliders.Count - 1];
+            if (l.sharedMesh != null)
+                Destroy(l.sharedMesh);
+            Destroy(l.gameObject);
+            layer.colliders.RemoveAt(layer.colliders.Count - 1);
+        }
+
         //add
         while(layer.objects.Count < nbMesh)
             layer.objects.Add(CreateNewLayerObject(layer.layerIndex));
+
+        while (layer.colliders.Count < nbColliderMesh)
+            layer.colliders.Add(CreateNewLayerCollider(layer.layerIndex));
 
         //set
         int meshIndex = 0;
@@ -174,6 +188,12 @@ public class ChunkRenderer : MonoBehaviour
                 var obj = layer.objects[meshIndex];
                 UpdateLayerObject(obj, m, i, meshParams);
             }
+        }
+
+        for(int i = 0; i < nbColliderMesh; i++)
+        {
+            var obj = layer.colliders[i];
+            UpdateLayerCollider(obj, i, meshParams);
         }
         
         ChunkRendererPool.instance.FreeJob(job.jobID);
@@ -201,6 +221,24 @@ public class ChunkRenderer : MonoBehaviour
         mesh.bounds = new Bounds(new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize) / 2, new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize));
     }
 
+    void UpdateLayerCollider(MeshCollider obj, int index, MeshParams<WorldVertexDefinition> meshParams)
+    {
+        var data = meshParams.GetColliderMesh(index);
+
+        var mesh = obj.sharedMesh;
+
+        MeshEx.SetColliderMeshParams(mesh, data.verticesSize, data.indexesSize);
+
+        mesh.SetVertexBufferData(data.vertices, 0, 0, data.verticesSize);
+        mesh.SetIndexBufferData(data.indexes, 0, 0, data.indexesSize);
+
+        mesh.subMeshCount = 1;
+        mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, data.indexesSize, MeshTopology.Triangles));
+
+        //full chunk layer
+        mesh.bounds = new Bounds(new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize) / 2, new Vector3(Chunk.chunkSize, Chunk.chunkSize, Chunk.chunkSize));
+    }
+
     LayerObject CreateNewLayerObject(int layer)
     {
         LayerObject obj = new LayerObject();
@@ -216,5 +254,19 @@ public class ChunkRenderer : MonoBehaviour
         transform.localScale = new Vector3(m_scaleX, m_scaleY, m_scaleZ);
 
         return obj;
+    }
+
+    MeshCollider CreateNewLayerCollider(int layer)
+    {
+        GameObject o = new GameObject("Collider " + layer);
+        var transform = o.GetComponent<Transform>();
+        var collider = o.AddComponent<MeshCollider>();
+        collider.sharedMesh = new Mesh();
+        transform.parent = this.transform;
+        transform.localPosition = new Vector3(0, layer * m_scaleY * Chunk.chunkSize, 0);
+        transform.localRotation = Quaternion.identity;
+        transform.localScale = new Vector3(m_scaleX, m_scaleY, m_scaleZ);
+
+        return collider;
     }
 }

@@ -200,11 +200,11 @@ MonoBehaviour:
     seed: 0
     size: 4
     perlins:
-    - amplitude: 16
-      frequency: 4
-    - amplitude: 8
-      frequency: 8
     - amplitude: 4
+      frequency: 4
+    - amplitude: 2
+      frequency: 8
+    - amplitude: 1
       frequency: 16
 --- !u!4 &206087259
 Transform:

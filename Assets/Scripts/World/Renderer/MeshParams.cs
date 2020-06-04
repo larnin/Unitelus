@@ -26,6 +26,7 @@ public class MeshParams<T> where T : struct
     const int allocSize = 1000;
 
     public Dictionary<Material, List<MeshParamData<T>>> m_data = new Dictionary<Material, List<MeshParamData<T>>>();
+    public List<MeshParamData<ColliderVertexDefinition>> m_colliderData = new List<MeshParamData<ColliderVertexDefinition>>();
 
     public MeshParamData<T> Allocate(int vertexSize, int indexSize, Material material)
     {
@@ -62,6 +63,36 @@ public class MeshParams<T> where T : struct
         return element;
     }
 
+    public MeshParamData<ColliderVertexDefinition> AllocateCollider(int vertexSize, int indexSize)
+    {
+        Debug.Assert(vertexSize <= MeshParamData<T>.maxVertexSize);
+
+        if(m_colliderData.Count == 0)
+        {
+            m_colliderData.Add(new MeshParamData<ColliderVertexDefinition>());
+            AllocateVerticesArray(m_colliderData[0], vertexSize);
+            AllocateIndexArray(m_colliderData[0], indexSize);
+        }
+
+        var element = m_colliderData[m_data.Count - 1];
+
+        if(!element.CanAllocate(vertexSize))
+        {
+            var newData = new MeshParamData<ColliderVertexDefinition>();
+            m_colliderData.Add(newData);
+            AllocateVerticesArray(newData, vertexSize);
+            AllocateIndexArray(newData, indexSize);
+            element = newData;
+        }
+
+        if (element.verticesSize + vertexSize > element.vertices.Length)
+            IncreaseVerticesArray(element, vertexSize);
+        if (element.indexesSize + indexSize > element.indexes.Length)
+            IncreaseIndexArray(element, indexSize);
+
+        return element;
+    }
+
     //only clean index but not resize the buffers
     //only remove the sub buffers if there are more than one MeshParamData for one material
     public void ResetSize()
@@ -73,7 +104,15 @@ public class MeshParams<T> where T : struct
 
             d.Value[0].indexesSize = 0;
             d.Value[0].verticesSize = 0;
+        }
 
+        while (m_colliderData.Count > 1)
+            m_colliderData.RemoveAt(1);
+
+        if (m_colliderData.Count > 0)
+        {
+            m_colliderData[0].indexesSize = 0;
+            m_colliderData[0].verticesSize = 0;
         }
     }
 
@@ -81,6 +120,7 @@ public class MeshParams<T> where T : struct
     public void Reset()
     {
         m_data.Clear();
+        m_colliderData.Clear();
     }
 
     public List<Material> GetNonEmptyMaterials()
@@ -123,39 +163,54 @@ public class MeshParams<T> where T : struct
         return data[index];
     }
 
-    void AllocateVerticesArray(MeshParamData<T> data, int addVertices)
+    public int GetColliderMeshCount()
+    {
+        if (m_colliderData.Count == 1 && m_colliderData[0].vertices.Length == 0 || m_colliderData[0].indexes.Length == 0)
+            return 0;
+
+        return m_colliderData.Count();
+    }
+
+    public MeshParamData<ColliderVertexDefinition> GetColliderMesh(int index)
+    {
+        Debug.Assert(index >= 0 && index < GetColliderMeshCount());
+
+        return m_colliderData[index];
+    }
+
+    static void AllocateVerticesArray<U>(MeshParamData<U> data, int addVertices) where U : struct
     {
         Debug.Assert(data.vertices == null);
         int newSize = addVertices + allocSize;
-        if (newSize > MeshParamData<T>.maxVertexSize)
-            newSize = MeshParamData<T>.maxVertexSize;
+        if (newSize > MeshParamData<U>.maxVertexSize)
+            newSize = MeshParamData<U>.maxVertexSize;
 
-        data.vertices = new T[newSize];
+        data.vertices = new U[newSize];
     }
 
-    void IncreaseVerticesArray(MeshParamData<T> data, int addVertices)
+    static void IncreaseVerticesArray<U>(MeshParamData<U> data, int addVertices) where U : struct
     {
         Debug.Assert(data.vertices != null);
 
         int newSize = data.vertices.Length + addVertices + allocSize;
-        if (newSize > MeshParamData<T>.maxVertexSize)
-            newSize = MeshParamData<T>.maxVertexSize;
+        if (newSize > MeshParamData<U>.maxVertexSize)
+            newSize = MeshParamData<U>.maxVertexSize;
 
-        var newArray = new T[newSize];
+        var newArray = new U[newSize];
 
         for (int i = 0; i < data.verticesSize; i++)
             newArray[i] = data.vertices[i];
         data.vertices = newArray;
     }
 
-    void AllocateIndexArray(MeshParamData<T> data, int addIndexes)
+    static void AllocateIndexArray<U>(MeshParamData<U> data, int addIndexes) where U : struct
     {
         Debug.Assert(data.indexes == null);
 
         data.indexes = new ushort[addIndexes + allocSize];
     }
 
-    void IncreaseIndexArray(MeshParamData<T> data, int addIndexes)
+    static void IncreaseIndexArray<U>(MeshParamData<U> data, int addIndexes) where U : struct
     {
         Debug.Assert(data.indexes != null);
 
