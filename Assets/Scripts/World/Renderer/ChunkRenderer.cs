@@ -39,6 +39,14 @@ public class ChunkRenderer : MonoBehaviour
 
     List<WaitingJob> m_waitingJobs = new List<WaitingJob>();
 
+    private void OnDestroy()
+    {
+        foreach(var job in m_waitingJobs)
+        {
+            ChunkRendererPool.instance.FreeJob(job.jobID);
+        }
+    }
+
     public void Update()
     {
         if (m_chunk == null)
@@ -244,6 +252,7 @@ public class ChunkRenderer : MonoBehaviour
         LayerObject obj = new LayerObject();
 
         GameObject o = new GameObject("Layer " + layer );
+        o.layer = gameObject.layer;
         var transform = o.GetComponent<Transform>();
         obj.meshFilter = o.AddComponent<MeshFilter>();
         obj.meshRenderer = o.AddComponent<MeshRenderer>();
@@ -259,6 +268,7 @@ public class ChunkRenderer : MonoBehaviour
     MeshCollider CreateNewLayerCollider(int layer)
     {
         GameObject o = new GameObject("Collider " + layer);
+        o.layer = gameObject.layer;
         var transform = o.GetComponent<Transform>();
         var collider = o.AddComponent<MeshCollider>();
         collider.sharedMesh = new Mesh();
@@ -268,5 +278,10 @@ public class ChunkRenderer : MonoBehaviour
         transform.localScale = new Vector3(m_scaleX, m_scaleY, m_scaleZ);
 
         return collider;
+    }
+
+    public bool AreAllRenderReady()
+    {
+        return true;
     }
 }

@@ -13,6 +13,7 @@ public class WorldRenderer : MonoBehaviour
 
     [SerializeField] int m_renderSize = 10;
     [SerializeField] float m_moveUpdateDistance = 2;
+    [SerializeField] [Layer] int m_collisionLayer = 0;
 
     SubscriberList m_subscriberList = new SubscriberList();
 
@@ -23,6 +24,7 @@ public class WorldRenderer : MonoBehaviour
     private void Awake()
     {
         m_subscriberList.Add(new Event<CenterUpdatedEvent>.Subscriber(OnCenterUpdate));
+        m_subscriberList.Add(new Event<IsChunkRenderedEvent>.Subscriber(IsChunkRendered));
 
         m_subscriberList.Subscribe();
     }
@@ -84,6 +86,7 @@ public class WorldRenderer : MonoBehaviour
         var world = PlaceholderWorld.instance.world;
 
         var obj = new GameObject("Chunk[" + x + " " + z + "]");
+        obj.layer = m_collisionLayer;
         var renderer = obj.AddComponent<ChunkRenderer>();
         renderer.SetChunk(world.GetChunk(x, z));
         renderer.SetPosition(x, z);
@@ -105,5 +108,14 @@ public class WorldRenderer : MonoBehaviour
     void RemoveChunk(ChunkInfos c)
     {
         Destroy(c.renderer.gameObject);
+    }
+
+    void IsChunkRendered(IsChunkRenderedEvent e)
+    {
+        foreach(var c in m_chunks)
+        {
+            if (c.x == e.x && c.z == e.z)
+                e.rendered = c.renderer.AreAllRenderReady();
+        }
     }
 }

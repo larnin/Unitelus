@@ -8,6 +8,15 @@ using UnityEngine;
 
 public class ChunkRenderPoolBehaviour : MonoBehaviour
 {
+    SubscriberList m_subscriberList = new SubscriberList();
+
+    private void Awake()
+    {
+        m_subscriberList.Add(new Event<CenterUpdatedEvent>.Subscriber(OnCenterMoved));
+
+        m_subscriberList.Subscribe();
+    }
+
     private void Start()
     {
         ChunkRendererPool.instance.Start();
@@ -16,11 +25,17 @@ public class ChunkRenderPoolBehaviour : MonoBehaviour
     private void OnDestroy()
     {
         ChunkRendererPool.instance.Stop();
+        m_subscriberList.Unsubscribe();
     }
 
     private void Update()
     {
         ChunkRendererPool.instance.UpdateEndedJobs();
+    }
+
+    void OnCenterMoved(CenterUpdatedEvent e)
+    {
+        ChunkRendererPool.instance.SetCenter(e.pos);
     }
 }
 
@@ -91,6 +106,9 @@ public class ChunkRendererPool
     readonly object m_endedJobsLock = new object();
     List<Job> m_endedJobs = new List<Job>();
 
+    readonly object m_centerLock = new object();
+    Vector3 m_center = Vector3.zero;
+
     Thread m_thread;
 
     int m_nextTaskID = 0;
@@ -99,6 +117,14 @@ public class ChunkRendererPool
     {
         for (int i = 0; i < m_dataPoolSize; i++)
             m_freeDatas.Add(new MeshParams<WorldVertexDefinition>());
+    }
+
+    public void SetCenter(Vector3 center)
+    {
+        lock(m_centerLock)
+        {
+            m_center = center;
+        }
     }
 
     public int AddJob(int x, int z, int layer, World world)
@@ -276,14 +302,16 @@ public class ChunkRendererPool
         if (data == null)
             return;
 
+        int nextJobID = GetNearestJobIndex();
+
         lock (m_waitingJobsLock)
         {
             Job job = null;
 
-            if (m_waitingJobs.Count > 0)
+            if(nextJobID >= 0)
             {
-                job = m_waitingJobs[0];
-                m_waitingJobs.RemoveAt(0);
+                job = m_waitingJobs[nextJobID];
+                m_waitingJobs.RemoveAt(nextJobID);
             }
 
             if (job == null)
@@ -312,7 +340,7 @@ public class ChunkRendererPool
         DoJob();
 
         //move task to ended task
-        lock(m_doingJobLock)
+        lock (m_doingJobLock)
         {
             lock(m_doingJobStatusLock)
             {
@@ -351,5 +379,40 @@ public class ChunkRendererPool
 
             Debug.Log("Job done on " + m_doingJob.x + " " + m_doingJob.layer + " " + m_doingJob.z);
         }
+    }
+
+    int GetNearestJobIndex()
+    {
+        float minDistance = float.MaxValue;
+        int bestIndex = -1;
+
+        Vector3 center;
+        lock(m_centerLock)
+        {
+            center = m_center;
+        }
+
+        lock(m_waitingJobsLock)
+        {
+            if (m_waitingJobs.Count == 0)
+                return -1;
+
+            for (int i = 0; i < m_waitingJobs.Count; i++)
+            {
+                var job = m_waitingJobs[i];
+                var pos = new Vector3(job.x + 0.5f, job.layer + 0.5f, job.z + 0.5f);
+                pos *= Chunk.chunkSize;
+
+                var dist = (center - pos).sqrMagnitude;
+                if(dist < minDistance)
+                {
+                    bestIndex = i;
+                    minDistance = dist;
+                }
+            }
+        }
+
+        Debug.Assert(bestIndex >= 0);
+        return bestIndex;
     }
 }

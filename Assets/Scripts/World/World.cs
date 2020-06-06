@@ -433,4 +433,94 @@ public class World
         outX = x + chunkX * Chunk.chunkSize;
         outZ = z + chunkZ * Chunk.chunkSize;
     }
+
+    public void ClampWorldPos(int x, int z, out int outX, out int outZ)
+    {
+        if(!m_worldLoop)
+        {
+            outX = x;
+            outZ = z;
+            return;
+        }
+
+        int worldSize = size;
+
+        if (x < 0)
+            outX = (x % worldSize + worldSize) % worldSize;
+        else outX = x % worldSize;
+        if (z < 0)
+            outZ = (z % worldSize + worldSize) % worldSize;
+        else outZ = z % worldSize;
+    }
+
+    public void ClampWorldPos(float x, float z, out float outX, out float outZ)
+    {
+        if (!m_worldLoop)
+        {
+            outX = x;
+            outZ = z;
+            return;
+        }
+
+        int worldSize = size;
+
+        if (x < 0)
+            outX = (x % worldSize + worldSize) % worldSize;
+        else outX = x % worldSize;
+        if (z < 0)
+            outZ = (z % worldSize + worldSize) % worldSize;
+        else outZ = z % worldSize;
+    }
+
+    public Vector3 Dir(Vector3 posA, Vector3 posB)
+    {
+        if (!m_worldLoop)
+            return posB - posA;
+
+        float posAX, posAZ, posBX, posBZ;
+        ClampWorldPos(posA.x, posA.z, out posAX, out posAZ);
+        ClampWorldPos(posB.x, posB.z, out posBX, out posBZ);
+
+        posA.x = posAX;
+        posA.z = posAZ;
+
+        float worldSize = size;
+
+        float alternativeBX = posBX < posAX ? posBX + worldSize : posBX - worldSize;
+        float alternativeBZ = posBZ < posAZ ? posBZ + worldSize : posBZ - worldSize;
+
+        int bestIndex = -1;
+        float bestDist = float.MaxValue;
+        Vector3[] possibleBPos = new Vector3[4]
+        {
+            new Vector3(posBX, posB.y, posBZ),
+            new Vector3(alternativeBX, posB.y, posBZ),
+            new Vector3(posBX, posB.y, alternativeBZ),
+            new Vector3(alternativeBX, posB.y, alternativeBZ)
+        };
+
+        for(int i = 0 ; i < possibleBPos.Length; i++)
+        {
+            float dist = (possibleBPos[i] - posA).sqrMagnitude;
+            if(dist < bestDist)
+            {
+                bestIndex = i;
+                bestDist = dist;
+            }
+        }
+
+        Debug.Assert(bestIndex >= 0);
+
+        return possibleBPos[bestIndex] - posA;
+    }
+
+    public float SqrDistance(Vector3 posA, Vector3 posB)
+    {
+        return Dir(posA, posB).sqrMagnitude;
+    }
+
+    public float Distance(Vector3 posA, Vector3 posB)
+    {
+        return Mathf.Sqrt(SqrDistance(posA, posB));
+    }
 }
