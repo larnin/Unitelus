@@ -2,18 +2,118 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public static class WorldGenerator
+public class WorldGenerator
 {
-    public static World Generate(WorldGeneratorSettings settings)
+    public enum State
     {
-        World world = new World(settings.size, true);
+        idle,
+        generating,
+        finished,
+        error,
+    }
+
+    readonly object m_stateLock = new object();
+    State m_state = State.idle;
+
+    readonly object m_statusLock = new object();
+    string m_status = "Idle";
+
+    readonly object m_worldLock = new object();
+    World m_world = null;
+
+    Thread m_thread;
+
+    WorldGeneratorSettings m_settings = null;
+
+    public State state
+    {
+        get
+        {
+            lock (m_stateLock)
+                return m_state;
+        }
+        private set
+        {
+            lock (m_stateLock)
+                m_state = value;
+        }
+    }
+
+    public string statusText
+    {
+        get
+        {
+            lock (m_statusLock)
+                return m_status;
+        }
+        private set
+        {
+            lock (m_statusLock)
+                m_status = value;
+        }
+    }
+
+    public World world
+    {
+        get
+        {
+            lock (m_worldLock)
+                return m_world;
+        }
+        private set
+        {
+            lock (m_worldLock)
+                m_world = value;
+        }
+    }
+
+    public void Generate(WorldGeneratorSettings settings)
+    {
+        lock(m_stateLock)
+        {
+            if(m_state == State.generating)
+            {
+                Debug.Assert(false);
+                return;
+            }
+
+            m_state = State.generating;
+        }
+
+        statusText = "Generating ...";
+
+        Debug.Assert(m_thread == null);
+
+        m_settings = settings;
+
+        m_thread = new Thread(new ThreadStart(Process));
+        m_thread.Start();
+    }
+
+    public void Stop()
+    {
+        if(m_thread != null)
+        {
+            m_thread.Abort();
+            m_thread = null;
+            state = State.error;
+            statusText = "Aborted";
+        }
+    }
+
+    void Process()
+    {
+        statusText = "Generating surface ...";
+
+        m_world = new World(m_settings.size, true);
 
         List<Perlin> perlins = new List<Perlin>();
-        foreach (var p in settings.perlins)
-            perlins.Add(new Perlin(world.size, p.amplitude, p.frequency, settings.seed + perlins.Count));
+        foreach (var p in m_settings.perlins)
+            perlins.Add(new Perlin(world.size, p.amplitude, p.frequency, m_settings.seed + perlins.Count));
 
         BlockData b;
         b.id = 1;
@@ -21,9 +121,9 @@ public static class WorldGenerator
 
         int minHeight = int.MaxValue;
 
-        for (int x = 0; x < settings.size * Chunk.chunkSize; x++)
+        for (int x = 0; x < m_settings.size * Chunk.chunkSize; x++)
         {
-            for (int z = 0; z < settings.size * Chunk.chunkSize; z++)
+            for (int z = 0; z < m_settings.size * Chunk.chunkSize; z++)
             {
                 float y = 0;
                 foreach (var p in perlins)
@@ -36,15 +136,17 @@ public static class WorldGenerator
             }
         }
 
-        for (int x = 0; x < settings.size * Chunk.chunkSize; x++)
+        statusText = "Generating ground ...";
+
+        for (int x = 0; x < m_settings.size * Chunk.chunkSize; x++)
         {
-            for (int z = 0; z < settings.size * Chunk.chunkSize; z++)
+            for (int z = 0; z < m_settings.size * Chunk.chunkSize; z++)
             {
                 int height = world.GetTopBlockHeight(x, z);
 
                 if (height <= minHeight)
                     continue;
-                for(int y = height - 1; y >= minHeight; y--)
+                for (int y = height - 1; y >= minHeight; y--)
                     world.SetBlock(x, y, z, b, false);
             }
         }
@@ -67,9 +169,14 @@ public static class WorldGenerator
         //world.SetBlock(16, 7, 0, b, false);
         //world.SetBlock(15, 7, 0, b, false);
 
+        statusText = "Updating blocks state ...";
+
         UpdateWorldData(world);
 
-        return world;
+        statusText = "Done";
+        m_thread = null;
+
+        state = State.finished;
     }
 
     static void UpdateWorldData(World world)

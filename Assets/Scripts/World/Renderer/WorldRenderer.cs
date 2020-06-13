@@ -110,12 +110,19 @@ public class WorldRenderer : MonoBehaviour
         Destroy(c.renderer.gameObject);
     }
 
+    bool IsChunkRendered(int x, int z)
+    {
+        foreach (var c in m_chunks)
+        {
+            if (c.x == x && c.z == z)
+                return c.renderer.AreAllRenderReady();
+        }
+
+        return false;
+    }
+
     void IsChunkRendered(IsChunkRenderedEvent e)
     {
-        foreach(var c in m_chunks)
-        {
-            if (c.x == e.x && c.z == e.z)
-                e.rendered = c.renderer.AreAllRenderReady();
-        }
+        e.rendered = IsChunkRendered(e.x, e.z);
     }
 }

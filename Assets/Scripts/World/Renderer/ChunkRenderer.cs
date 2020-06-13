@@ -15,6 +15,7 @@ public class ChunkRenderer : MonoBehaviour
     int m_x = 0;
     int m_z = 0;
     float m_fUpdateTime = -1;
+    bool m_chunkInitialized = false;
 
     class LayerObject
     {
@@ -85,6 +86,9 @@ public class ChunkRenderer : MonoBehaviour
         }
         
         m_fUpdateTime = Time.time;
+
+        if (!m_chunkInitialized)
+            m_chunkInitialized = m_waitingJobs.Count == 0;
     }
 
     public void SetChunk(Chunk c)
@@ -282,6 +286,6 @@ public class ChunkRenderer : MonoBehaviour
 
     public bool AreAllRenderReady()
     {
-        return true;
+        return m_chunkInitialized;
     }
 }
