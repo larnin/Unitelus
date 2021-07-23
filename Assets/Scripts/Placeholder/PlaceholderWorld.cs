@@ -5,6 +5,8 @@ public class PlaceholderWorld : MonoBehaviour
 {
     [SerializeField] WorldGeneratorSettings m_settings = new WorldGeneratorSettings();
 
+    WorldGenerator m_generator = null;
+
     static PlaceholderWorld m_instance = null;
     public static PlaceholderWorld instance
     {
@@ -27,6 +29,13 @@ public class PlaceholderWorld : MonoBehaviour
 
     private void Start()
     {
-        m_world = WorldGenerator.Generate(m_settings);
+        m_generator = new WorldGenerator();
+        m_generator.Generate(m_settings);
+    }
+
+    private void Update()
+    {
+        if (m_world == null && m_generator.state == WorldGenerator.State.finished)
+            m_world = m_generator.world;
     }
 }
