@@ -84,8 +84,8 @@ public class ChunkRenderer : MonoBehaviour
             }
             UpdateLayer(layer);
         }
-        
-        m_fUpdateTime = Time.time;
+
+        m_fUpdateTime = TimeEx.GetTime();
 
         if (!m_chunkInitialized)
             m_chunkInitialized = m_waitingJobs.Count == 0;

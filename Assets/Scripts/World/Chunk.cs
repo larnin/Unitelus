@@ -41,7 +41,7 @@ public class ChunkLayer
 
         m_blocks[index] = bloc;
 
-        m_updateTime = Time.time;
+        m_updateTime = TimeEx.GetTime();
     }
 
     int PosToIndex(int x, int y, int z)

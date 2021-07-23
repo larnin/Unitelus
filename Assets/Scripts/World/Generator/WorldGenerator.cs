@@ -26,6 +26,7 @@ public class WorldGenerator
     World m_world = null;
 
     Thread m_thread;
+    float m_time;
 
     WorldGeneratorSettings m_settings = null;
 
@@ -90,6 +91,7 @@ public class WorldGenerator
 
         m_settings = settings;
 
+        m_time = Time.time;
         m_thread = new Thread(new ThreadStart(Process));
         m_thread.Start();
     }
@@ -107,9 +109,11 @@ public class WorldGenerator
 
     void Process()
     {
+        TimeEx.SetFixedTime(m_time);
+
         statusText = "Generating surface ...";
 
-        m_world = new World(m_settings.size, true);
+        world = new World(m_settings.size, true);
 
         List<Perlin> perlins = new List<Perlin>();
         foreach (var p in m_settings.perlins)
@@ -177,6 +181,8 @@ public class WorldGenerator
         m_thread = null;
 
         state = State.finished;
+
+        TimeEx.SetTimeDynamic();
     }
 
     static void UpdateWorldData(World world)
