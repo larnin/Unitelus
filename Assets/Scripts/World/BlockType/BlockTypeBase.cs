@@ -31,6 +31,7 @@ public abstract class BlockTypeBase
 
     public abstract bool IsFaceFull(BlockFace face, byte data = 0);
     public abstract bool IsFull();
+    public abstract bool IsEmpty(); //no collision
 
     public abstract BlockData UpdateBlock(MatrixView<BlockData> neighbors);
 }

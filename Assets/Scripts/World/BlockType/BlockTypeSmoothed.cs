@@ -98,6 +98,11 @@ public class BlockTypeSmoothed : BlockTypeBase
         return false;
     }
 
+    public override bool IsEmpty()
+    {
+        return false;
+    }
+
     public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
         var block = neighbors.GetCenter();

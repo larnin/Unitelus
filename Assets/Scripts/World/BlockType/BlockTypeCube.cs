@@ -28,6 +28,11 @@ public class BlockTypeCube : BlockTypeBase
         return true;
     }
 
+    public override bool IsEmpty()
+    {
+        return false;
+    }
+
     public override void Render(Vector3 pos, MatrixView<BlockData> neighbors, MeshParams<WorldVertexDefinition> meshParams)
     {
         if (m_data == null)
