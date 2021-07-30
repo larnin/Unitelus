@@ -17,3 +17,15 @@ public class IsChunkRenderedEvent
         rendered = false;
     }
 }
+
+public class GetChunkRenderedCountEvent
+{
+    public int rederedChunkNb;
+    public int totalChunkNb;
+
+    public GetChunkRenderedCountEvent()
+    {
+        rederedChunkNb = 0;
+        totalChunkNb = 0;
+    }
+}

@@ -25,6 +25,7 @@ public class WorldRenderer : MonoBehaviour
     {
         m_subscriberList.Add(new Event<CenterUpdatedEvent>.Subscriber(OnCenterUpdate));
         m_subscriberList.Add(new Event<IsChunkRenderedEvent>.Subscriber(IsChunkRendered));
+        m_subscriberList.Add(new Event<GetChunkRenderedCountEvent>.Subscriber(GetChunkRenderedCount));
 
         m_subscriberList.Subscribe();
     }
@@ -124,5 +125,17 @@ public class WorldRenderer : MonoBehaviour
     void IsChunkRendered(IsChunkRenderedEvent e)
     {
         e.rendered = IsChunkRendered(e.x, e.z);
+    }
+
+    void GetChunkRenderedCount(GetChunkRenderedCountEvent e)
+    {
+        e.totalChunkNb = m_chunks.Count;
+        e.rederedChunkNb = 0;
+
+        foreach(var c in m_chunks)
+        {
+            if (c.renderer.AreAllRenderReady())
+                e.rederedChunkNb++;
+        }
     }
 }
