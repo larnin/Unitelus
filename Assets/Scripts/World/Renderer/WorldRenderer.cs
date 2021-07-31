@@ -24,6 +24,7 @@ public class WorldRenderer : MonoBehaviour
     private void Awake()
     {
         m_subscriberList.Add(new Event<CenterUpdatedEvent>.Subscriber(OnCenterUpdate));
+        m_subscriberList.Add(new Event<CenterUpdatedEventInstant>.Subscriber(OnCenterUpdate));
         m_subscriberList.Add(new Event<IsChunkRenderedEvent>.Subscriber(IsChunkRendered));
         m_subscriberList.Add(new Event<GetChunkRenderedCountEvent>.Subscriber(GetChunkRenderedCount));
 
@@ -35,16 +36,26 @@ public class WorldRenderer : MonoBehaviour
         m_subscriberList.Unsubscribe();
     }
 
+    void OnCenterUpdate(CenterUpdatedEventInstant e)
+    {
+        OnCenterUpdate(e.pos);
+    }
+
     void OnCenterUpdate(CenterUpdatedEvent e)
     {
-        if ((e.pos - m_lastPos).sqrMagnitude < m_moveUpdateDistance * m_moveUpdateDistance)
+        OnCenterUpdate(e.pos);
+    }
+
+    void OnCenterUpdate(Vector3 pos)
+    {
+        if ((pos - m_lastPos).sqrMagnitude < m_moveUpdateDistance * m_moveUpdateDistance)
             return;
-        m_lastPos = e.pos;
+        m_lastPos = pos;
 
         List<ChunkInfos> updatedList = new List<ChunkInfos>();
 
         int minX, minZ, maxX, maxZ;
-        GetVisibleChunksQuad(e.pos, out minX, out minZ, out maxX, out maxZ);
+        GetVisibleChunksQuad(pos, out minX, out minZ, out maxX, out maxZ);
 
         for(int i = minX; i <= maxX; i++)
         {

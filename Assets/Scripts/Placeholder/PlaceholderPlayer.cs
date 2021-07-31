@@ -10,7 +10,7 @@ public class PlaceholderPlayer : MonoBehaviour
 
     private void Start()
     {
-
+        Event<CenterUpdatedEventInstant>.Broadcast(new CenterUpdatedEventInstant(transform.position));
     }
 
     void Update()
