@@ -30,6 +30,9 @@ public class CameraFollow : MonoBehaviour
         Vector3 dir = m_targetPos - pos;
 
         float distance = dir.magnitude;
+        if (distance <= 0.001f)
+            return;
+
         dir /= distance;
 
         float speed = Mathf.Pow(distance, m_speedPow) * m_speedFactor;
