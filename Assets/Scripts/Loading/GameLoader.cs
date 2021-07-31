@@ -22,6 +22,20 @@ public class GameLoader : MonoBehaviour
     WorldGenerator m_generator = null;
 
     GameLoadingState m_state = GameLoadingState.starting;
+    string m_stateText = "Starting";
+
+    SubscriberList m_subscriberList = new SubscriberList();
+
+    private void Awake()
+    {
+        m_subscriberList.Add(new Event<GetLoadingState>.Subscriber(GetState));
+        m_subscriberList.Subscribe();
+    }
+
+    private void OnDestroy()
+    {
+        m_subscriberList.Unsubscribe();
+    }
 
     private void Update()
     {
@@ -72,15 +86,19 @@ public class GameLoader : MonoBehaviour
 
     void InitGenerateWorld()
     {
+        m_stateText = "Generate world";
         m_generator = new WorldGenerator();
         m_generator.Generate(m_settings);
     }
 
     void ProcessGenerateWorld()
     {
+        m_stateText = m_generator.statusText;
+
         if(m_generator.state == WorldGenerator.State.finished)
         {
             Event<WorldCreatedEvent>.Broadcast(new WorldCreatedEvent(m_generator.world));
+            m_stateText = "Spawn player";
             ChangeState(GameLoadingState.instanciatePlayer);
         }
         else if(m_generator.state == WorldGenerator.State.error)
@@ -103,6 +121,7 @@ public class GameLoader : MonoBehaviour
     {
         if(m_playerPrefab == null)
         {
+            m_stateText = "Unable to spawn the player, prefab not found";
             ChangeState(GameLoadingState.error);
             return;
         }
@@ -113,6 +132,7 @@ public class GameLoader : MonoBehaviour
 
         player.transform.position = pos;
 
+        m_stateText = "Prerender world";
         ChangeState(GameLoadingState.prerender);
     }
 
@@ -203,11 +223,18 @@ public class GameLoader : MonoBehaviour
         if (renderState.rederedChunkNb * 2 < renderState.totalChunkNb)
             return;
 
+        m_stateText = "Ready !";
         ChangeState(GameLoadingState.loaded);
     }
 
     void Loaded()
     {
         gameObject.SetActive(false);
+    }
+
+    void GetState(GetLoadingState e)
+    {
+        e.state = m_state;
+        e.stateText = m_stateText;
     }
 }

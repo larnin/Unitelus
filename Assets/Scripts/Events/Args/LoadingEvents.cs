@@ -35,3 +35,15 @@ public class GameLoaderStateEvent
         newState = _newState;
     }
 }
+
+public class GetLoadingState
+{
+    public GameLoadingState state;
+    public string stateText;
+
+    public GetLoadingState()
+    {
+        state = GameLoadingState.error;
+        stateText = "No response";
+    }
+}
