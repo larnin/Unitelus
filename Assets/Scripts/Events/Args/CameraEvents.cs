@@ -1,6 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+class GetCameraEvent
+{
+    public Camera camera;
+
+    public GetCameraEvent()
+    {
+        camera = null;
+    }
+}
 
 class AddScreenShakeEvent
 {

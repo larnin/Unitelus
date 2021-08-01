@@ -32,6 +32,7 @@ public class ScreenShakeBehaviour : MonoBehaviour
         m_subsctiberList.Add(new Event<AddScreenShakeEvent>.Subscriber(OnAddShake));
         m_subsctiberList.Add(new Event<StopScreenShakeEvent>.Subscriber(OnStopShake));
         m_subsctiberList.Add(new Event<StopAllScreenShakeEvent>.Subscriber(OnStopAllShake));
+        m_subsctiberList.Add(new Event<GetCameraEvent>.Subscriber(GetCamera));
         m_subsctiberList.Subscribe();
     }
 
@@ -83,5 +84,10 @@ public class ScreenShakeBehaviour : MonoBehaviour
     void OnStopAllShake(StopAllScreenShakeEvent e)
     {
         m_screenShakes.Clear();
+    }
+
+    void GetCamera(GetCameraEvent e)
+    {
+        e.camera = m_camera;
     }
 }
