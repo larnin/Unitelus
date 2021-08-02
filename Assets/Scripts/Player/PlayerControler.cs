@@ -142,17 +142,29 @@ public class PlayerControler : MonoBehaviour
 
     void UpdateAirSpeed()
     {
+        GetCameraEvent camera = new GetCameraEvent();
+        Event<GetCameraEvent>.Broadcast(camera);
+
+        //up
+        Vector3 cameraDir = Vector3.ProjectOnPlane(camera.camera.transform.forward, Vector3.up);
+        cameraDir += Vector3.ProjectOnPlane(camera.camera.transform.up, Vector3.up);
+        cameraDir.Normalize();
+        //left
+        Vector3 cameraDirOrtho = new Vector3(cameraDir.z, cameraDir.y, -cameraDir.x);
+        
+        Vector2 inputDirection = new Vector2(cameraDirOrtho.x, cameraDirOrtho.z) * m_direction.x + new Vector2(cameraDir.x, cameraDir.z) * m_direction.y;
+
         var velocity = m_rigidbody.velocity;
         
-        float directionMagnitude = m_direction.magnitude;
-        var directionNormalized = directionMagnitude > 0.001f ? m_direction / directionMagnitude : m_direction;
+        float directionMagnitude = inputDirection.magnitude;
+        var directionNormalized = directionMagnitude > 0.001f ? inputDirection / directionMagnitude : inputDirection;
         
         var vecSee = new Vector2(transform.forward.x, transform.forward.z);
 
         float angle = Mathf.Atan2(vecSee.y, vecSee.x);
         float targetAngle = angle;
         if (directionMagnitude > 0.001f)
-            targetAngle = Mathf.Atan2(m_direction.y, m_direction.x);
+            targetAngle = Mathf.Atan2(inputDirection.y, inputDirection.x);
         else if(m_oldDirection.magnitude > 0.001f)
             targetAngle = Mathf.Atan2(m_oldDirection.y, m_oldDirection.x);
 
