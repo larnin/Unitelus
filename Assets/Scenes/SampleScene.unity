@@ -407,7 +407,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c334b9744088fe4290a450c8f6624ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_renderSize: 20
+  m_renderSize: 100
   m_moveUpdateDistance: 2
   m_collisionLayer: 0
 --- !u!4 &210816805
@@ -1285,6 +1285,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_lookOffset: {x: 0, y: 0}
+  m_posOffset: {x: 0, y: 0}
   m_rotateSpeed: 1
   m_distanceSpeed: 10
   m_angleSpeed: 1
