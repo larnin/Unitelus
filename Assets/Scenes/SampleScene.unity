@@ -407,9 +407,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c334b9744088fe4290a450c8f6624ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_renderSize: 100
+  m_renderSize: 50
   m_moveUpdateDistance: 2
-  m_collisionLayer: 0
+  m_collisionLayer: 6
 --- !u!4 &210816805
 Transform:
   m_ObjectHideFlags: 0
@@ -1027,7 +1027,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
+  orthographic: 1
   orthographic size: 5
   m_Depth: 0
   m_CullingMask:
@@ -1284,8 +1284,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a9093c9c48611b74bb155023a36b34de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_lookOffset: {x: 0, y: 0}
-  m_posOffset: {x: 0, y: 0}
+  m_lookOffset: {x: 0, y: 1}
+  m_posOffset: {x: 0, y: 1.5}
   m_rotateSpeed: 1
   m_distanceSpeed: 10
   m_angleSpeed: 1
@@ -1320,12 +1320,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_settings:
     seed: 152
-    size: 4
+    size: 6
     perlins:
-    - amplitude: 2
-      frequency: 5
-    - amplitude: 1
-      frequency: 10
+    - amplitude: 14
+      frequency: 2
+    - amplitude: 7
+      frequency: 4
   m_playerPrefab: {fileID: 7660277646467561147, guid: 013c65f2d2d77514d863733b3ab45470,
     type: 3}
 --- !u!4 &1996218792

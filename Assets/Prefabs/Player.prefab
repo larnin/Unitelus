@@ -221,15 +221,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d1f3d4ffa620a946839202b6ab3767a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_maxSpeed: 5
+  m_maxSpeed: 7
   m_acceleration: 15
   m_maxFallSpeed: 20
   m_rotationSpeed: 10
-  m_groundCheckDistance: 0.2
+  m_groundCheckDistance: 0.05
   m_groundMask:
     serializedVersion: 2
-    m_Bits: 0
-  m_maxGroundAngle: 50
+    m_Bits: 64
+  m_maxGroundAngle: 60
   m_jumpSpeed: 10
   m_maxJumpDuration: 0.2
   m_jumpBufferTimeBeforeLand: 0.2

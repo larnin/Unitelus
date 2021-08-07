@@ -26,10 +26,12 @@ public class PlayerControler : MonoBehaviour
     bool m_jumping;
 
     bool m_grounded = false;
+    bool m_oldGrounded = false;
     Vector3 m_groundNormal = Vector3.up;
     float m_outGroundTime = -1;
 
-    Vector3 m_oldVelocity;
+    Vector2 m_velocity = Vector2.zero;
+    
     Vector3 m_oldPosition;
 
     SubscriberList m_subscriberList = new SubscriberList();
@@ -68,17 +70,15 @@ public class PlayerControler : MonoBehaviour
         m_jumping = jump.jump;
 
         UpdateGrounded();
+        UpdateVelocity();
         UpdateSpeed();
 
         UpdateFallSpeed();
 
         UpdateJump();
-
-        m_oldVelocity = m_rigidbody.velocity;
+        
         m_oldPosition = transform.position;
-
-        if (m_direction.magnitude > 0.001f)
-            m_oldDirection = m_direction;
+        m_oldGrounded = m_grounded;
 
         Event<CenterUpdatedEvent>.Broadcast(new CenterUpdatedEvent(transform.position));
     }
@@ -111,36 +111,7 @@ public class PlayerControler : MonoBehaviour
             m_outGroundTime = 0;
     }
 
-    void UpdateSpeed()
-    {
-        //if (m_grounded)
-        //    UpdateGrounded();
-        //else UpdateAirSpeed();
-
-        UpdateAirSpeed();
-    }
-
-    void UpdateGroundedSpeed()
-    {
-        var velocity = m_rigidbody.velocity;
-
-
-
-        var axisX = Vector3.Cross(m_groundNormal, new Vector3(0, 0, 1));
-        var axisZ = Vector3.Cross(m_groundNormal, axisX);
-
-        float angleX = Vector3.SignedAngle(axisX, new Vector3(1, 0, 0), Vector3.up);
-        float angleZ = Vector3.SignedAngle(axisZ, new Vector3(0, 0, 1), Vector3.up);
-
-        var velocityX = Vector3.Project(velocity, axisX);
-        var velocityY = Vector3.Project(velocity, m_groundNormal);
-        var velocityZ = Vector3.Project(velocity, axisZ);
-
-
-
-    }
-
-    void UpdateAirSpeed()
+    void UpdateVelocity()
     {
         GetCameraEvent camera = new GetCameraEvent();
         Event<GetCameraEvent>.Broadcast(camera);
@@ -151,25 +122,23 @@ public class PlayerControler : MonoBehaviour
         cameraDir.Normalize();
         //left
         Vector3 cameraDirOrtho = new Vector3(cameraDir.z, cameraDir.y, -cameraDir.x);
-        
+
         Vector2 inputDirection = new Vector2(cameraDirOrtho.x, cameraDirOrtho.z) * m_direction.x + new Vector2(cameraDir.x, cameraDir.z) * m_direction.y;
 
-        var velocity = m_rigidbody.velocity;
-        
         float directionMagnitude = inputDirection.magnitude;
         var directionNormalized = directionMagnitude > 0.001f ? inputDirection / directionMagnitude : inputDirection;
-        
+
         var vecSee = new Vector2(transform.forward.x, transform.forward.z);
 
         float angle = Mathf.Atan2(vecSee.y, vecSee.x);
         float targetAngle = angle;
         if (directionMagnitude > 0.001f)
             targetAngle = Mathf.Atan2(inputDirection.y, inputDirection.x);
-        else if(m_oldDirection.magnitude > 0.001f)
+        else if (m_oldDirection.magnitude > 0.001f)
             targetAngle = Mathf.Atan2(m_oldDirection.y, m_oldDirection.x);
 
         float deltaAngle = DeltaRadAngle(angle, targetAngle);
-        if (Mathf.Abs(deltaAngle) > 0.001f)
+        if (Mathf.Abs(deltaAngle) > 0.001f && (directionMagnitude > 0.001f || m_velocity.magnitude > 0.001f))
         {
             float rotation = m_rotationSpeed * Mathf.Sign(deltaAngle) * Time.deltaTime;
             if (Mathf.Abs(rotation) > Mathf.Abs(deltaAngle))
@@ -185,34 +154,116 @@ public class PlayerControler : MonoBehaviour
 
         float targetSpeed = dirDot > 0 ? directionMagnitude * m_maxSpeed : 0;
 
-        Vector2 planeVelocity = new Vector2(velocity.x, velocity.z);
-        float normSpeed = Vector2.Dot(direction, planeVelocity);
-        float orthoSpeed = Vector2.Dot(orthoDirection, planeVelocity);
-        
+        float normSpeed = Vector2.Dot(direction, m_velocity);
+        float orthoSpeed = Vector2.Dot(orthoDirection, m_velocity);
+
         orthoSpeed -= m_acceleration * Time.deltaTime;
         if (orthoSpeed < 0)
             orthoSpeed = 0;
-        if(normSpeed < targetSpeed)
+        if (normSpeed < targetSpeed)
         {
             normSpeed += m_acceleration * Time.deltaTime;
             if (normSpeed > targetSpeed)
                 normSpeed = targetSpeed;
         }
-        if(normSpeed > targetSpeed)
+        if (normSpeed > targetSpeed)
         {
             normSpeed -= m_acceleration * Time.deltaTime;
             if (normSpeed < targetSpeed)
                 normSpeed = targetSpeed;
         }
 
-        planeVelocity = orthoSpeed * orthoDirection + normSpeed * direction;
-        velocity.x = planeVelocity.x;
-        velocity.z = planeVelocity.y;
-
-        m_rigidbody.velocity = velocity;
+        m_velocity = orthoSpeed * orthoDirection + normSpeed * direction;
+        
         m_rigidbody.rotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.y), Vector3.up);
+
+        if (directionMagnitude > 0.001f)
+            m_oldDirection = inputDirection;
+    }
+    
+    void UpdateSpeed()
+    {
+        if (m_grounded || m_oldGrounded)
+        {
+            if (!UpdateGroundedSpeed())
+                UpdateAirSpeed();
+        }
+        else UpdateAirSpeed();
     }
 
+    bool UpdateGroundedSpeed()
+    {
+        float radius;
+        Vector3 point1, point2;
+        GetCapsuleParameters(out point1, out point2, out radius);
+
+        Vector3 point = point1.y < point2.y ? point1 : point2;
+        float distance = radius / Mathf.Cos(Mathf.Deg2Rad * m_maxGroundAngle) + m_groundCheckDistance * 2;
+
+        float deltaPos = m_velocity.magnitude * Time.deltaTime;
+        distance += deltaPos;
+
+        var hits = Physics.RaycastAll(point, -Vector3.up, distance, m_groundMask);
+        if (hits.Length == 0)
+            return false;
+
+        bool haveHit = false;
+        foreach(var h in hits)
+        {
+            float angle = Vector3.Angle(h.normal, Vector3.up);
+            if (angle > m_maxGroundAngle)
+                continue;
+            haveHit = true;
+            break;
+        }
+
+        if (!haveHit)
+            return false;
+
+        distance -= radius;
+
+        hits = Physics.CapsuleCastAll(point1, point2, radius, -Vector3.up, distance, m_groundMask);
+        if (hits.Length == 0)
+            return false;
+
+        haveHit = false;
+        Vector3 normal = Vector3.up;
+        foreach (var h in hits)
+        {
+            float angle = Vector3.Angle(h.normal, Vector3.up);
+            if (angle > m_maxGroundAngle)
+                continue;
+            if (distance < h.distance)
+                continue;
+            haveHit = true;
+            normal = h.normal;
+            distance = h.distance;
+        }
+
+        if (!haveHit)
+            return false;
+        
+        var pos = transform.position - Vector3.up * distance;
+        m_rigidbody.MovePosition(pos);
+
+        var velocity = Vector3.ProjectOnPlane(new Vector3(m_velocity.x, 0, m_velocity.y), normal);
+        m_rigidbody.velocity = velocity;
+
+        m_grounded = true;
+        m_outGroundTime = 0;
+        m_groundNormal = normal;
+
+        return true;
+    }
+
+    void UpdateAirSpeed()
+    {
+        var velocity = m_rigidbody.velocity;
+        velocity.x = m_velocity.x;
+        velocity.z = m_velocity.y;
+        m_rigidbody.velocity = velocity;
+    }
+    
     void UpdateFallSpeed()
     {
         Vector3 velocity = m_rigidbody.velocity;
@@ -229,12 +280,14 @@ public class PlayerControler : MonoBehaviour
 
     void GetCapsuleParameters(out Vector3 point1, out Vector3 point2, out float radius)
     {
+        const float moveUp = 0.02f;
+
         radius = m_collider.radius;
 
         float distanceToPoint = m_collider.height / 2 - m_collider.radius;
 
-        point1 = transform.position + m_collider.center + Vector3.up * distanceToPoint;
-        point2 = transform.position + m_collider.center - Vector3.up * distanceToPoint;
+        point1 = transform.position + m_collider.center + Vector3.up * (distanceToPoint + moveUp);
+        point2 = transform.position + m_collider.center - Vector3.up * (distanceToPoint - moveUp);
     }
 
     float DeltaRadAngle(float from, float to)
@@ -253,5 +306,6 @@ public class PlayerControler : MonoBehaviour
     {
         GUI.Label(new Rect(10, 10, 300, 20), "Direction " + m_direction.x + " " + m_direction.y);
         GUI.Label(new Rect(10, 30, 300, 20), "Jump " + m_jumping);
+        GUI.Label(new Rect(10, 50, 300, 20), "Grounded " + m_grounded);
     }
 }
