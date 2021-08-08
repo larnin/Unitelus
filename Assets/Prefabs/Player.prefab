@@ -230,8 +230,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   m_maxGroundAngle: 60
-  m_jumpSpeed: 10
-  m_maxJumpDuration: 0.2
+  m_jumpSpeed: 5
   m_jumpBufferTimeBeforeLand: 0.2
   m_jumpBufferTimerAfterLand: 0.2
   m_jumpApexSpeed: 1

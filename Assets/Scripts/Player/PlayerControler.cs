@@ -13,7 +13,6 @@ public class PlayerControler : MonoBehaviour
     [SerializeField] float m_maxGroundAngle = 50;
     //jump
     [SerializeField] float m_jumpSpeed = 10;
-    [SerializeField] float m_maxJumpDuration = 0.2f;
     [SerializeField] float m_jumpBufferTimeBeforeLand = 0.2f;
     [SerializeField] float m_jumpBufferTimerAfterLand = 0.2f;
     [SerializeField] float m_jumpApexSpeed = 1;
@@ -29,6 +28,9 @@ public class PlayerControler : MonoBehaviour
     bool m_oldGrounded = false;
     Vector3 m_groundNormal = Vector3.up;
     float m_outGroundTime = -1;
+
+    float m_jumpPressTime = 0;
+    float m_jumpTime = 1;
 
     Vector2 m_velocity = Vector2.zero;
     
@@ -79,6 +81,8 @@ public class PlayerControler : MonoBehaviour
         
         m_oldPosition = transform.position;
         m_oldGrounded = m_grounded;
+
+        m_jumpPressTime += Time.deltaTime;
 
         Event<CenterUpdatedEvent>.Broadcast(new CenterUpdatedEvent(transform.position));
     }
@@ -193,6 +197,10 @@ public class PlayerControler : MonoBehaviour
 
     bool UpdateGroundedSpeed()
     {
+        // don't ground player during jump
+        if (m_jumpTime < 0.3f)
+            return false;
+
         float radius;
         Vector3 point1, point2;
         GetCapsuleParameters(out point1, out point2, out radius);
@@ -280,7 +288,24 @@ public class PlayerControler : MonoBehaviour
 
     void UpdateJump()
     {
+        bool canJump = m_jumping && ((m_grounded && m_jumpPressTime < m_jumpBufferTimeBeforeLand) || (!m_grounded && m_outGroundTime < m_jumpBufferTimerAfterLand && m_jumpPressTime == 0));
 
+        if(canJump)
+        {
+            var velocity = m_rigidbody.velocity;
+            velocity.y = m_jumpSpeed;
+            m_rigidbody.velocity = velocity;
+
+            m_jumpTime = 0;
+
+            m_jumpPressTime = 1000;
+        }
+
+        m_jumpTime += Time.deltaTime;
+
+        if (m_jumping)
+            m_jumpPressTime += Time.deltaTime;
+        else m_jumpPressTime = 0;
     }
 
     void GetCapsuleParameters(out Vector3 point1, out Vector3 point2, out float radius)
