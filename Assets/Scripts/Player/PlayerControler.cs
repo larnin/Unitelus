@@ -247,6 +247,11 @@ public class PlayerControler : MonoBehaviour
         m_rigidbody.MovePosition(pos);
 
         var velocity = Vector3.ProjectOnPlane(new Vector3(m_velocity.x, 0, m_velocity.y), normal);
+        if(velocity.y < 0)
+        {
+            velocity.Normalize();
+            velocity *= m_velocity.magnitude;
+        }
         m_rigidbody.velocity = velocity;
 
         m_grounded = true;
