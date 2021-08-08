@@ -15,7 +15,6 @@ public class PlayerControler : MonoBehaviour
     [SerializeField] float m_jumpSpeed = 10;
     [SerializeField] float m_jumpBufferTimeBeforeLand = 0.2f;
     [SerializeField] float m_jumpBufferTimerAfterLand = 0.2f;
-    [SerializeField] float m_jumpApexSpeed = 1;
 
     Rigidbody m_rigidbody;
     CapsuleCollider m_collider;
@@ -54,6 +53,7 @@ public class PlayerControler : MonoBehaviour
     void Start()
     {
         Event<CenterUpdatedEventInstant>.Broadcast(new CenterUpdatedEventInstant(transform.position));
+        m_oldPosition = transform.position;
     }
     
     void FixedUpdate()
@@ -71,18 +71,21 @@ public class PlayerControler : MonoBehaviour
         Event<GetJumpEvent>.Broadcast(jump, gameObject);
         m_jumping = jump.jump;
 
-        UpdateGrounded();
-        UpdateVelocity();
-        UpdateSpeed();
+        UpdatePaused();
 
-        UpdateFallSpeed();
+        if (!Gamestate.instance.paused)
+        {
+            UpdateGrounded();
+            UpdateVelocity();
+            UpdateSpeed();
 
-        UpdateJump();
+            UpdateFallSpeed();
+
+            UpdateJump();
+        }
         
         m_oldPosition = transform.position;
         m_oldGrounded = m_grounded;
-
-        m_jumpPressTime += Time.deltaTime;
 
         Event<CenterUpdatedEvent>.Broadcast(new CenterUpdatedEvent(transform.position));
     }
@@ -332,10 +335,17 @@ public class PlayerControler : MonoBehaviour
         return delta;
     }
 
-    private void OnGUI()
+    void UpdatePaused()
     {
-        GUI.Label(new Rect(10, 10, 300, 20), "Direction " + m_direction.x + " " + m_direction.y);
-        GUI.Label(new Rect(10, 30, 300, 20), "Jump " + m_jumping);
-        GUI.Label(new Rect(10, 50, 300, 20), "Grounded " + m_grounded);
+        if(Gamestate.instance.paused)
+        {
+            m_rigidbody.useGravity = false;
+            m_rigidbody.velocity = Vector3.zero;
+            transform.position = m_oldPosition;
+        }
+        else
+        {
+            m_rigidbody.useGravity = true;
+        }
     }
 }

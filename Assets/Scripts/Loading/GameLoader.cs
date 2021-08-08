@@ -78,6 +78,8 @@ public class GameLoader : MonoBehaviour
 
     void StartWorldCreation()
     {
+        Gamestate.instance.paused = true;
+
         //for now we only have a generator, no save to load
 
         ChangeState(GameLoadingState.generateWorld);
@@ -229,6 +231,7 @@ public class GameLoader : MonoBehaviour
 
     void Loaded()
     {
+        Gamestate.instance.paused = false;
         gameObject.SetActive(false);
     }
 
