@@ -23,39 +23,70 @@ public class BlockTypeSmoothed : BlockTypeBase
         SmallPyramid,
     }
 
+    class BlockShapeBit
+    {
+        //x and z are rotation dependant
+        public int[] x = new int[Enum.GetValues(typeof(Rotation)).Length];
+        public int y;
+        public int[] z = new int[Enum.GetValues(typeof(Rotation)).Length];
+        public bool full;
+    }
+
     class BlockShape
     {
-        //0 == empty / 1 == full / 2 == any
-        public int[] states;
+       public  List<BlockShapeBit> m_bits = new List<BlockShapeBit>();
+        
         public ShapeType shape;
-        public Rotation rotation;
 
-        public BlockShape(int[] _states, ShapeType _shape, Rotation _rotation = Rotation.Rot0)
+        // _states : 0 == empty / 1 == full / 2 == any
+        public BlockShape(short[] _states, ShapeType _shape, Rotation _rotation = Rotation.Rot0)
         {
-            states = new int[27];
-            for (int i = 0; i < states.Length && i < _states.Length; i++)
-                states[i] = _states[i];
+            int rotNb = Enum.GetValues(typeof(Rotation)).Length;
+            
+            FillBits(_states, _rotation);
+            SetBitsFromRotation(_rotation);
 
             shape = _shape;
-            rotation = _rotation;
         }
 
-        public int GetState(int x, int y, int z, Rotation rot = Rotation.Rot0)
+        void FillBits(short[] _states, Rotation rot)
         {
-            if (Mathf.Abs(x) > 1 || Mathf.Abs(y) > 1 || Mathf.Abs(z) > 1)
-                return 2;
+            for (int i = 0; i < _states.Length; i++)
+            {
+                if (_states[i] > 1 || _states[i] < 0)
+                    continue;
+                int x = (i % 3) - 1;
+                int z = ((i / 3) % 3) - 1;
+                int y = (i / 9) - 1;
 
-            var pos = RotationEx.RotateOffset(new Vector2Int(x, z), rot);
+                BlockShapeBit bit = new BlockShapeBit();
+                bit.x[(int)rot] = x;
+                bit.y = y;
+                bit.z[(int)rot] = z;
+                bit.full = _states[i] == 1;
 
-            return states[PosToIndex(pos.x, y, pos.y)];
+                m_bits.Add(bit);
+            }
         }
 
-        int PosToIndex(int x, int y, int z)
+        void SetBitsFromRotation(Rotation rot)
         {
-            x++;
-            y++;
-            z++;
-            return x + z * 3 + y * 9;
+            int rotNb = Enum.GetValues(typeof(Rotation)).Length;
+
+            for(int i = 0; i < rotNb; i++)
+            {
+                if (i == (int)rot)
+                    continue;
+
+                Rotation offsetRot = RotationEx.SubRotations((Rotation)i, rot);
+
+                foreach(var b in m_bits)
+                {
+                    var pos = RotationEx.RotateOffset(new Vector2Int(b.x[(int)rot], b.z[(int)rot]), offsetRot);
+                    b.x[i] = pos.x;
+                    b.z[i] = pos.y;
+                }
+            }
         }
     }
 
@@ -70,7 +101,7 @@ public class BlockTypeSmoothed : BlockTypeBase
     {
         type = BlockType.Smoothed;
     }
-    
+
     public override bool IsFaceFull(BlockFace face, byte data = 0)
     {
         ShapeType shape = GetShapeTypeData(data);
@@ -84,7 +115,7 @@ public class BlockTypeSmoothed : BlockTypeBase
         if (shape == ShapeType.AntiTetrahedral)
             return face == BlockFace.Down || face == BlockFace.Front || face == BlockFace.Left;
 
-        if(shape == ShapeType.HalfCubic)
+        if (shape == ShapeType.HalfCubic)
             return face == BlockFace.Down || face == BlockFace.Back;
 
         if (shape == ShapeType.HorizontalHalfCubic)
@@ -111,9 +142,9 @@ public class BlockTypeSmoothed : BlockTypeBase
 
         if (m_data == null)
             m_data = new BlockRendererData(id, m_material);
-            m_data.SetFaceUV(new Rect(0.25f, 0, 0.25f, 1)
-                , new Rect(0.5f, 0, 0.25f, 1)
-                , new Rect(0.0f, 0, 0.25f, 1));
+        m_data.SetFaceUV(new Rect(0.25f, 0, 0.25f, 1)
+            , new Rect(0.5f, 0, 0.25f, 1)
+            , new Rect(0.0f, 0, 0.25f, 1));
         m_data.rotation = rotation;
 
         SetDrawFacesFromNeighbors(m_data, neighbors);
@@ -170,13 +201,13 @@ public class BlockTypeSmoothed : BlockTypeBase
 
         ShapeType shape = GetShapeTypeData(current.data);
         Rotation rotation = GetRotationData(current.data);
-        
-        if(shape == ShapeType.HalfCubic)
+
+        if (shape == ShapeType.HalfCubic)
         {
             var leftFace = BlockFaceEx.Rotate(BlockFace.Left, rotation);
             var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rotation);
 
-            if(m_data.GetFaceDraw(leftFace))
+            if (m_data.GetFaceDraw(leftFace))
             {
                 var leftBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(leftFace));
 
@@ -196,7 +227,7 @@ public class BlockTypeSmoothed : BlockTypeBase
                 }
             }
 
-            if(m_data.GetFaceDraw(rightFace))
+            if (m_data.GetFaceDraw(rightFace))
             {
                 var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
 
@@ -217,7 +248,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             }
         }
 
-        if(shape == ShapeType.Tetrahedral)
+        if (shape == ShapeType.Tetrahedral)
         {
             var backFace = BlockFaceEx.Rotate(BlockFace.Back, rotation);
             var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rotation);
@@ -239,7 +270,7 @@ public class BlockTypeSmoothed : BlockTypeBase
                 }
             }
 
-            if(m_data.GetFaceDraw(backFace))
+            if (m_data.GetFaceDraw(backFace))
             {
                 var backBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(backFace));
 
@@ -259,7 +290,7 @@ public class BlockTypeSmoothed : BlockTypeBase
                 }
             }
 
-            if(m_data.GetFaceDraw(rightFace))
+            if (m_data.GetFaceDraw(rightFace))
             {
                 var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
 
@@ -280,7 +311,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             }
         }
 
-        if(shape == ShapeType.AntiTetrahedral)
+        if (shape == ShapeType.AntiTetrahedral)
         {
             var backFace = BlockFaceEx.Rotate(BlockFace.Back, rotation);
             var rightFace = BlockFaceEx.Rotate(BlockFace.Right, rotation);
@@ -343,13 +374,13 @@ public class BlockTypeSmoothed : BlockTypeBase
             }
         }
 
-        if(shape == ShapeType.HorizontalHalfCubic)
+        if (shape == ShapeType.HorizontalHalfCubic)
         {
-            if(m_data.GetFaceDraw(BlockFace.Up))
+            if (m_data.GetFaceDraw(BlockFace.Up))
             {
                 var upBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Up));
 
-                if(BlockTypeList.instance.Get(upBlock.id).type == BlockType.Smoothed)
+                if (BlockTypeList.instance.Get(upBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType upShape = GetShapeTypeData(upBlock.data);
                     Rotation upRotation = GetRotationData(upBlock.data);
@@ -362,11 +393,11 @@ public class BlockTypeSmoothed : BlockTypeBase
                 }
             }
 
-            if(m_data.GetFaceDraw(BlockFace.Down))
+            if (m_data.GetFaceDraw(BlockFace.Down))
             {
                 var downBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Down));
 
-                if(BlockTypeList.instance.Get(downBlock.id).type == BlockType.Smoothed)
+                if (BlockTypeList.instance.Get(downBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType downShape = GetShapeTypeData(downBlock.data);
                     Rotation downRotation = GetRotationData(downBlock.data);
@@ -384,7 +415,7 @@ public class BlockTypeSmoothed : BlockTypeBase
     static Matrix<bool> tempBlocks = new Matrix<bool>(3, 3, 3);
     static int nbRot = Enum.GetValues(typeof(Rotation)).Length;
 
-    public static void GetBlockType(MatrixView<BlockData> neighbors, out ShapeType shape, out Rotation rotation)
+    void GetBlockType(MatrixView<BlockData> neighbors, out ShapeType shape, out Rotation rotation)
     {
         ushort id = neighbors.GetCenter().id;
 
@@ -398,46 +429,34 @@ public class BlockTypeSmoothed : BlockTypeBase
                 }
 
         int nbShape = m_shapes.Count();
-        for(int shapeIndex = 0; shapeIndex < nbShape; shapeIndex++)
+        for (int shapeIndex = 0; shapeIndex < nbShape; shapeIndex++)
         {
-            var b = m_shapes[shapeIndex];
+            var s = m_shapes[shapeIndex];
+            int nbBit = s.m_bits.Count;
             for(int rot = 0; rot < nbRot; rot++)
             {
                 bool validBlock = true;
 
-                for (int i = -1; i <= 1; i++)
+                for (int i = 0; i < nbBit; i++)
                 {
-                    for (int j = -1; j <= 1; j++)
+                    var b = s.m_bits[i];
+                    bool block = tempBlocks.Get(b.x[rot] + 1, b.y + 1, b.z[rot] + 1);
+                    if(block != b.full)
                     {
-                        for (int k = -1; k <= 1; k++)
-                        {
-                            bool block = tempBlocks.Get(i + 1, j + 1, k + 1);
-                            int state = b.GetState(i, j, k, (Rotation)rot);
-                            if (state == 2)
-                                continue;
-
-                            if ((state == 0 && !block) || (state == 1 && block))
-                                continue;
-
-                            validBlock = false;
-                            break;
-                        }
-                        if (!validBlock)
-                            break;
-                    }
-                    if (!validBlock)
+                        validBlock = false;
                         break;
+                    }
                 }
 
                 if (validBlock)
                 {
-                    shape = b.shape;
-                    rotation = RotationEx.SubRotations(b.rotation, (Rotation)rot);
+                    shape = s.shape;
+                    rotation = (Rotation)rot;
                     return;
                 }
             }
         }
-        
+
         Debug.Assert(false);
         shape = ShapeType.Cubic;
         rotation = Rotation.Rot0;
@@ -447,7 +466,7 @@ public class BlockTypeSmoothed : BlockTypeBase
     {
         var data = neighbors.GetCenter();
 
-        if(IsNoOverrideData(data.data))
+        if (IsNoOverrideData(data.data))
             return neighbors.GetCenter();
 
         ShapeType shape;
@@ -495,31 +514,31 @@ public class BlockTypeSmoothed : BlockTypeBase
         //    ,2,2,2,2,0,2,2,2,2}
         //    , ShapeType.SmallPyramid));
 
-        shapes.Add(new BlockShape(new int[]
+        shapes.Add(new BlockShape(new short[]
             {2,2,2,2,2,2,2,2,2
             ,2,1,2,1,2,1,2,0,2
             ,2,2,2,2,0,2,2,2,2}
             , ShapeType.HalfCubic));
 
-        shapes.Add(new BlockShape(new int[]
+        shapes.Add(new BlockShape(new short[]
             {2,2,2,2,2,2,2,2,2
             ,2,1,2,0,2,1,2,0,2
             ,2,2,2,2,1,2,2,2,2}
             , ShapeType.HorizontalHalfCubic));
 
-        shapes.Add(new BlockShape(new int[]
+        shapes.Add(new BlockShape(new short[]
             {2,2,2,2,2,2,2,2,2
             ,2,1,2,0,2,1,2,0,2
             ,2,2,2,2,0,2,2,2,2}
             , ShapeType.Tetrahedral));
 
-        shapes.Add(new BlockShape(new int[]
+        shapes.Add(new BlockShape(new short[]
             {2,2,2,2,2,2,2,2,2
             ,1,1,0,1,2,1,1,1,1
             ,2,0,2,2,2,0,2,2,2}
             , ShapeType.AntiTetrahedral));
 
-        shapes.Add(new BlockShape(new int[] 
+        shapes.Add(new BlockShape(new short[]
             {2,2,2,2,2,2,2,2,2
             ,2,2,2,2,2,2,2,2,2
             ,2,2,2,2,2,2,2,2,2}
