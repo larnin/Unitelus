@@ -35,38 +35,43 @@ public static class RotationEx
         return new Vector2Int(0, 0);
     }
 
+    static int rotationCount = Enum.GetValues(typeof(Rotation)).Length;
     public static Rotation AddRotations(Rotation a, Rotation b)
     {
-        while(b > Rotation.Rot0)
-        {
-            if (a == Rotation.Rot270)
-                a = Rotation.Rot0;
-            else a++;
-            b--;
-        }
-        return a;
+        int rot = (int)a + (int)b;
+        if (rot >= rotationCount)
+            rot -= rotationCount;
+        return (Rotation)rot;
     }
 
     public static Rotation SubRotations(Rotation a, Rotation b)
     {
-        while (b > Rotation.Rot0)
-        {
-            if (a == Rotation.Rot0)
-                a = Rotation.Rot270;
-            else a--;
-            b--;
-        }
-        return a;
+        int rot = (int)a - (int)b;
+        if (rot < 0)
+            rot += rotationCount;
+        return (Rotation)rot;
     }
 
     public static Vector2Int RotateOffset(Vector2Int offset, Rotation rot)
     {
-        while (rot > Rotation.Rot0)
+        if (rot == Rotation.Rot0)
+            return offset;
+        else if(rot == Rotation.Rot90)
         {
             var temp = offset.x;
             offset.x = -offset.y;
             offset.y = temp;
-            rot--;
+        }
+        else if(rot == Rotation.Rot180)
+        {
+            offset.x *= -1;
+            offset.y *= -1;
+        }
+        else // Rot270
+        {
+            var temp = -offset.x;
+            offset.x = offset.y;
+            offset.y = temp;
         }
 
         return offset;
@@ -74,12 +79,24 @@ public static class RotationEx
 
     public static Vector2 RotateOffset(Vector2 offset, Rotation rot)
     {
-        while (rot > Rotation.Rot0)
+        if (rot == Rotation.Rot0)
+            return offset;
+        else if (rot == Rotation.Rot90)
         {
             var temp = offset.x;
             offset.x = -offset.y;
             offset.y = temp;
-            rot--;
+        }
+        else if (rot == Rotation.Rot180)
+        {
+            offset.x *= -1;
+            offset.y *= -1;
+        }
+        else // Rot270
+        {
+            var temp = -offset.x;
+            offset.x = offset.y;
+            offset.y = temp;
         }
 
         return offset;

@@ -381,11 +381,12 @@ public class BlockTypeSmoothed : BlockTypeBase
         }
     }
 
+    static Matrix<bool> tempBlocks = new Matrix<bool>(3, 3, 3);
+    static int nbRot = Enum.GetValues(typeof(Rotation)).Length;
+
     public static void GetBlockType(MatrixView<BlockData> neighbors, out ShapeType shape, out Rotation rotation)
     {
         ushort id = neighbors.GetCenter().id;
-
-        Matrix<bool> blocks = new Matrix<bool>(3, 3, 3);
 
         for (int i = -1; i <= 1; i++)
             for (int j = -1; j <= 1; j++)
@@ -393,12 +394,14 @@ public class BlockTypeSmoothed : BlockTypeBase
                 {
                     var b = neighbors.Get(i, j, k);
 
-                    blocks.Set(i + 1, j + 1, k + 1, b.id == id || BlockTypeList.instance.Get(b.id).IsFull());
+                    tempBlocks.Set(i + 1, j + 1, k + 1, b.id == id || BlockTypeList.instance.Get(b.id).IsFull());
                 }
 
-        foreach (var b in m_shapes)
+        int nbShape = m_shapes.Count();
+        for(int shapeIndex = 0; shapeIndex < nbShape; shapeIndex++)
         {
-            foreach (var rot in Enum.GetValues(typeof(Rotation)))
+            var b = m_shapes[shapeIndex];
+            for(int rot = 0; rot < nbRot; rot++)
             {
                 bool validBlock = true;
 
@@ -408,7 +411,7 @@ public class BlockTypeSmoothed : BlockTypeBase
                     {
                         for (int k = -1; k <= 1; k++)
                         {
-                            bool block = blocks.Get(i + 1, j + 1, k + 1);
+                            bool block = tempBlocks.Get(i + 1, j + 1, k + 1);
                             int state = b.GetState(i, j, k, (Rotation)rot);
                             if (state == 2)
                                 continue;
