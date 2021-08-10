@@ -111,6 +111,9 @@ public class WorldGenerator
     {
         TimeEx.SetFixedTime(m_time);
 
+        DebugTimer timer = new DebugTimer();
+        timer.Start();
+
         statusText = "Generating surface ...";
 
         world = new World(m_settings.size, true);
@@ -140,6 +143,7 @@ public class WorldGenerator
             }
         }
 
+        timer.LogAndRestart(statusText);
         statusText = "Generating ground ...";
 
         for (int x = 0; x < m_settings.size * Chunk.chunkSize; x++)
@@ -155,28 +159,12 @@ public class WorldGenerator
             }
         }
 
-        //world.SetBlock(0, 10, -1, b, false);
-        //world.SetBlock(1, 10, -1, b, false);
-        //world.SetBlock(0, 10, 0, b, false);
-        //world.SetBlock(1, 10, 0, b, false);
-        //world.SetBlock(0, 10, 1, b, false);
-        //world.SetBlock(1, 10, 1, b, false);
-
-
-        //world.SetBlock(4, 10, 0, b, false);
-        //world.SetBlock(4, 10, 1, b, false);
-        //world.SetBlock(5, 10, 0, b, false);
-        //world.SetBlock(5, 10, 1, b, false);
-        //world.SetBlock(6, 10, 0, b, false);
-        //world.SetBlock(6, 10, 1, b, false);
-
-        //world.SetBlock(16, 7, 0, b, false);
-        //world.SetBlock(15, 7, 0, b, false);
-
+        timer.LogAndRestart(statusText);
         statusText = "Updating blocks state ...";
 
         UpdateWorldData(world);
 
+        timer.LogAndRestart(statusText);
         statusText = "Done";
         m_thread = null;
 
