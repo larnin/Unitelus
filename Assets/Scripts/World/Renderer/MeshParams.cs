@@ -74,7 +74,7 @@ public class MeshParams<T> where T : struct
             AllocateIndexArray(m_colliderData[0], indexSize);
         }
 
-        var element = m_colliderData[m_data.Count - 1];
+        var element = m_colliderData[m_colliderData.Count - 1];
 
         if(!element.CanAllocate(vertexSize))
         {

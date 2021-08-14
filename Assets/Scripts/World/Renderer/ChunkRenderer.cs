@@ -199,6 +199,7 @@ public class ChunkRenderer : MonoBehaviour
             {
                 var obj = layer.objects[meshIndex];
                 UpdateLayerObject(obj, m, i, meshParams);
+                meshIndex++;
             }
         }
 
