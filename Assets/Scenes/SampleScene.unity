@@ -407,7 +407,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c334b9744088fe4290a450c8f6624ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_renderSize: 50
+  m_renderSize: 200
   m_moveUpdateDistance: 2
   m_collisionLayer: 6
 --- !u!4 &210816805
@@ -434,6 +434,7 @@ GameObject:
   m_Component:
   - component: {fileID: 252455911}
   - component: {fileID: 252455910}
+  - component: {fileID: 252455912}
   m_Layer: 0
   m_Name: BlocksHolder
   m_TagString: Untagged
@@ -458,6 +459,9 @@ MonoBehaviour:
     SerializedBytes: 
     ReferencedUnityObjects:
     - {fileID: 2100000, guid: f4e7efe8b9e16504fab88a23f482174f, type: 2}
+    - {fileID: 2100000, guid: 85911febed12fc24ca13b76be7af6770, type: 2}
+    - {fileID: 2100000, guid: 708ea5c46a19f6e4fbadb0b2c950faa0, type: 2}
+    - {fileID: 2100000, guid: edc2db4d3d54d644fb664b923ad57997, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -469,19 +473,64 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 1
+      Data: 4
     - Name: 
       Entry: 7
-      Data: 1|BlockTypeSmoothed, Assembly-CSharp
+      Data: 1|BlockTypeCube, Assembly-CSharp
     - Name: m_id
       Entry: 3
       Data: 1
     - Name: m_type
       Entry: 3
-      Data: 3
+      Data: 1
     - Name: m_material
       Entry: 10
       Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 2|BlockTypeCube, Assembly-CSharp
+    - Name: m_id
+      Entry: 3
+      Data: 2
+    - Name: m_type
+      Entry: 3
+      Data: 1
+    - Name: m_material
+      Entry: 10
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 3|BlockTypeCube, Assembly-CSharp
+    - Name: m_id
+      Entry: 3
+      Data: 3
+    - Name: m_type
+      Entry: 3
+      Data: 1
+    - Name: m_material
+      Entry: 10
+      Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 4|BlockTypeCube, Assembly-CSharp
+    - Name: m_id
+      Entry: 3
+      Data: 4
+    - Name: m_type
+      Entry: 3
+      Data: 1
+    - Name: m_material
+      Entry: 10
+      Data: 3
     - Name: 
       Entry: 8
       Data: 
@@ -505,6 +554,39 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &252455912
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 252455909}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5f3c4eca4b7c1d4f8214c242cb8e379, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_biomes:
+  - biomeType: 1
+    themperature: 25
+    moisture: 1
+    weight: 1
+    size: 1
+  - biomeType: 2
+    themperature: 22
+    moisture: 2
+    weight: 1.5
+    size: 1.2
+  - biomeType: 3
+    themperature: 35
+    moisture: 0
+    weight: 1
+    size: 1
+  - biomeType: 4
+    themperature: 5
+    moisture: 1.5
+    weight: 0.5
+    size: 0.9
 --- !u!1 &399600873
 GameObject:
   m_ObjectHideFlags: 0
@@ -1363,12 +1445,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_settings:
     seed: 152
-    size: 6
+    size: 16
     perlins:
     - amplitude: 14
       frequency: 2
     - amplitude: 7
       frequency: 4
+    m_biomes:
+      seed: 1248
+      nbBiome: 20
+      relaxingPower: 5
+      relaxingForce: 20
+      magnetPower: 30
+      magnetForce: 20
+      validBiomes: 01000000020000000300000004000000
   m_playerPrefab: {fileID: 7660277646467561147, guid: 013c65f2d2d77514d863733b3ab45470,
     type: 3}
 --- !u!4 &1996218792

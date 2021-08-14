@@ -377,7 +377,7 @@ public class ChunkRendererPool
                 }
             }
 
-            Debug.Log("Job done on " + m_doingJob.x + " " + m_doingJob.layer + " " + m_doingJob.z);
+            //Debug.Log("Job done on " + m_doingJob.x + " " + m_doingJob.layer + " " + m_doingJob.z);
         }
     }
 

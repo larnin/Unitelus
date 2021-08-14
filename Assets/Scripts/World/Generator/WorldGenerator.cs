@@ -30,6 +30,8 @@ public class WorldGenerator
 
     WorldGeneratorSettings m_settings = null;
 
+    VoronoiBiomes m_biomes;
+
     public State state
     {
         get
@@ -114,6 +116,12 @@ public class WorldGenerator
         DebugTimer timer = new DebugTimer();
         timer.Start();
 
+        statusText = "Generating biomes ...";
+
+        m_biomes = new VoronoiBiomes();
+        m_biomes.Generate(m_settings.m_biomes, m_settings.size * Chunk.chunkSize);
+
+        timer.LogAndRestart(statusText);
         statusText = "Generating surface ...";
 
         world = new World(m_settings.size, true);
@@ -126,6 +134,22 @@ public class WorldGenerator
         b.id = 1;
         b.data = 0;
 
+        int minHeight = 2;
+
+
+        for (int x = 0; x < m_settings.size * Chunk.chunkSize; x++)
+        {
+            for (int z = 0; z < m_settings.size * Chunk.chunkSize; z++)
+            {
+                var biome = m_biomes.GetNearestBiome(new Vector2(x, z));
+                b.id = (ushort)biome;
+
+                world.SetBlock(x, minHeight, z, b, false);
+            }
+        }
+        minHeight--;
+
+        /*
         int minHeight = int.MaxValue;
 
         for (int x = 0; x < m_settings.size * Chunk.chunkSize; x++)
@@ -141,7 +165,7 @@ public class WorldGenerator
 
                 minHeight = Mathf.Min(yInt - 1, minHeight);
             }
-        }
+        }*/
 
         timer.LogAndRestart(statusText);
         statusText = "Generating ground ...";

@@ -220,7 +220,7 @@ public class GameLoader : MonoBehaviour
 
         //at least 9 chunks and half of the draw chunks
 
-        if (renderState.rederedChunkNb < 9)
+        if (renderState.rederedChunkNb < 9 && renderState.totalChunkNb > 9)
             return;
         if (renderState.rederedChunkNb * 2 < renderState.totalChunkNb)
             return;
