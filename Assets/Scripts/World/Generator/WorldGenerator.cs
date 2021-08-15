@@ -125,6 +125,7 @@ public class WorldGenerator
         statusText = "Generating surface ...";
 
         world = new World(m_settings.size, true);
+        world.m_biomes = m_biomes;
 
         List<Perlin> perlins = new List<Perlin>();
         foreach (var p in m_settings.perlins)

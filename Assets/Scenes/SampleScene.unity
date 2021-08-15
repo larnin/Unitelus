@@ -576,7 +576,7 @@ MonoBehaviour:
     themperature: 22
     moisture: 2
     weight: 1.5
-    size: 1.2
+    size: 1
   - biomeType: 3
     themperature: 35
     moisture: 0
@@ -586,7 +586,7 @@ MonoBehaviour:
     themperature: 5
     moisture: 1.5
     weight: 0.5
-    size: 0.9
+    size: 1
 --- !u!1 &399600873
 GameObject:
   m_ObjectHideFlags: 0

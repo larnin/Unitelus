@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class VoronoiBiomes
 {
-    class Vertex
+    public class Vertex
     {
         public float x;
         public float y;
@@ -21,6 +21,19 @@ public class VoronoiBiomes
         }
     }
 
+    public class Triangle
+    {
+        public int index1;
+        public int index2;
+        public int index3;
+        public Triangle(int _index1, int _index2, int _index3)
+        {
+            index1 = _index1;
+            index2 = _index2;
+            index3 = _index3;
+        }
+    }
+
     VoronoiBiomesSettings m_settings;
     float m_moistureMin;
     float m_moistureMax;
@@ -28,7 +41,8 @@ public class VoronoiBiomes
     float m_themperatureMax;
     int m_size;
 
-    List<Vertex> m_vertices = new List<Vertex>();
+    public List<Vertex> m_vertices = new List<Vertex>();
+    public List<Triangle> m_triangles = new List<Triangle>();
 
     MT19937 m_rand;
 
@@ -45,6 +59,7 @@ public class VoronoiBiomes
         GenerateVertices();
         MagnetizeVertices();
         RelaxeVertices();
+        GenerateTriangles();
     }
 
     void DevelopeSettings()
@@ -138,6 +153,11 @@ public class VoronoiBiomes
                     newVertex.y += dir.y;
                 }
 
+                Vector2 vertexPos = new Vector2(newVertex.x, newVertex.y);
+                vertexPos = ClampPos(vertexPos);
+                newVertex.x = vertexPos.x;
+                newVertex.y = vertexPos.y;
+
                 newVertices.Add(newVertex);
             }
 
@@ -179,11 +199,200 @@ public class VoronoiBiomes
                     newVertex.y += dir.y;
                 }
 
+                Vector2 vertexPos = new Vector2(newVertex.x, newVertex.y);
+                vertexPos = ClampPos(vertexPos);
+                newVertex.x = vertexPos.x;
+                newVertex.y = vertexPos.y;
+
                 newVertices.Add(newVertex);
             }
 
             m_vertices = newVertices;
         }
+    }
+
+    void GenerateTriangles()
+    {
+        if (m_vertices.Count < 4)
+            return;
+
+        //first triangle
+        int index1 = -1;
+        int index2 = -1;
+        Vector2 pos = new Vector2(m_vertices[0].x, m_vertices[0].y);
+        for(int i = 1; i < m_vertices.Count; i++)
+        {
+            Vector2 pos1 = new Vector2(m_vertices[i].x, m_vertices[i].y);
+            //pos1 = GetNearerPoint(pos1, pos);
+
+            for(int j = 1; j < m_vertices.Count; j++)
+            {
+                if (i == j)
+                    continue;
+                Vector2 pos2 = new Vector2(m_vertices[j].x, m_vertices[j].y);
+                //pos2 = GetNearerPoint(pos2, pos);
+
+                Vector2 omega = Utility.TriangleOmega(pos, pos1, pos2);
+                //float radius = GetDistance(omega, pos);
+                float radiusSqr = (omega - pos).sqrMagnitude;
+                //omega = ClampPos(omega);
+
+                bool collision = false;
+                for(int k = 1; k < m_vertices.Count; k++)
+                {
+                    if (k == i || k == j)
+                        continue;
+
+                    Vector2 posTest = new Vector2(m_vertices[k].x, m_vertices[k].y);
+                    //posTest = GetNearerPoint(posTest, omega);
+
+                    if ((posTest - omega).sqrMagnitude < radiusSqr)
+                    //if(GetDistance(posTest, omega) < radius)
+                    {
+                        collision = true;
+                        break;
+                    }
+                }
+                if (collision)
+                    continue;
+
+                index1 = i;
+                index2 = j;
+                break;
+            }
+            if (index1 >= 0 || index2 >= 0)
+                break;
+        }
+
+        //must have found a triangle
+        if (index1 < 0 || index2 < 0)
+            return;
+
+        //now check all the vertices to make a Delaunay triangulation
+        List<int> validPoints = new List<int>();
+        for (int i = 0; i < m_vertices.Count; i++)
+            validPoints.Add(i);
+        List<int> border = new List<int>();
+        border.Add(0);
+        border.Add(index1);
+        border.Add(index2);
+        m_triangles.Add(new Triangle(0, index1, index2));
+
+        int skipCount = 0;
+
+        bool isValid = true;
+        while(border.Count >= 3)
+        {
+            int index = skipCount + 1;
+            if (index == border.Count) 
+                index = 0;
+            Vector2 pos1 = new Vector2(m_vertices[border[skipCount]].x, m_vertices[border[skipCount]].y);
+            Vector2 pos2 = new Vector2(m_vertices[border[index]].x, m_vertices[border[index]].y);
+            //pos2 = GetNearerPoint(pos2, pos1);
+
+            bool found = false;
+            for(int i = 0; i < validPoints.Count; i++)
+            {
+                int verticeIndex = validPoints[i];
+                if (verticeIndex == border[skipCount] || verticeIndex == border[index])
+                    continue;
+
+                bool isTrangleValid = true;
+                //check if this triangle is already validated
+                for(int j = 0; j < m_triangles.Count; j++)
+                {
+                    if(AreSameTriangle(m_triangles[j].index1, m_triangles[j].index2, m_triangles[j].index3, border[skipCount], border[index], verticeIndex))
+                    {
+                        isTrangleValid = false;
+                        break;
+                    }
+                }
+
+                if (!isTrangleValid)
+                    continue;
+
+                int previousIndex = skipCount == 0 ? border.Count - 1 : skipCount - 1;
+                int nextIndex = index == border.Count - 1 ? 0 : index + 1;
+
+                bool isPrevious = verticeIndex == border[previousIndex];
+                bool isNext = verticeIndex == border[nextIndex];
+                //check if tested point is on border to not cut the current border loop in multiple loop
+                if (!isPrevious && !isNext)
+                {
+                    bool isOnBorder = false;
+                    for (int j = 0; j < border.Count; j++)
+                    {
+                        if (border[j] == verticeIndex)
+                        {
+                            isOnBorder = true;
+                            break;
+                        }
+                    }
+                    if (isOnBorder)
+                        continue;
+                }
+
+                Vector2 pos3 = new Vector2(m_vertices[verticeIndex].x, m_vertices[verticeIndex].y);
+                //pos3 = GetNearerPoint(pos3, pos1);
+
+                Vector2 omega = Utility.TriangleOmega(pos1, pos2, pos3);
+                //float radius = GetDistance(omega, pos1);
+                float radiusSqr = (omega - pos1).sqrMagnitude;
+                //omega = ClampPos(omega);
+
+                bool isTriangleValid = true;
+                for (int j = 0; j < m_vertices.Count; j++)
+                {
+                    if (j == border[skipCount] || j == border[index] || j == verticeIndex)
+                        continue;
+
+                    Vector2 posTest = new Vector2(m_vertices[j].x, m_vertices[j].y);
+                    //posTest = GetNearerPoint(posTest, omega);
+
+                    if((omega - posTest).sqrMagnitude < radiusSqr)
+                    //if(GetDistance(omega, posTest) < radius)
+                    {
+                        isTriangleValid = false;
+                        break;
+                    }
+                }
+
+                if (!isTriangleValid)
+                    continue;
+
+                found = true;
+
+                m_triangles.Add(new Triangle(border[skipCount], border[index], verticeIndex));
+
+                if(isPrevious)
+                {
+                    validPoints.Remove(border[skipCount]);
+                    border.RemoveAt(skipCount);
+                }
+                else if(isNext)
+                {
+                    validPoints.Remove(border[index]);
+                    border.RemoveAt(index);
+                }
+                else border.Insert(skipCount + 1, verticeIndex);
+                break;
+            }
+
+            if (!found)
+            {
+                skipCount++;
+                if (skipCount == border.Count)
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+            else skipCount = 0;
+        }
+
+        //todo something here, this must not happen
+        if (!isValid)
+            return;
     }
 
     float NormalizeMoisture(float moisture)
@@ -239,6 +448,24 @@ public class VoronoiBiomes
         return offset.magnitude;
     }
 
+    public Vector2 GetNearerPoint(Vector2 pos, Vector2 origin)
+    {
+        Vector2 delta = origin - pos;
+        if(Mathf.Abs(delta.x) > m_size / 2)
+        {
+            if (pos.x < origin.x)
+                pos.x += m_size;
+            else pos.x -= m_size;
+        }
+        if(Mathf.Abs(delta.y) > m_size / 2)
+        {
+            if (pos.y < origin.y)
+                pos.y += m_size;
+            else pos.y -= m_size;
+        }
+        return pos;
+    }
+
     Vector2 ClampPos(Vector2 pos)
     {
         if (pos.x < 0)
@@ -249,6 +476,17 @@ public class VoronoiBiomes
         else pos.y = pos.y % m_size;
 
         return pos;
+    }
+
+    bool AreSameTriangle(int t1a, int t1b, int t1c, int t2a, int t2b, int t2c)
+    {
+        int[] indexs1 = new int[] { t1a, t1b, t1c };
+        int[] indexs2 = new int[] { t2a, t2b, t2c };
+
+        Array.Sort(indexs1);
+        Array.Sort(indexs2);
+
+        return indexs1[0] == indexs2[0] && indexs1[1] == indexs2[1] && indexs1[2] == indexs2[2];
     }
 
     public BiomeType GetNearestBiome(Vector2 pos)
