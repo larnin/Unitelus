@@ -57,24 +57,18 @@ public class PlaceholderWorld : MonoBehaviour
         {
             var triangle = biomes.m_triangles[i];
 
-            var p1 = biomes.m_vertices[triangle.index1];
-            var p2 = biomes.m_vertices[triangle.index2];
-            var p3 = biomes.m_vertices[triangle.index3];
+            var p1 = biomes.m_localVertices[triangle.index1];
+            var p2 = biomes.m_localVertices[triangle.index2];
+            var p3 = biomes.m_localVertices[triangle.index3];
 
-            var pos1 = new Vector2(p1.x, p1.y);
-            var pos2 = new Vector2(p2.x, p2.y);
-            var pos3 = new Vector2(p3.x, p3.y);
+            var pos1 = biomes.GetLocalVertexPosition(p1);
+            var pos2 = biomes.GetLocalVertexPosition(p2);
+            var pos3 = biomes.GetLocalVertexPosition(p3);
 
-            //pos2 = biomes.GetNearerPoint(pos2, pos1);
-            //pos3 = biomes.GetNearerPoint(pos3, pos1);
-            
             Debug.DrawLine(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), Color.red);
             Debug.DrawLine(new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), Color.red);
             Debug.DrawLine(new Vector3(pos3.x, y, pos3.y), new Vector3(pos1.x, y, pos1.y), Color.red);
-
         }
-
-       
     }
 
     void OnDrawGizmos()
