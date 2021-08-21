@@ -44,6 +44,18 @@ public class UnstructuredPeriodicGrid
             chunkX = _chunkX;
             chunkY = _chunkY;
         }
+
+        public LocalVertex(LocalVertex other)
+        {
+            Set(other);
+        }
+
+        public void Set(LocalVertex other)
+        {
+            vertex = other.vertex;
+            chunkX = other.chunkX;
+            chunkY = other.chunkY;
+        }
     }
 
     class Edge
@@ -247,6 +259,12 @@ public class UnstructuredPeriodicGrid
         Debug.Assert(edge >= 0 && edge <= v.edges.Count);
         return v.edges[edge];
     }
+
+    bool AreSameVertex(LocalVertex a, LocalVertex b)
+    {
+        return a.vertex == b.vertex && a.chunkX == b.chunkX && a.chunkY == b.chunkY;
+    }
+
     #endregion
 
     #region triangles
@@ -660,6 +678,124 @@ public class UnstructuredPeriodicGrid
 
         return min1.vertex == min2.vertex && max1.vertex == max2.vertex;
     }
+
+    //keep the order of vertices, triangles and edges
+    //change triangle list order in vertices in the 2 connected triangles
+    //return true if the edge have been flipped
+    public bool FlipEdge(int edge)
+    {
+        Debug.Assert(edge >= 0 && edge < m_edges.Count);
+
+        var e = m_edges[edge];
+
+        if (e.triangle1 < 0 || e.triangle2 < 0)
+            return false;
+
+        var t1 = m_triangles[e.triangle1];
+        var t2 = m_triangles[e.triangle2];
+
+        //search for vertice on the edge and singles
+        LocalVertex lv1 = new LocalVertex(-1);
+        LocalVertex lv2 = new LocalVertex(-1);
+        LocalVertex lv3 = new LocalVertex(e.vertex1);
+        LocalVertex lv4 = new LocalVertex(e.vertex2);
+
+        if (!AreSameVertex(t1.vertex1, e.vertex1) && !AreSameVertex(t1.vertex1, e.vertex2))
+            lv1.Set(t1.vertex1);
+        if (!AreSameVertex(t1.vertex2, e.vertex1) && !AreSameVertex(t1.vertex2, e.vertex2))
+            lv1.Set(t1.vertex2);
+        if (!AreSameVertex(t1.vertex3, e.vertex1) && !AreSameVertex(t1.vertex3, e.vertex2))
+            lv1.Set(t1.vertex3);
+
+        if (!AreSameVertex(t2.vertex1, e.vertex1) && !AreSameVertex(t2.vertex1, e.vertex2))
+            lv2.Set(t2.vertex1);
+        if (!AreSameVertex(t2.vertex2, e.vertex1) && !AreSameVertex(t2.vertex2, e.vertex2))
+            lv2.Set(t2.vertex2);
+        if (!AreSameVertex(t2.vertex3, e.vertex1) && !AreSameVertex(t2.vertex3, e.vertex2))
+            lv2.Set(t2.vertex3);
+
+        Vertex v1 = m_vertices[lv1.vertex];
+        Vertex v2 = m_vertices[lv2.vertex];
+        Vertex v3 = m_vertices[lv3.vertex];
+        Vertex v4 = m_vertices[lv4.vertex];
+
+        Edge[] edges = new Edge[4];
+        int edgeNB = 0;
+
+        Action<int> addEdge = delegate (int edgeIndex)
+        {
+            if (edgeIndex == edge)
+                return;
+            if (edgeNB == edges.Length)
+                return;
+
+            var edgeT = m_edges[edgeIndex];
+            edges[edgeNB] = edgeT;
+            edgeNB++;
+        };
+
+        addEdge(t1.edge1);
+        addEdge(t1.edge2);
+        addEdge(t1.edge3);
+        addEdge(t2.edge1);
+        addEdge(t2.edge2);
+        addEdge(t2.edge3);
+
+        //remove old references
+        v1.triangles.Remove(e.triangle1);
+        v2.triangles.Remove(e.triangle2);
+        v3.triangles.Remove(e.triangle1);
+        v3.triangles.Remove(e.triangle2);
+        v4.triangles.Remove(e.triangle1);
+        v4.triangles.Remove(e.triangle2);
+
+        v3.edges.Remove(edge);
+        v4.edges.Remove(edge);
+
+        for(int i = 0; i < edges.Length; i++)
+        {
+            if (edges[i].triangle1 == e.triangle1 || edges[i].triangle1 == e.triangle2)
+            {//set triangle2  to triangle1 to be sure to have all triangle2 empty, it's easier to set triangles this way
+                edges[i].triangle1 = edges[i].triangle2;
+                edges[i].triangle2 = -1;
+            }
+            if (edges[i].triangle2 == e.triangle1 || edges[i].triangle2 == e.triangle2)
+                edges[i].triangle2 = -1;
+        }
+
+        //modify edge and triangles
+        e.vertex1.Set(lv1);
+        e.vertex2.Set(lv2);
+
+        t1.vertex1.Set(lv1);
+        t1.vertex2.Set(lv2);
+        t1.vertex3.Set(lv3);
+
+        t2.vertex1.Set(lv1);
+        t2.vertex2.Set(lv2);
+        t2.vertex3.Set(lv4);
+
+        v1.triangles.Add(e.triangle1);
+        v2.triangles.Add(e.triangle1);
+        v3.triangles.Add(e.triangle1);
+
+        v1.triangles.Add(e.triangle2);
+        v2.triangles.Add(e.triangle2);
+        v4.triangles.Add(e.triangle2);
+
+        v1.edges.Add(edge);
+        v2.edges.Add(edge);
+
+        for(int i = 0; i < edges.Length; i++)
+        {
+            if (AreSameVertex(edges[i].vertex1, lv3) || AreSameVertex(edges[i].vertex2, lv3))
+                edges[i].triangle2 = e.triangle1;
+            else edges[i].triangle2 = e.triangle2;
+        }
+
+        return true;
+    }
+
     #endregion
 
     Vector2 ClampPos(Vector2 pos)
