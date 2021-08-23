@@ -55,6 +55,12 @@ public class Matrix<T>
         m_data[PosToIndex(x, y, z)] = value;
     }
 
+    public void SetAll(T value = default(T))
+    {
+        for (int i = 0; i < m_data.Length; i++)
+            m_data[i] = value;
+    }
+
     int PosToIndex(int x, int y, int z)
     {
         Debug.Assert(x >= 0 && x < m_width && y >= 0 && y < m_height && z >= 0 && z < m_depth);
