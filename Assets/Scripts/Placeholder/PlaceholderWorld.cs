@@ -53,7 +53,7 @@ public class PlaceholderWorld : MonoBehaviour
         Debug.DrawLine(new Vector3(size, y, size), new Vector3(size, y, 0), Color.magenta);
         Debug.DrawLine(new Vector3(size, y, 0), new Vector3(0, y, 0), Color.magenta);
         
-        for (int i = 0; i < biomes.m_triangles.Count; i++)
+        /*for (int i = 0; i < biomes.m_triangles.Count; i++)
         {
             var triangle = biomes.m_triangles[i];
 
@@ -68,7 +68,9 @@ public class PlaceholderWorld : MonoBehaviour
             Debug.DrawLine(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), Color.red);
             Debug.DrawLine(new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), Color.red);
             Debug.DrawLine(new Vector3(pos3.x, y, pos3.y), new Vector3(pos1.x, y, pos1.y), Color.red);
-        }
+        }*/
+
+        biomes.Draw();
     }
 
     void OnDrawGizmos()

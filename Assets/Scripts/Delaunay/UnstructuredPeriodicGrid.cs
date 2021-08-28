@@ -55,6 +55,73 @@ namespace NDelaunay
                 chunkX = other.chunkX;
                 chunkY = other.chunkY;
             }
+
+            public static bool operator==(LocalVertex a, LocalVertex b)
+            {
+                return a.vertex == b.vertex && a.chunkX == b.chunkX && a.chunkY == b.chunkY;
+            }
+
+            public static bool operator!=(LocalVertex a, LocalVertex b)
+            {
+                return !(a == b);
+            }
+
+            public static bool operator>(LocalVertex a, LocalVertex b)
+            {
+                if (a.vertex > b.vertex)
+                    return true;
+                if (a.vertex == b.vertex)
+                {
+                    if (a.chunkX > b.chunkX)
+                        return true;
+                    if (a.chunkX == b.chunkX)
+                        return a.chunkY > b.chunkY;
+                }
+                return false;
+            }
+
+            public static bool operator<(LocalVertex a, LocalVertex b)
+            {
+                if (a.vertex < b.vertex)
+                    return true;
+                if (a.vertex == b.vertex)
+                {
+                    if (a.chunkX < b.chunkX)
+                        return true;
+                    if (a.chunkX == b.chunkX)
+                        return a.chunkY < b.chunkY;
+                }
+                return false;
+            }
+
+            public static bool operator>=(LocalVertex a, LocalVertex b)
+            {
+                return !(a < b);
+            }
+            
+            public static bool operator<=(LocalVertex a, LocalVertex b)
+            {
+                return !(a > b);
+            }
+
+            public override bool Equals(object o)
+            {
+                var v = o as LocalVertex;
+                if (v == null)
+                    return false;
+
+                return v == this;
+
+            }
+
+            public override int GetHashCode()
+            {
+                int hash = 13;
+                hash = (hash * 7) + vertex.GetHashCode();
+                hash = (hash * 7) + chunkX.GetHashCode();
+                hash = (hash * 7) + chunkY.GetHashCode();
+                return hash;
+            }
         }
 
         class Edge
@@ -67,16 +134,16 @@ namespace NDelaunay
 
             public Edge(LocalVertex _vertex1, LocalVertex _vertex2)
             {
-                vertex1 = _vertex1;
-                vertex2 = _vertex2;
+                vertex1 = new LocalVertex(_vertex1);
+                vertex2 = new LocalVertex(_vertex2);
                 triangle1 = -1;
                 triangle2 = -1;
             }
 
             public Edge(LocalVertex _vertex1, LocalVertex _vertex2, int _triangle1, int _triangle2)
             {
-                vertex1 = _vertex1;
-                vertex2 = _vertex2;
+                vertex1 = new LocalVertex(_vertex1);
+                vertex2 = new LocalVertex(_vertex2);
                 triangle1 = _triangle1;
                 triangle2 = _triangle2;
             }
@@ -94,9 +161,9 @@ namespace NDelaunay
 
             public Triangle(LocalVertex _vertex1, LocalVertex _vertex2, LocalVertex _vertex3)
             {
-                vertex1 = _vertex1;
-                vertex2 = _vertex2;
-                vertex3 = _vertex3;
+                vertex1 = new LocalVertex(_vertex1);
+                vertex2 = new LocalVertex(_vertex2);
+                vertex3 = new LocalVertex(_vertex3);
                 edge1 = -1;
                 edge2 = -1;
                 edge3 = -1;
@@ -104,9 +171,9 @@ namespace NDelaunay
 
             public Triangle(LocalVertex _vertex1, LocalVertex _vertex2, LocalVertex _vertex3, int _edge1, int _edge2, int _edge3)
             {
-                vertex1 = _vertex1;
-                vertex2 = _vertex2;
-                vertex3 = _vertex3;
+                vertex1 = new LocalVertex(_vertex1);
+                vertex2 = new LocalVertex(_vertex2);
+                vertex3 = new LocalVertex(_vertex3);
                 edge1 = _edge1;
                 edge2 = _edge2;
                 edge3 = _edge3;
@@ -271,11 +338,6 @@ namespace NDelaunay
             return v.edges[edge];
         }
 
-        bool AreSameVertex(LocalVertex a, LocalVertex b)
-        {
-            return a.vertex == b.vertex && a.chunkX == b.chunkX && a.chunkY == b.chunkY;
-        }
-
         #endregion
 
         #region triangles
@@ -368,7 +430,6 @@ namespace NDelaunay
             vert3.triangles.Add(triangleIndex);
 
             m_triangles.Add(new Triangle(v1, v2, v3, edge1, edge2, edge3));
-
 
             return triangleIndex;
         }
@@ -653,10 +714,10 @@ namespace NDelaunay
                         if (!testPos.Get(j + 1, k + 1))
                             continue;
 
-                        Vector2 pos1 = GetPos(t.vertex1.vertex, t.vertex1.chunkX + j, t.vertex1.chunkY + j);
-                        Vector2 pos2 = GetPos(t.vertex2.vertex, t.vertex2.chunkX + j, t.vertex2.chunkY + j);
-                        Vector2 pos3 = GetPos(t.vertex3.vertex, t.vertex3.chunkX + j, t.vertex3.chunkY + j);
-
+                        Vector2 pos1 = GetPos(t.vertex1.vertex, t.vertex1.chunkX - j, t.vertex1.chunkY - k);
+                        Vector2 pos2 = GetPos(t.vertex2.vertex, t.vertex2.chunkX - j, t.vertex2.chunkY - k);
+                        Vector2 pos3 = GetPos(t.vertex3.vertex, t.vertex3.chunkX - j, t.vertex3.chunkY - k);
+                        
                         if (Utility.IsOnTriangle(pos, pos1, pos2, pos3))
                             return i;
                     }
@@ -768,6 +829,15 @@ namespace NDelaunay
             chunkY2 = e.vertex2.chunkY;
         }
 
+        public void GetEdgeVerticesPos(int edge, out Vector2 pos1, out Vector2 pos2)
+        {
+            Debug.Assert(edge >= 0 && edge < m_edges.Count);
+            var e = m_edges[edge];
+
+            pos1 = GetPos(e.vertex1);
+            pos2 = GetPos(e.vertex2);
+        }
+
         public int GetEdgeTriange(int edge, EdgePoint point)
         {
             Debug.Assert(edge >= 0 && edge < m_edges.Count);
@@ -789,15 +859,15 @@ namespace NDelaunay
 
         bool AreSameEdge(LocalVertex e1a, LocalVertex e1b, LocalVertex e2a, LocalVertex e2b)
         {
-            LocalVertex min1 = e1a.vertex < e1b.vertex ? e1a : e1b;
-            LocalVertex max1 = e1a.vertex < e1b.vertex ? e1b : e1a;
-            LocalVertex min2 = e2a.vertex < e2b.vertex ? e2a : e2b;
-            LocalVertex max2 = e2a.vertex < e2b.vertex ? e2b : e2a;
+            LocalVertex min1 = e1a < e1b ? e1a : e1b;
+            LocalVertex max1 = e1a < e1b ? e1b : e1a;
+            LocalVertex min2 = e2a < e2b ? e2a : e2b;
+            LocalVertex max2 = e2a < e2b ? e2b : e2a;
 
-            if (min1.chunkX - min2.chunkX != max1.chunkX - max2.chunkY)
+            if (min1.chunkX - min2.chunkX != max1.chunkX - max2.chunkX)
                 return false;
 
-            if (min1.chunkY - min2.chunkY != max2.chunkY - max2.chunkY)
+            if (min1.chunkY - min2.chunkY != max1.chunkY - max2.chunkY)
                 return false;
 
             return min1.vertex == min2.vertex && max1.vertex == max2.vertex;
@@ -808,9 +878,9 @@ namespace NDelaunay
             Debug.Assert(edge >= 0 && edge < m_edges.Count);
 
             var e = m_edges[edge];
-            var triangle2 = e.triangle1 == triangle ? e.triangle2 : e.triangle1;
-
-            return triangle2;
+            if (e.triangle1 == triangle)
+                return e.triangle2;
+            return e.triangle1;
         }
 
         public void GetOppositeVertexFromEdge(int edge, int triangle, out int vertex, out int chunkX, out int chunkY)
@@ -826,21 +896,21 @@ namespace NDelaunay
             var t = m_triangles[triangle2];
             var e = m_edges[edge];
 
-            if(!AreSameVertex(t.vertex1, e.vertex1) && !AreSameVertex(t.vertex1, e.vertex2))
+            if(AreSameEdge(t.vertex2, t.vertex3, e.vertex1, e.vertex2))
             {
                 vertex = t.vertex1.vertex;
                 chunkX = t.vertex1.chunkX;
                 chunkY = t.vertex1.chunkY;
                 return;
             }
-            if (!AreSameVertex(t.vertex2, e.vertex1) && !AreSameVertex(t.vertex2, e.vertex2))
+            if(AreSameEdge(t.vertex1, t.vertex3, e.vertex1, e.vertex2))
             {
                 vertex = t.vertex2.vertex;
                 chunkX = t.vertex2.chunkX;
                 chunkY = t.vertex2.chunkY;
                 return;
             }
-            if (!AreSameVertex(t.vertex3, e.vertex1) && !AreSameVertex(t.vertex3, e.vertex2))
+            if(AreSameEdge(t.vertex1, t.vertex2, e.vertex1, e.vertex2))
             {
                 vertex = t.vertex3.vertex;
                 chunkX = t.vertex3.chunkX;
@@ -852,120 +922,196 @@ namespace NDelaunay
         //keep the order of vertices, triangles and edges
         //change triangle list order in vertices in the 2 connected triangles
         //return true if the edge have been flipped
-        public bool FlipEdge(int edge)
+        public bool FlipEdge(int edge1)
         {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
+            Debug.Assert(edge1 >= 0 && edge1 < m_edges.Count);
 
-            var e = m_edges[edge];
+            var e1 = m_edges[edge1];
 
-            if (e.triangle1 < 0 || e.triangle2 < 0)
+            if (e1.triangle1 < 0 || e1.triangle2 < 0)
                 return false;
 
-            var t1 = m_triangles[e.triangle1];
-            var t2 = m_triangles[e.triangle2];
+            int triangle1 = e1.triangle1;
+            int triangle2 = e1.triangle2;
 
-            //search for vertice on the edge and singles
+            Triangle t1 = m_triangles[triangle1];
+            Triangle t2 = m_triangles[triangle2];
+
+            //move triangles to be relative to the current edge
+            int offsetX, offsetY;
+            bool found = GetTriangleToEdgeOffset(triangle1, edge1, out offsetX, out offsetY);
+            Debug.Assert(found);
+            t1.vertex1.chunkX += offsetX;
+            t1.vertex2.chunkX += offsetX;
+            t1.vertex3.chunkX += offsetX;
+            t1.vertex1.chunkY += offsetY;
+            t1.vertex2.chunkY += offsetY;
+            t1.vertex3.chunkY += offsetY;
+            found = GetTriangleToEdgeOffset(triangle2, edge1, out offsetX, out offsetY);
+            Debug.Assert(found);
+            t2.vertex1.chunkX += offsetX;
+            t2.vertex2.chunkX += offsetX;
+            t2.vertex3.chunkX += offsetX;
+            t2.vertex1.chunkY += offsetY;
+            t2.vertex2.chunkY += offsetY;
+            t2.vertex3.chunkY += offsetY;
+
+
+            //search for vertices and edges
             LocalVertex lv1 = new LocalVertex(-1);
             LocalVertex lv2 = new LocalVertex(-1);
-            LocalVertex lv3 = new LocalVertex(e.vertex1);
-            LocalVertex lv4 = new LocalVertex(e.vertex2);
+            LocalVertex lv3 = new LocalVertex(e1.vertex1);
+            LocalVertex lv4 = new LocalVertex(e1.vertex2);
+            int edge2 = -1;
+            int edge3 = -1;
+            int edge4 = -1;
+            int edge5 = -1;
 
-            if (!AreSameVertex(t1.vertex1, e.vertex1) && !AreSameVertex(t1.vertex1, e.vertex2))
+            if (AreSameEdge(t1.vertex2, t1.vertex3, e1.vertex1, e1.vertex2))
+            {//e1 == t1.e2
                 lv1.Set(t1.vertex1);
-            if (!AreSameVertex(t1.vertex2, e.vertex1) && !AreSameVertex(t1.vertex2, e.vertex2))
+                var e = m_edges[t1.edge1];
+                if(AreSameEdge(e.vertex1, e.vertex2, lv1, lv3))
+                     { edge2 = t1.edge1; edge3 = t1.edge3; }
+                else { edge2 = t1.edge3; edge3 = t1.edge1; }
+            }
+            if (AreSameEdge(t1.vertex1, t1.vertex3, e1.vertex1, e1.vertex2))
+            {//e1 == t1.e3
                 lv1.Set(t1.vertex2);
-            if (!AreSameVertex(t1.vertex3, e.vertex1) && !AreSameVertex(t1.vertex3, e.vertex2))
+                var e = m_edges[t1.edge1];
+                if (AreSameEdge(e.vertex1, e.vertex2, lv1, lv3))
+                     { edge2 = t1.edge1; edge3 = t1.edge2; }
+                else { edge2 = t1.edge2; edge3 = t1.edge1; }
+            }
+            if (AreSameEdge(t1.vertex1, t1.vertex2, e1.vertex1, e1.vertex2))
+            {//e1 == t1.e1
                 lv1.Set(t1.vertex3);
+                var e = m_edges[t1.edge2];
+                if (AreSameEdge(e.vertex1, e.vertex2, lv1, lv3))
+                     { edge2 = t1.edge2; edge3 = t1.edge3; }
+                else { edge2 = t1.edge3; edge3 = t1.edge2; }
+            }
 
-            if (!AreSameVertex(t2.vertex1, e.vertex1) && !AreSameVertex(t2.vertex1, e.vertex2))
+            if (AreSameEdge(t2.vertex2, t2.vertex3, e1.vertex1, e1.vertex2))
+            {//e1 == t2.e2
                 lv2.Set(t2.vertex1);
-            if (!AreSameVertex(t2.vertex2, e.vertex1) && !AreSameVertex(t2.vertex2, e.vertex2))
+                var e = m_edges[t2.edge1];
+                if (AreSameEdge(e.vertex1, e.vertex2, lv2, lv3))
+                    { edge4 = t2.edge1; edge5 = t2.edge3; }
+                else { edge4 = t2.edge3; edge5 = t2.edge1; }
+            }
+            if (AreSameEdge(t2.vertex1, t2.vertex3, e1.vertex1, e1.vertex2))
+            {//e1 == t2.e3
                 lv2.Set(t2.vertex2);
-            if (!AreSameVertex(t2.vertex3, e.vertex1) && !AreSameVertex(t2.vertex3, e.vertex2))
+                var e = m_edges[t2.edge1];
+                if (AreSameEdge(e.vertex1, e.vertex2, lv2, lv3))
+                     { edge4 = t2.edge1; edge5 = t2.edge2; }
+                else { edge4 = t2.edge2; edge5 = t2.edge1; }
+            }
+            if (AreSameEdge(t2.vertex1, t2.vertex2, e1.vertex1, e1.vertex2))
+            {//e1 == t2.e1
                 lv2.Set(t2.vertex3);
+                var e = m_edges[t2.edge2];
+                if (AreSameEdge(e.vertex1, e.vertex2, lv2, lv3))
+                     { edge4 = t2.edge2; edge5 = t2.edge3; }
+                else { edge4 = t2.edge3; edge5 = t2.edge2; }
+            }
+
+            Debug.Assert(edge2 >= 0 && edge3 >= 0 && edge4 >= 0 && edge5 >= 0);
 
             Vertex v1 = m_vertices[lv1.vertex];
             Vertex v2 = m_vertices[lv2.vertex];
             Vertex v3 = m_vertices[lv3.vertex];
             Vertex v4 = m_vertices[lv4.vertex];
 
-            Edge[] edges = new Edge[4];
-            int edgeNB = 0;
+            Edge e2 = m_edges[edge2];
+            Edge e3 = m_edges[edge3];
+            Edge e4 = m_edges[edge4];
+            Edge e5 = m_edges[edge5];
 
-            Action<int> addEdge = delegate (int edgeIndex)
-            {
-                if (edgeIndex == edge)
-                    return;
-                if (edgeNB == edges.Length)
-                    return;
-
-                var edgeT = m_edges[edgeIndex];
-                edges[edgeNB] = edgeT;
-                edgeNB++;
-            };
-
-            addEdge(t1.edge1);
-            addEdge(t1.edge2);
-            addEdge(t1.edge3);
-            addEdge(t2.edge1);
-            addEdge(t2.edge2);
-            addEdge(t2.edge3);
-
-            //remove old references
-            v1.triangles.Remove(e.triangle1);
-            v2.triangles.Remove(e.triangle2);
-            v3.triangles.Remove(e.triangle1);
-            v3.triangles.Remove(e.triangle2);
-            v4.triangles.Remove(e.triangle1);
-            v4.triangles.Remove(e.triangle2);
-
-            v3.edges.Remove(edge);
-            v4.edges.Remove(edge);
-
-            for (int i = 0; i < edges.Length; i++)
-            {
-                if (edges[i].triangle1 == e.triangle1 || edges[i].triangle1 == e.triangle2)
-                {//set triangle2  to triangle1 to be sure to have all triangle2 empty, it's easier to set triangles this way
-                    edges[i].triangle1 = edges[i].triangle2;
-                    edges[i].triangle2 = -1;
-                }
-                if (edges[i].triangle2 == e.triangle1 || edges[i].triangle2 == e.triangle2)
-                    edges[i].triangle2 = -1;
-            }
-
-            //modify edge and triangles
-            e.vertex1.Set(lv1);
-            e.vertex2.Set(lv2);
-
+            //change edge triangles and vertices properties
+            t1.edge1 = edge1;
+            t1.edge2 = edge2;
+            t1.edge3 = edge4;
             t1.vertex1.Set(lv1);
             t1.vertex2.Set(lv2);
             t1.vertex3.Set(lv3);
 
+            t2.edge1 = edge1;
+            t2.edge2 = edge3;
+            t2.edge3 = edge5;
             t2.vertex1.Set(lv1);
             t2.vertex2.Set(lv2);
             t2.vertex3.Set(lv4);
 
-            v1.triangles.Add(e.triangle1);
-            v2.triangles.Add(e.triangle1);
-            v3.triangles.Add(e.triangle1);
+            e1.vertex1.Set(lv1);
+            e1.vertex2.Set(lv2);
 
-            v1.triangles.Add(e.triangle2);
-            v2.triangles.Add(e.triangle2);
-            v4.triangles.Add(e.triangle2);
+            if (e3.triangle1 == triangle1)
+                e3.triangle1 = triangle2;
+            else if (e3.triangle2 == triangle1)
+                e3.triangle2 = triangle2;
+            else Debug.Assert(false);
 
-            v1.edges.Add(edge);
-            v2.edges.Add(edge);
+            if (e4.triangle1 == triangle2)
+                e4.triangle1 = triangle1;
+            else if (e4.triangle2 == triangle2)
+                e4.triangle2 = triangle1;
+            else Debug.Assert(false);
 
-            for (int i = 0; i < edges.Length; i++)
-            {
-                if (AreSameVertex(edges[i].vertex1, lv3) || AreSameVertex(edges[i].vertex2, lv3))
-                    edges[i].triangle2 = e.triangle1;
-                else edges[i].triangle2 = e.triangle2;
-            }
+            v1.triangles.Add(triangle2);
+            v1.edges.Add(edge1);
+            v2.triangles.Add(triangle1);
+            v2.edges.Add(edge1);
+            v3.triangles.Remove(triangle2);
+            v3.edges.Remove(edge1);
+            v4.triangles.Remove(triangle1);
+            v4.edges.Remove(edge1);
 
             return true;
         }
         #endregion
+
+        //return true if edge is on the triangle
+        bool GetTriangleToEdgeOffset(int triangle, int edge, out int x, out int y)
+        {
+            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
+            Debug.Assert(edge >= 0 && edge < m_edges.Count);
+
+            var t = m_triangles[triangle];
+            var e = m_edges[edge];
+
+            if(AreSameEdge(t.vertex1, t.vertex2, e.vertex1, e.vertex2))
+            {
+                GetEdgeToEdgeOffset(t.vertex1, t.vertex2, e.vertex1, e.vertex2, out x, out y);
+                return true;
+            }
+            if(AreSameEdge(t.vertex2, t.vertex3, e.vertex1, e.vertex2))
+            {
+                GetEdgeToEdgeOffset(t.vertex2, t.vertex3, e.vertex1, e.vertex2, out x, out y);
+                return true;
+            }
+            if(AreSameEdge(t.vertex3, t.vertex1, e.vertex1, e.vertex2))
+            {
+                GetEdgeToEdgeOffset(t.vertex3, t.vertex1, e.vertex1, e.vertex2, out x, out y);
+                return true;
+            }
+
+            x = 0;
+            y = 0;
+            return false;
+        }
+
+        void GetEdgeToEdgeOffset(LocalVertex e1a, LocalVertex e1b, LocalVertex e2a, LocalVertex e2b, out int x, out int y)
+        {
+            LocalVertex min1 = e1a < e1b ? e1a : e1b;
+            LocalVertex max1 = e1a < e1b ? e1b : e1a;
+            LocalVertex min2 = e2a < e2b ? e2a : e2b;
+            LocalVertex max2 = e2a < e2b ? e2b : e2a;
+
+            x = min2.chunkX - min1.chunkX;
+            y = min2.chunkY - min1.chunkY;
+        }
 
         public Vector2 ClampPos(Vector2 pos)
         {

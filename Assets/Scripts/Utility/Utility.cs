@@ -48,11 +48,20 @@ public static class Utility
     
     public static bool IsOnTriangle(Vector2 p, Vector2 p0, Vector2 p1, Vector2 p2)
     {
-        var A = 1 / 2 * (-p1.y * p2.x + p0.y * (-p1.x + p2.x) + p0.x * (p1.y - p2.y) + p1.x * p2.y);
-        var sign = A < 0 ? -1 : 1;
-        var s = (p0.y * p2.x - p0.x * p2.y + (p2.y - p0.y) * p.x + (p0.x - p2.x) * p.y) * sign;
-        var t = (p0.x * p1.y - p0.y * p1.x + (p0.y - p1.y) * p.x + (p1.x - p0.x) * p.y) * sign;
+        var v0 = p2 - p0;
+        var v1 = p1 - p0;
+        var v2 = p - p0;
 
-        return s > 0 && t > 0 && (s + t) < 2 * A * sign;
+        var dot00 = Vector2.Dot(v0, v0);
+        var dot01 = Vector2.Dot(v0, v1);
+        var dot02 = Vector2.Dot(v0, v2);
+        var dot11 = Vector2.Dot(v1, v1);
+        var dot12 = Vector2.Dot(v1, v2);
+
+        var denom = dot00 * dot11 - dot01 * dot01;
+        var u = (dot11 * dot02 - dot01 * dot12) / denom;
+        var v = (dot00 * dot12 - dot01 * dot02) / denom;
+
+        return (u >= 0) && (v >= 0) && (u + v < 1);
     }
 }

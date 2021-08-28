@@ -45,6 +45,33 @@ namespace NDelaunay
             int v3, chunkX3, chunkY3;
             m_grid.GetTriangleVertices(t, out v1, out chunkX1, out chunkY1, out v2, out chunkX2, out chunkY2, out v3, out chunkX3, out chunkY3);
 
+            Vector2 pos1 = m_grid.GetPos(v1, chunkX1, chunkY1);
+            Vector2 pos2 = m_grid.GetPos(v2, chunkX2, chunkY2);
+            Vector2 pos3 = m_grid.GetPos(v3, chunkX3, chunkY3);
+
+            float size = m_grid.GetSize();
+
+            while(vertex.x - pos1.x > size || vertex.x - pos2.x > size || vertex.x - pos3.x > size)
+            {
+                pos1.x += size; pos2.x += size; pos3.x += size;
+                chunkX1++; chunkX2++; chunkX3++;
+            }
+            while (vertex.x - pos1.x < -size || vertex.x - pos2.x < -size || vertex.x - pos3.x < -size)
+            {
+                pos1.x -= size; pos2.x -= size; pos3.x -= size;
+                chunkX1--; chunkX2--; chunkX3--;
+            }
+            while (vertex.y - pos1.y > size || vertex.y - pos2.y > size || vertex.y - pos3.y > size)
+            {
+                pos1.y += size; pos2.y += size; pos3.y += size;
+                chunkY1++; chunkY2++; chunkY3++;
+            }
+            while (vertex.y - pos1.y < -size || vertex.y - pos2.y < -size || vertex.y - pos3.y < -size)
+            {
+                pos1.y -= size; pos2.y -= size; pos3.y -= size;
+                chunkY1--; chunkY2--; chunkY3--;
+            }
+
             m_grid.RemoveTriangle(t);
 
             var t1 = m_grid.AddTriangle(v1, chunkX1, chunkY1, v2, chunkX2, chunkY2, v, 0, 0, false);
@@ -74,14 +101,14 @@ namespace NDelaunay
             float distSqr = (omega - v4).sqrMagnitude;
             if (offset >= radius)
                 return;
-
+         
             int indexE1, chunkXE1, chunkYE1;
             int indexE2, chunkXE2, chunkYE2;
             m_grid.GetEdgeVertices(edge, out indexE1, out chunkXE1, out chunkYE1, out indexE2, out chunkXE2, out chunkYE2);
 
             //flip edge
             m_grid.FlipEdge(edge);
-
+            return;
             //and test the 2 others edges to be fliped
             //indexE1 - index && indexE2 - index
 
@@ -102,6 +129,30 @@ namespace NDelaunay
 
             TestFlipEdge(t1, edgePoint1);
             TestFlipEdge(t2, edgePoint2);
+        }
+
+        public void Draw()
+        {
+            for(int i = 0; i < m_grid.GetTriangleCount(); i++)
+            {
+                Vector2 pos1, pos2, pos3;
+
+                m_grid.GetTriangleVerticesPos(i, out pos1, out pos2, out pos3);
+                float y = 3.1f;
+
+                Debug.DrawLine(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), Color.red);
+                Debug.DrawLine(new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), Color.red);
+                Debug.DrawLine(new Vector3(pos3.x, y, pos3.y), new Vector3(pos1.x, y, pos1.y), Color.red);
+            }
+
+            for(int i = 0; i < m_grid.GetEdgeCount(); i++)
+            {
+                Vector2 pos1, pos2;
+                m_grid.GetEdgeVerticesPos(i, out pos1, out pos2);
+
+                float y = 15;
+                Debug.DrawLine(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), Color.blue);
+            }
         }
     }
 }

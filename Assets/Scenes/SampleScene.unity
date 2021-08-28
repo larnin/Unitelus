@@ -394,7 +394,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &210816804
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1452,8 +1452,8 @@ MonoBehaviour:
     - amplitude: 7
       frequency: 4
     m_biomes:
-      seed: 1248
-      nbBiome: 20
+      seed: 3
+      nbBiome: 10
       relaxingPower: 5
       relaxingForce: 20
       magnetPower: 30
