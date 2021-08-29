@@ -1077,11 +1077,6 @@ namespace NDelaunay
             v4.triangles.Remove(triangle1);
             v4.edges.Remove(edge1);
 
-            if (t1.edge1 == t1.edge2 || t1.edge2 == t1.edge3 || t1.edge3 == t1.edge1)
-                Debug.Assert(false);
-            if (t2.edge1 == t2.edge2 || t2.edge2 == t2.edge3 || t2.edge3 == t2.edge1)
-                Debug.Assert(false);
-
             return true;
         }
         #endregion
@@ -1191,24 +1186,6 @@ namespace NDelaunay
         {
             var offset = GetOffset(pos1, pos2);
             return offset.magnitude;
-        }
-
-        public int DebugCheckGrid()
-        {
-            int nb = 0;
-            for(int i = 0; i < m_edges.Count; i++)
-            {
-                if (m_edges[i].triangle1 < 0 || m_edges[i].triangle2 < 0)
-                    nb++;
-            }
-
-            for(int i = 0; i < m_triangles.Count; i++)
-            {
-                var t = m_triangles[i];
-                if (t.edge1 == t.edge2 || t.edge2 == t.edge3 || t.edge1 == t.edge3)
-                    Debug.Assert(false);
-            }
-            return nb;
         }
     }
 }
