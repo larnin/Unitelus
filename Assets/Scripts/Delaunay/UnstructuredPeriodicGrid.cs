@@ -226,10 +226,13 @@ namespace NDelaunay
                 var e = m_edges[i];
                 if (e.vertex1.vertex == index || e.vertex2.vertex == index)
                 {
+                    var otherVertex = e.vertex1.vertex == index ? e.vertex2.vertex : e.vertex1.vertex;
+                    var otherV = m_vertices[otherVertex];
+                    otherV.edges.Remove(i);
+
                     for (int j = 0; j < m_vertices.Count; j++)
                     {
                         var v = m_vertices[j];
-                        v.edges.Remove(i);
                         for (int k = 0; k < v.edges.Count; k++)
                             if (v.edges[k] > i)
                                 v.edges[k]--;
@@ -262,10 +265,16 @@ namespace NDelaunay
                 var t = m_triangles[i];
                 if (t.vertex1.vertex == index || t.vertex2.vertex == index || t.vertex3.vertex == index)
                 {
+                    if (t.vertex1.vertex != index)
+                        m_vertices[t.vertex1.vertex].triangles.Remove(i);
+                    if (t.vertex2.vertex != index)
+                        m_vertices[t.vertex2.vertex].triangles.Remove(i);
+                    if (t.vertex3.vertex != index)
+                        m_vertices[t.vertex3.vertex].triangles.Remove(i);
+
                     for (int j = 0; j < m_vertices.Count; j++)
                     {
                         var v = m_vertices[j];
-                        v.triangles.Remove(i);
                         for (int k = 0; k < v.triangles.Count; k++)
                             if (v.triangles[k] > i)
                                 v.triangles[k]--;
@@ -447,7 +456,7 @@ namespace NDelaunay
             foreach (var edgeIndex in edgeToCheck)
             {
                 var e = m_edges[edgeIndex];
-                //remove edge is no triangle on the other side
+                //remove edge if no triangle on the other side
                 if (e.triangle1 < 0 || e.triangle2 < 0)
                 {
                     m_vertices[e.vertex1.vertex].edges.Remove(edgeIndex);
@@ -678,13 +687,13 @@ namespace NDelaunay
                 var t = m_triangles[i];
 
                 bool testAllPos = false;
-                if (t.vertex1.chunkX != t.vertex2.chunkX || t.vertex1.chunkX != t.vertex3.chunkX)
+                if (t.vertex1.chunkX != t.vertex2.chunkX || t.vertex1.chunkX != t.vertex3.chunkX || t.vertex1.chunkX != 0)
                 {
                     testPos.Set(0, 1, t.vertex1.chunkX < 0 || t.vertex2.chunkX < 0 || t.vertex3.chunkX < 0);
                     testPos.Set(2, 1, t.vertex1.chunkX > 0 || t.vertex2.chunkX > 0 || t.vertex3.chunkX > 0);
                     testAllPos = true;
                 }
-                if (t.vertex1.chunkY != t.vertex2.chunkY || t.vertex1.chunkY != t.vertex3.chunkY)
+                if (t.vertex1.chunkY != t.vertex2.chunkY || t.vertex1.chunkY != t.vertex3.chunkY || t.vertex1.chunkY != 0)
                 {
                     testPos.Set(1, 0, t.vertex1.chunkY < 0 || t.vertex2.chunkY < 0 || t.vertex3.chunkY < 0);
                     testPos.Set(1, 2, t.vertex1.chunkY > 0 || t.vertex2.chunkY > 0 || t.vertex3.chunkY > 0);
@@ -1031,15 +1040,15 @@ namespace NDelaunay
 
             //change edge triangles and vertices properties
             t1.edge1 = edge1;
-            t1.edge2 = edge2;
-            t1.edge3 = edge4;
+            t1.edge2 = edge4;
+            t1.edge3 = edge2;
             t1.vertex1.Set(lv1);
             t1.vertex2.Set(lv2);
             t1.vertex3.Set(lv3);
 
             t2.edge1 = edge1;
-            t2.edge2 = edge3;
-            t2.edge3 = edge5;
+            t2.edge2 = edge5;
+            t2.edge3 = edge3;
             t2.vertex1.Set(lv1);
             t2.vertex2.Set(lv2);
             t2.vertex3.Set(lv4);
@@ -1067,6 +1076,11 @@ namespace NDelaunay
             v3.edges.Remove(edge1);
             v4.triangles.Remove(triangle1);
             v4.edges.Remove(edge1);
+
+            if (t1.edge1 == t1.edge2 || t1.edge2 == t1.edge3 || t1.edge3 == t1.edge1)
+                Debug.Assert(false);
+            if (t2.edge1 == t2.edge2 || t2.edge2 == t2.edge3 || t2.edge3 == t2.edge1)
+                Debug.Assert(false);
 
             return true;
         }
@@ -1177,6 +1191,24 @@ namespace NDelaunay
         {
             var offset = GetOffset(pos1, pos2);
             return offset.magnitude;
+        }
+
+        public int DebugCheckGrid()
+        {
+            int nb = 0;
+            for(int i = 0; i < m_edges.Count; i++)
+            {
+                if (m_edges[i].triangle1 < 0 || m_edges[i].triangle2 < 0)
+                    nb++;
+            }
+
+            for(int i = 0; i < m_triangles.Count; i++)
+            {
+                var t = m_triangles[i];
+                if (t.edge1 == t.edge2 || t.edge2 == t.edge3 || t.edge1 == t.edge3)
+                    Debug.Assert(false);
+            }
+            return nb;
         }
     }
 }

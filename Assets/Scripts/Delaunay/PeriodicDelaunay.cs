@@ -71,9 +71,9 @@ namespace NDelaunay
                 pos1.y -= size; pos2.y -= size; pos3.y -= size;
                 chunkY1--; chunkY2--; chunkY3--;
             }
-
+            
             m_grid.RemoveTriangle(t);
-
+            
             var t1 = m_grid.AddTriangle(v1, chunkX1, chunkY1, v2, chunkX2, chunkY2, v, 0, 0, false);
             var t2 = m_grid.AddTriangle(v2, chunkX2, chunkY2, v3, chunkX3, chunkY3, v, 0, 0, false);
             var t3 = m_grid.AddTriangle(v3, chunkX3, chunkY3, v1, chunkX1, chunkY1, v, 0, 0, false);
