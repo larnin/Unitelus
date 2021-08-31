@@ -183,6 +183,35 @@ namespace NDelaunay
             pos3 = t.pos3;
         }
 
+        public void GetTriangleVerticesInfosAt(Vector2 pos, out Vector2 pos1, out int vertex1, out Vector2 pos2, out int vertex2, out Vector2 pos3, out int vertex3)
+        {
+            pos = ClampPos(pos);
+            int chunkX, chunkY;
+            PosToUnclampedChunkPos(pos.x, pos.y, out chunkX, out chunkY);
+
+            var chunk = m_chunks[ChunkPosToIndex(chunkX, chunkY)];
+            int triangle = chunk.GetTriangle(pos);
+            if (triangle == -1)
+            {
+                Debug.Assert(false);
+                vertex1 = -1;
+                vertex2 = -1;
+                vertex3 = -1;
+                pos1 = Vector2.zero;
+                pos2 = Vector2.zero;
+                pos3 = Vector2.zero;
+                return;
+            }
+
+            var t = chunk.triangles[triangle];
+            vertex1 = t.vertex1;
+            vertex2 = t.vertex2;
+            vertex3 = t.vertex3;
+            pos1 = t.pos1;
+            pos2 = t.pos2;
+            pos3 = t.pos3;
+        }
+
         int ChunkPosToIndex(int x, int y)
         {
             return x * m_chunkNb + y;

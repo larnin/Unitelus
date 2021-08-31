@@ -278,9 +278,47 @@ public class VoronoiBiomes
         return pos;
     }
 
+    public void GetSurroundingBiomesWeights(Vector2 pos, out BiomeType type1, out float weight1, out BiomeType type2, out float weight2, out BiomeType type3, out float weight3)
+    {
+        Vector2 pos1, pos2, pos3;
+        int vertex1, vertex2, vertex3;
+        m_grid.GetTriangleVerticesInfosAt(pos, out pos1, out vertex1, out pos2, out vertex2, out pos3, out vertex3);
+
+        Debug.Assert(vertex1 >= 0 && vertex1 < m_vertices.Count);
+        Debug.Assert(vertex2 >= 0 && vertex2 < m_vertices.Count);
+        Debug.Assert(vertex3 >= 0 && vertex3 < m_vertices.Count);
+
+        type1 = m_vertices[vertex1].biome;
+        type2 = m_vertices[vertex2].biome;
+        type3 = m_vertices[vertex3].biome;
+
+        weight1 = 1 / (1 + (pos1 - pos).magnitude);
+        weight2 = 1 / (1 + (pos2 - pos).magnitude);
+        weight3 = 1 / (1 + (pos3 - pos).magnitude);
+    }
+
+    public void GetSurroundingBiomes(Vector2 pos, out BiomeType type1, out BiomeType type2, out BiomeType type3)
+    {
+        float weight1, weight2, weight3;
+        GetSurroundingBiomesWeights(pos, out type1, out weight1, out type2, out weight2, out type3, out weight3);
+    }
+
     public BiomeType GetNearestBiome(Vector2 pos)
     {
-        float minDistance = float.MaxValue;
+        BiomeType type1, type2, type3;
+        float weight1, weight2, weight3;
+
+        GetSurroundingBiomesWeights(pos, out type1, out weight1, out type2, out weight2, out type3, out weight3);
+
+        BiomeType type = type1;
+        if (weight2 > weight1)
+            type = type2;
+        if (weight3 > weight2 && weight3 > weight1)
+            type = type3;
+
+        return type;
+
+        /*float minDistance = float.MaxValue;
         BiomeType bestBiome = BiomeType.Invalid;
 
         foreach(var v in m_vertices)
@@ -294,7 +332,7 @@ public class VoronoiBiomes
             }
         }
 
-        return bestBiome;
+        return bestBiome;*/
     }
 
     public void Draw()
