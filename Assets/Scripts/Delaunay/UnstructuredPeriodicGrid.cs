@@ -184,9 +184,9 @@ namespace NDelaunay
         List<Edge> m_edges = new List<Edge>();
         List<Triangle> m_triangles = new List<Triangle>();
 
-        float m_size;
+        int m_size;
 
-        public UnstructuredPeriodicGrid(float size)
+        public UnstructuredPeriodicGrid(int size)
         {
             m_size = size;
         }
@@ -1186,6 +1186,23 @@ namespace NDelaunay
         {
             var offset = GetOffset(pos1, pos2);
             return offset.magnitude;
+        }
+
+        public PeriodicChunkedGrid ToChunkedGrid(int chunkSize)
+        {
+            PeriodicChunkedGrid grid = new PeriodicChunkedGrid(m_size, chunkSize);
+
+            int triangleNb = m_triangles.Count;
+            for(int i = 0; i < triangleNb; i++)
+            {
+                var t = m_triangles[i];
+                Vector2 pos1, pos2, pos3;
+                GetTriangleVerticesPos(i, out pos1, out pos2, out pos3);
+
+                grid.AddTriangle(pos1, pos2, pos3, t.vertex1.vertex, t.vertex2.vertex, t.vertex3.vertex);
+            }
+
+            return grid;
         }
     }
 }

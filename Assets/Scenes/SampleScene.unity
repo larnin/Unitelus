@@ -1453,7 +1453,7 @@ MonoBehaviour:
       frequency: 4
     m_biomes:
       seed: 3
-      nbBiome: 10
+      nbBiome: 100
       relaxingPower: 5
       relaxingForce: 20
       magnetPower: 30

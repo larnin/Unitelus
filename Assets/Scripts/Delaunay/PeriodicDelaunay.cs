@@ -8,7 +8,7 @@ namespace NDelaunay
     {
         UnstructuredPeriodicGrid m_grid;
 
-        public PeriodicDelaunay(float size)
+        public PeriodicDelaunay(int size)
         {
             m_grid = new UnstructuredPeriodicGrid(size);
         }
@@ -129,6 +129,11 @@ namespace NDelaunay
 
             TestFlipEdge(t1, edgePoint1);
             TestFlipEdge(t2, edgePoint2);
+        }
+
+        public PeriodicChunkedGrid GetChunkedGrid(int chunkSize)
+        {
+            return m_grid.ToChunkedGrid(chunkSize);
         }
 
         public void Draw()

@@ -30,9 +30,9 @@ public class VoronoiBiomes
     float m_themperatureMax;
     int m_size;
 
-    PeriodicDelaunay m_delaunay;
-
     public List<Vertex> m_vertices = new List<Vertex>();
+
+    PeriodicChunkedGrid m_grid = null;
 
     MT19937 m_rand;
 
@@ -203,12 +203,14 @@ public class VoronoiBiomes
 
     void GenerateTriangles()
     {
-        m_delaunay = new PeriodicDelaunay(m_size);
+        var delaunay = new PeriodicDelaunay(m_size);
 
         for(int i = 0; i < m_vertices.Count; i++)
         {
-            m_delaunay.Add(new Vector2(m_vertices[i].x, m_vertices[i].y));
+            delaunay.Add(new Vector2(m_vertices[i].x, m_vertices[i].y));
         }
+
+        m_grid = delaunay.GetChunkedGrid(Chunk.chunkSize);
     }
 
     float NormalizeMoisture(float moisture)
@@ -297,6 +299,7 @@ public class VoronoiBiomes
 
     public void Draw()
     {
-        m_delaunay.Draw();
+        if(m_grid != null)
+            m_grid.Draw();
     }
 }
