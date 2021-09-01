@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 public struct BlockData
 {
-    public UInt16 id;
+    public BlockID id;
     public byte data;
 
-    BlockData(UInt16 _id, byte _data = 0)
+    BlockData(BlockID _id, byte _data = 0)
     {
         id = _id;
         data = _data;

@@ -15,10 +15,10 @@ public enum BlockType
 
 public abstract class BlockTypeBase
 {
-    [SerializeField] int m_id;
+    [SerializeField] BlockID m_id;
     [SerializeField] BlockType m_type;
 
-    public int id { get { return m_id; } }
+    public BlockID id { get { return m_id; } }
     public BlockType type { get { return m_type; } protected set { m_type = value; } }
 
     public BlockTypeBase()

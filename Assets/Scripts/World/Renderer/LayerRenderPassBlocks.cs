@@ -32,7 +32,7 @@ public class LayerRenderPassBlocks : LayerRendererPassBase
                 for(int k = 0; k < Chunk.chunkSize; k++)
                 {
                     m_view.SetPos(i + 1, j + 1, k + 1);
-                    int centerID = m_matrix.Get(i + 1, j + 1, k + 1).id;
+                    BlockID centerID = m_matrix.Get(i + 1, j + 1, k + 1).id;
                     if (centerID == 0)
                         continue;
 

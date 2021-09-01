@@ -7,14 +7,14 @@ using UnityEngine;
 
 public class BlockRendererData
 {
-    public int id;
+    public BlockID id;
     public Material material;
     public Rotation rotation;
     public bool collision;
     Rect[] facesUV;
     bool[] facesDraw;
 
-    public BlockRendererData(int _id, Material mat, Rotation rot = Rotation.Rot0, bool _collision = true)
+    public BlockRendererData(BlockID _id, Material mat, Rotation rot = Rotation.Rot0, bool _collision = true)
     {
         id = _id;
         material = mat;

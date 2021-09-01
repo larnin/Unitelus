@@ -132,7 +132,7 @@ public class WorldGenerator
             perlins.Add(new Perlin(world.size, p.amplitude, p.frequency, m_settings.seed + perlins.Count));
 
         BlockData b;
-        b.id = 1;
+        b.id = BlockID.INVALID;
         b.data = 0;
 
         int minHeight = 2;
@@ -143,7 +143,7 @@ public class WorldGenerator
             for (int z = 0; z < m_settings.size * Chunk.chunkSize; z++)
             {
                 var biome = m_biomes.GetNearestBiome(new Vector2(x, z));
-                b.id = (ushort)biome;
+                b.id = (BlockID)biome;
 
                 world.SetBlock(x, minHeight, z, b, false);
             }

@@ -25,27 +25,31 @@ public class BlockTypeList
         Set(0, new BlockTypeEmpty());
     }
 
-    public void Set(int id, BlockTypeBase block)
+    public void Set(BlockID id, BlockTypeBase block)
     {
-        while (id >= m_blocks.Count)
+        int index = (int)id;
+
+        while (index >= m_blocks.Count)
             m_blocks.Add(null);
 
-        m_blocks[id] = block;
+        m_blocks[index] = block;
     }
 
-    public BlockTypeBase Get(int id)
+    public BlockTypeBase Get(BlockID id)
     {
+        int index = (int)id;
+
         Debug.Assert(m_blocks[0] != null);
-        if (id >= m_blocks.Count)
+        if (index >= m_blocks.Count)
         {
             Debug.Assert(false);
             return m_blocks[0];
         }
-        if(m_blocks[id] == null)
+        if(m_blocks[index] == null)
         {
             Debug.Assert(false);
             return m_blocks[0];
         }
-        return m_blocks[id];
+        return m_blocks[index];
     }
 }
