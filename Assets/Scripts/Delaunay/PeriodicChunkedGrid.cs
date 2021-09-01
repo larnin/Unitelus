@@ -253,33 +253,5 @@ namespace NDelaunay
 
             return pos;
         }
-
-        public void Draw()
-        {
-            int index = Mathf.FloorToInt(Time.time / 0.5f) - 20;
-            if (index < 0)
-                index = 0;
-            //index = 4;
-
-            index %= m_chunkNb * m_chunkNb;
-
-            int x = index % m_chunkNb;
-            int y = index / m_chunkNb;
-            index = ChunkPosToIndex(x, y);
-
-            var c = m_chunks[index];
-
-            float height = 5;
-
-            //draw full size
-            DebugDraw.Rectangle(new Vector3(0, height, 0), new Vector2(m_totalSize, m_totalSize), Color.magenta);
-
-            //draw chunk size
-            DebugDraw.Rectangle(new Vector3(x * m_chunkSize, height, y * m_chunkSize), new Vector2(m_chunkSize, m_chunkSize), Color.red);
-
-            //draw triangles
-            foreach(var t in c.triangles)
-                DebugDraw.Triangle(new Vector3(t.pos1.x, height, t.pos1.y), new Vector3(t.pos2.x, height, t.pos2.y), new Vector3(t.pos3.x, height, t.pos3.y), Color.green);
-        }
     }
 }

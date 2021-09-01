@@ -143,7 +143,7 @@ public class GameLoader : MonoBehaviour
         var rand = new MT19937((uint)m_settings.seed);
 
         var world = PlaceholderWorld.instance.world;
-
+        
         var genSize = new UniformIntDistribution(0, world.size);
 
         var mat = new Matrix<BlockData>(3, 3, 3);

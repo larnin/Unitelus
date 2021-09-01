@@ -104,6 +104,8 @@ public class VoronoiBiomes
                 m_vertices.Add(vertex);
             }
         }
+
+        m_vertices.Shuffle(m_rand);
     }
 
     //push the biomes that are not compatible (desert/snow)
@@ -292,9 +294,13 @@ public class VoronoiBiomes
         type2 = m_vertices[vertex2].biome;
         type3 = m_vertices[vertex3].biome;
 
-        weight1 = 1 / (1 + (pos1 - pos).magnitude);
-        weight2 = 1 / (1 + (pos2 - pos).magnitude);
-        weight3 = 1 / (1 + (pos3 - pos).magnitude);
+        var p1 = Utility.IntersectLine(pos1, pos, pos2, pos3);
+        var p2 = Utility.IntersectLine(pos2, pos, pos1, pos3);
+        var p3 = Utility.IntersectLine(pos3, pos, pos1, pos2);
+
+        weight1 = 1 - (pos1 - pos).magnitude / (pos1 - p1).magnitude;
+        weight2 = 1 - (pos2 - pos).magnitude / (pos2 - p2).magnitude;
+        weight3 = 1 - (pos3 - pos).magnitude / (pos3 - p3).magnitude;
     }
 
     public void GetSurroundingBiomes(Vector2 pos, out BiomeType type1, out BiomeType type2, out BiomeType type3)
@@ -317,27 +323,5 @@ public class VoronoiBiomes
             type = type3;
 
         return type;
-
-        /*float minDistance = float.MaxValue;
-        BiomeType bestBiome = BiomeType.Invalid;
-
-        foreach(var v in m_vertices)
-        {
-            var biome = BiomeList.instance.Get(v.biome);
-            var offset = GetDistance(pos, new Vector2(v.x, v.y)) / biome.size;
-            if(offset < minDistance)
-            {
-                minDistance = offset;
-                bestBiome = v.biome;
-            }
-        }
-
-        return bestBiome;*/
-    }
-
-    public void Draw()
-    {
-        if(m_grid != null)
-            m_grid.Draw();
     }
 }

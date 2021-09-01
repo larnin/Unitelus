@@ -1447,18 +1447,18 @@ MonoBehaviour:
     seed: 152
     size: 16
     perlins:
-    - amplitude: 14
+    - amplitude: 15
       frequency: 2
     - amplitude: 7
       frequency: 4
     m_biomes:
-      seed: 3
-      nbBiome: 100
+      seed: 15
+      nbBiome: 200
       relaxingPower: 5
       relaxingForce: 20
       magnetPower: 30
       magnetForce: 20
-      validBiomes: 01000000020000000300000004000000
+      validBiomes: 01000000040000000300000002000000
   m_playerPrefab: {fileID: 7660277646467561147, guid: 013c65f2d2d77514d863733b3ab45470,
     type: 3}
 --- !u!4 &1996218792
