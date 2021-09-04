@@ -13,7 +13,7 @@ public enum BlockType
     Smoothed,
 }
 
-public abstract class BlockTypeBase
+public abstract class BlockTypeBase : ScriptableObject
 {
     [SerializeField] BlockID m_id;
     [SerializeField] BlockType m_type;

@@ -23,6 +23,32 @@ public class BlockTypeList
     BlockTypeList()
     {
         Set(0, new BlockTypeEmpty());
+
+        var allBlocks = Enum.GetValues(typeof(BlockID));
+        foreach(BlockID b in allBlocks)
+        {
+            var name = "Blocks/" + b.ToString();
+
+            var file = Resources.Load<ScriptableObject>(name);
+            if(file == null)
+            {
+                DebugConsole.Error("Unable to find Block " + name);
+                Set(b, new BlockTypeEmpty());
+                continue;
+            }
+
+            var blockType = file as BlockTypeBase;
+            if(blockType == null)
+            {
+                DebugConsole.Error("Load Block " + name + " have an uncompatible type !");
+                Set(b, new BlockTypeEmpty());
+                continue;
+            }
+            if(blockType.id != b)
+                DebugConsole.Warning("The block " + name + " have an inconsistent id");
+
+            Set(b, blockType);
+        }
     }
 
     public void Set(BlockID id, BlockTypeBase block)
