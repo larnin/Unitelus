@@ -92,6 +92,8 @@ public class BlockTypeSmoothed : BlockTypeBase
 
     [SerializeField]
     public Material m_material;
+    [SerializeField]
+    public BlockUV m_UV;
 
     BlockRendererData m_data;
 
@@ -141,10 +143,10 @@ public class BlockTypeSmoothed : BlockTypeBase
         Rotation rotation = GetRotationData(block.data);
 
         if (m_data == null)
+        {
             m_data = new BlockRendererData(id, m_material);
-        m_data.SetFaceUV(new Rect(0.25f, 0, 0.25f, 1)
-            , new Rect(0.5f, 0, 0.25f, 1)
-            , new Rect(0.0f, 0, 0.25f, 1));
+            m_UV.FillBlockDataUV(m_data);
+        }
         m_data.rotation = rotation;
 
         SetDrawFacesFromNeighbors(m_data, neighbors);

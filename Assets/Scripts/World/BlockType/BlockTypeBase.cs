@@ -18,7 +18,7 @@ public abstract class BlockTypeBase : ScriptableObject
     [SerializeField] BlockID m_id;
     [SerializeField] BlockType m_type;
 
-    public BlockID id { get { return m_id; } }
+    public BlockID id { get { return m_id; } set { m_id = value; } }
     public BlockType type { get { return m_type; } protected set { m_type = value; } }
 
     public BlockTypeBase()
