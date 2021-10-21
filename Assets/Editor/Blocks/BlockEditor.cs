@@ -62,6 +62,8 @@ public class OneBlockEditor
 
 public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
 {
+    static RenderTexture m_materialTexture;
+
     protected override void DrawPropertyLayout(GUIContent label)
     {
         var value = ValueEntry.SmartValue;
@@ -71,9 +73,12 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
             return;
         }
 
-        DrawDestroy();
+        if (DrawDestroy())
+            return;
 
-        switch(value.block.type)
+        EditorGUI.BeginChangeCheck();
+
+        switch (value.block.type)
         {
             case BlockType.Cube:
                 DrawBlockTypeCube();
@@ -89,7 +94,8 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
                 break;
         }
 
-        DrawSave();
+        if(EditorGUI.EndChangeCheck())
+            AssetDatabase.SaveAssets();
     }
 
     int m_newAssetIndex = 0;
@@ -138,8 +144,10 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
     }
     
 
-    void DrawDestroy()
+    bool DrawDestroy()
     {
+        bool isDestroyed = false;
+
         EditorGUILayout.BeginHorizontal();
 
         EditorGUILayout.LabelField("Want an another block type ?");
@@ -151,19 +159,13 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
             {
                 AssetDatabase.DeleteAsset("Assets/Resources/Blocks/" + value.ID().ToString() + ".asset");
                 AssetDatabase.SaveAssets();
+                return true;
             }
         }
 
         EditorGUILayout.EndHorizontal();
-    }
 
-    void DrawSave()
-    {
-        GUILayout.FlexibleSpace();
-        if(GUILayout.Button("Save"))
-        {
-            AssetDatabase.SaveAssets();
-        }
+        return isDestroyed;
     }
 
     void DrawBlockTypeEmpty()
@@ -176,7 +178,7 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
         var value = ValueEntry.SmartValue;
         var block = value.block as BlockTypeCube;
         DrawBlockUV(block.m_UV, ref value.m_editUVIndex);
-
+        DrawMaterial(block.m_material, block.m_UV, ref value.m_editUVIndex);
     }
 
     void DrawBlockTypeSmoothed()
@@ -184,7 +186,7 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
         var value = ValueEntry.SmartValue;
         var block = value.block as BlockTypeSmoothed;
         DrawBlockUV(block.m_UV, ref value.m_editUVIndex);
-
+        DrawMaterial(block.m_material, block.m_UV, ref value.m_editUVIndex);
     }
 
     void DrawUncompatypeType()
@@ -238,22 +240,58 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
             data.uvs = newArray;
         }
 
+        
         //display uvs
         switch (data.uvType)
         {
             case BlockUVType.SimpleFace:
+                if (editIndex != 0)
+                    editIndex = 0;
                 data.uvs[0] = EditorGUILayout.RectField("Face", data.uvs[0]);
                 break;
             case BlockUVType.UpDownSide:
-                data.uvs[0] = EditorGUILayout.RectField("Up", data.uvs[(int)BlockUV.Face.Up]);
-                data.uvs[0] = EditorGUILayout.RectField("Down", data.uvs[(int)BlockUV.Face.Down]);
-                data.uvs[0] = EditorGUILayout.RectField("Side", data.uvs[(int)BlockUV.Face.Front]);
+                string[] faceNames = new string[] { "Up", "Down", "Side" };
+                if (editIndex < 0 || editIndex >= faceNames.Length)
+                    editIndex = 0;
+                for(int i = 0; i < faceNames.Length; i++)
+                {
+                    bool foldOut = i == editIndex;
+                    if(EditorGUILayout.BeginFoldoutHeaderGroup(foldOut, faceNames[i]))
+                    {
+                        if (!foldOut)
+                            editIndex = i;
+                        data.uvs[i] = EditorGUILayout.RectField(data.uvs[i]);
+                    }
+                    EditorGUILayout.EndFoldoutHeaderGroup();
+                }
                 break;
             case BlockUVType.FullUnfold:
                 for (int i = 0; i < data.uvs.Length; i++)
-                    data.uvs[i] = EditorGUILayout.RectField(((BlockUV.Face)i).ToString(), data.uvs[i]);
+                {
+                    bool foldOut = i == editIndex;
+                    if (EditorGUILayout.BeginFoldoutHeaderGroup(foldOut, ((BlockUV.Face)i).ToString()))
+                    {
+                        if (!foldOut)
+                            editIndex = i;
+                        data.uvs[i] = EditorGUILayout.RectField(data.uvs[i]);
+                    }
+                    EditorGUILayout.EndFoldoutHeaderGroup();
+                }
                 break;
         }
+    }
+
+    void DrawMaterial(Material m, BlockUV data, ref int editIndex)
+    {
+        if(m_materialTexture == null)
+        {
+            m_materialTexture = new RenderTexture(256, 256, 0, RenderTextureFormat.ARGB32);
+            m_materialTexture.Create();
+        }
+
+        m_materialTexture.Release();
+        
+        GUILayout.Label(m_materialTexture);
     }
 }
 

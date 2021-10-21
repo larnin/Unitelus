@@ -3,16 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
-[Serializable]
-public class WorldGeneratorSettingPerlin
-{
-    public float amplitude = 1;
-    public int frequency = 1;
-}
+//generals settings
+//ocean settings
+//plain settings
+//mountains settings
+//desert settings
 
-[Serializable]
-public class WorldGeneratorSettings
+public class WorldGeneratorSettings : ScriptableObject
 {
     public int seed = 0;
     public int size = 1;
@@ -20,6 +19,13 @@ public class WorldGeneratorSettings
     public List<WorldGeneratorSettingPerlin> perlins = new List<WorldGeneratorSettingPerlin>();
 
     public VoronoiBiomesSettings m_biomes;
+}
+
+[Serializable]
+public class WorldGeneratorSettingPerlin
+{
+    public float amplitude = 1;
+    public int frequency = 1;
 }
 
 [Serializable]
