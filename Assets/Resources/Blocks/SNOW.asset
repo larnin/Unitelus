@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6b9543bfb49ad74c8ce904e45f12995, type: 3}
-  m_Name: WATER
+  m_Name: SNOW
   m_EditorClassIdentifier: 
-  m_id: 2
+  m_id: 7
   m_type: 1
-  m_material: {fileID: 2100000, guid: 57ae8d499498d92438bd84fb193e6b13, type: 2}
+  m_material: {fileID: 2100000, guid: d3fe9475c4188404bbcff9d7ee430b08, type: 2}
   m_UV:
     uvType: 0
     uvs:

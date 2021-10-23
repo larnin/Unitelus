@@ -165,7 +165,7 @@ public class MeshParams<T> where T : struct
 
     public int GetColliderMeshCount()
     {
-        if (m_colliderData.Count == 1 && m_colliderData[0].vertices.Length == 0 || m_colliderData[0].indexes.Length == 0)
+        if (m_colliderData.Count == 1 && (m_colliderData[0].vertices.Length == 0 || m_colliderData[0].indexes.Length == 0))
             return 0;
 
         return m_colliderData.Count();

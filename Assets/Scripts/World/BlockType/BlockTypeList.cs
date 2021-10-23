@@ -12,18 +12,21 @@ public class BlockTypeList
     {
         get
         {
-            if (m_instance == null)
-                m_instance = new BlockTypeList();
+            InitInstance();
             return m_instance;
         }
+    }
+
+    public static void InitInstance()
+    {
+        if (m_instance == null)
+            m_instance = new BlockTypeList();
     }
 
     List<BlockTypeBase> m_blocks = new List<BlockTypeBase>();
 
     BlockTypeList()
     {
-        Set(0, new BlockTypeEmpty());
-
         var allBlocks = Enum.GetValues(typeof(BlockID));
         foreach(BlockID b in allBlocks)
         {
@@ -33,7 +36,6 @@ public class BlockTypeList
             if(file == null)
             {
                 DebugConsole.Error("Unable to find Block " + name);
-                Set(b, new BlockTypeEmpty());
                 continue;
             }
 
@@ -41,7 +43,6 @@ public class BlockTypeList
             if(blockType == null)
             {
                 DebugConsole.Error("Load Block " + name + " have an uncompatible type !");
-                Set(b, new BlockTypeEmpty());
                 continue;
             }
             if(blockType.id != b)

@@ -119,12 +119,43 @@ public class WorldGenerator
         statusText = "Generating biomes ...";
 
         m_biomes = new BiomeGenerator();
-        m_biomes.Generate(m_settings.biomes, m_settings.main.size, m_settings.main.seed + 1);
+        m_biomes.Generate(m_settings.biomes, m_settings.main.size * Chunk.chunkSize, m_settings.main.seed + 1);
 
         timer.LogAndRestart(statusText);
         statusText = "Generating surface ...";
 
         world = new World(m_settings.main.size, true);
+
+        int minHeight = 2;
+
+        BlockData b;
+        b.id = BlockID.INVALID;
+        b.data = 0;
+
+        for (int x = 0; x < m_settings.main.size * Chunk.chunkSize; x++)
+        {
+            for (int z = 0; z < m_settings.main.size * Chunk.chunkSize; z++)
+            {
+                var biome = m_biomes.GetBiome(x, z);
+                if (biome == BiomeType.Invalid)
+                    b.id = BlockID.INVALID;
+                else if (biome == BiomeType.Desert)
+                    b.id = BlockID.SAND;
+                else if (biome == BiomeType.Mountain)
+                    b.id = BlockID.STONE;
+                else if (biome == BiomeType.Ocean)
+                    b.id = BlockID.WATER;
+                else if (biome == BiomeType.Plain)
+                    b.id = BlockID.GRASS;
+                else if (biome == BiomeType.Snow)
+                    b.id = BlockID.SNOW;
+                else b.id = BlockID.INVALID;
+
+                world.SetBlock(x, minHeight, z, b, false);
+            }
+        }
+        minHeight--;
+
 
         /*List<Perlin> perlins = new List<Perlin>();
         foreach (var p in m_settings.perlins)
@@ -170,7 +201,7 @@ public class WorldGenerator
         timer.LogAndRestart(statusText);
         statusText = "Generating ground ...";
 
-        /*for (int x = 0; x < m_settings.main.size * Chunk.chunkSize; x++)
+        for (int x = 0; x < m_settings.main.size * Chunk.chunkSize; x++)
         {
             for (int z = 0; z < m_settings.main.size * Chunk.chunkSize; z++)
             {
@@ -181,7 +212,7 @@ public class WorldGenerator
                 for (int y = height - 1; y >= minHeight; y--)
                     world.SetBlock(x, y, z, b, false);
             }
-        }*/
+        }
 
         timer.LogAndRestart(statusText);
         statusText = "Updating blocks state ...";

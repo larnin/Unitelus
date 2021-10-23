@@ -14,6 +14,13 @@ public class ChunkLayer
     public float updateTime { get { return m_updateTime; } }
     public int blockNb { get { return m_blockNb; } }
 
+    public ChunkLayer()
+    {
+        BlockData empty = BlockData.GetDefault();
+        for (int i = 0; i < Chunk.chunkSize * Chunk.chunkSize * Chunk.chunkSize; i++)
+            m_blocks[i] = empty;
+    }
+
     public bool IsEmpty()
     {
         return m_blockNb <= 0;

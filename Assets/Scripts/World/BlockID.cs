@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 public enum BlockID : byte
 {
+    INVALID,
+
     AIR,
     WATER,
     STONE,
     DIRT,
     GRASS,
     SAND,
-
-    INVALID,
+    SNOW,
 }

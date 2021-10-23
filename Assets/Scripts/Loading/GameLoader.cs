@@ -100,6 +100,9 @@ public class GameLoader : MonoBehaviour
             return;
         }
 
+        //init list here to not load blocks types in an other thread
+        BlockTypeList.InitInstance();
+
         m_stateText = "Generate world";
         m_generator = new WorldGenerator();
         m_generator.Generate(m_settings);

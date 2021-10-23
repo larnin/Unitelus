@@ -20,13 +20,16 @@ public class BiomeGenerator
         m_settings = settings;
 
         var grid = GenerateGrid();
-        m_grid = SmoothGrid(grid, m_settings.smoothSize);
+        if (m_settings.smoothSize < 0.5f)
+            m_grid = grid;
+        else m_grid = SmoothGrid(grid, m_settings.smoothSize);
     }
 
     Matrix<BiomeType> GenerateGrid()
     {
-        Matrix<BiomeType> grid = new Matrix<BiomeType>(m_size, m_size);
-        grid.SetAll(BiomeType.Invalid);
+        Matrix<Vector3> values = new Matrix<Vector3>(m_size, m_size);
+        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
         
         List<Perlin> xPerlin = new List<Perlin>();
         foreach (var p in m_settings.noiseX)
@@ -49,6 +52,42 @@ public class BiomeGenerator
                     value.y += p.Get(i, j);
                 foreach (var p in zPerlin)
                     value.z += p.Get(i, j);
+                values.Set(i, j, value);
+
+                min.x = Mathf.Min(min.x, value.x);
+                min.y = Mathf.Min(min.y, value.y);
+                min.z = Mathf.Min(min.z, value.z);
+
+                max.x = Mathf.Max(max.x, value.x);
+                max.y = Mathf.Max(max.y, value.y);
+                max.z = Mathf.Max(max.z, value.z);
+            }
+        }
+
+        Vector3 offset = -min;
+        Vector3 multiplier = max - min;
+        if (multiplier.x < 0.0001f)
+            multiplier.x = 1;
+        else multiplier.x = 1 / multiplier.x;
+        if (multiplier.y < 0.0001f)
+            multiplier.y = 1;
+        else multiplier.y = 1 / multiplier.y;
+        if (multiplier.z < 0.0001f)
+            multiplier.z = 1;
+        else multiplier.z = 1 / multiplier.z;
+
+        Matrix<BiomeType> grid = new Matrix<BiomeType>(m_size, m_size);
+        grid.SetAll(BiomeType.Invalid);
+
+        for (int i = 0; i < m_size; i++)
+        {
+            for (int j = 0; j < m_size; j++)
+            {
+                Vector3 value = values.Get(i, j);
+                value += offset;
+                value.x *= multiplier.x;
+                value.y *= multiplier.y;
+                value.z *= multiplier.z;
 
                 grid.Set(i, j, GetBiomeAt(value));
             }

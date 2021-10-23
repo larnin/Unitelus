@@ -33,7 +33,7 @@ public class LayerRenderPassBlocks : LayerRendererPassBase
                 {
                     m_view.SetPos(i + 1, j + 1, k + 1);
                     BlockID centerID = m_matrix.Get(i + 1, j + 1, k + 1).id;
-                    if (centerID == 0)
+                    if (centerID == BlockID.AIR)
                         continue;
 
                     Vector3 pos = new Vector3(i, j, k);

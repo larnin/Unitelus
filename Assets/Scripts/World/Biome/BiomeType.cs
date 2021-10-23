@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 public enum BiomeType
 {
     Invalid,
+
     Plain,
     Ocean,
     Desert,

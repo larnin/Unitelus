@@ -18,7 +18,7 @@ public struct BlockData
     public static BlockData GetDefault()
     {
         BlockData b;
-        b.id = 0;
+        b.id = BlockID.AIR;
         b.data = 0;
 
         return b;
