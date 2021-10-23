@@ -16,9 +16,9 @@ public enum GameLoadingState
 
 public class GameLoader : MonoBehaviour
 {
-    [SerializeField] WorldGeneratorSettings m_settings = new WorldGeneratorSettings();
     [SerializeField] GameObject m_playerPrefab = null;
 
+    WorldGeneratorSettings m_settings = null;
     WorldGenerator m_generator = null;
 
     GameLoadingState m_state = GameLoadingState.starting;
@@ -30,6 +30,11 @@ public class GameLoader : MonoBehaviour
     {
         m_subscriberList.Add(new Event<GetLoadingState>.Subscriber(GetState));
         m_subscriberList.Subscribe();
+
+        var name = "World/Settings";
+        var file = Resources.Load<ScriptableObject>(name) as WorldGeneratorSettings;
+        if (file != null)
+            m_settings = file;
     }
 
     private void OnDestroy()
@@ -88,6 +93,13 @@ public class GameLoader : MonoBehaviour
 
     void InitGenerateWorld()
     {
+        if(m_settings == null)
+        {
+            ChangeState(GameLoadingState.error);
+            m_stateText = "Unable to load generator settings";
+            return;
+        }
+
         m_stateText = "Generate world";
         m_generator = new WorldGenerator();
         m_generator.Generate(m_settings);
@@ -140,7 +152,7 @@ public class GameLoader : MonoBehaviour
 
     Vector3Int SearchSpawnLocation()
     {
-        var rand = new MT19937((uint)m_settings.seed);
+        var rand = new MT19937((uint)m_settings.main.seed);
 
         var world = PlaceholderWorld.instance.world;
         

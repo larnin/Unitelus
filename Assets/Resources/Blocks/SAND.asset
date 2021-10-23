@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6b9543bfb49ad74c8ce904e45f12995, type: 3}
-  m_Name: STONE
+  m_Name: SAND
   m_EditorClassIdentifier: 
-  m_id: 2
+  m_id: 5
   m_type: 1
-  m_material: {fileID: 2100000, guid: 963a033a029db40408f6c6e7f6b137b6, type: 2}
+  m_material: {fileID: 2100000, guid: 1902cc282613aaf4aa8b8a33f6e86e09, type: 2}
   m_UV:
     uvType: 0
     uvs:

@@ -162,4 +162,43 @@ public static class Utility
 
         return false;
     }
+
+    //negative value == at the interrior
+    public static float DistanceToBorder(Vector3 pos, Bounds bounds)
+    {
+        if (bounds.Contains(pos))
+            return DistanceToBorderInsideCube(pos, bounds);
+
+        Vector3 halfSize = bounds.extents;
+        Vector3 center = bounds.center;
+
+        float dX = Mathf.Max(Mathf.Abs(pos.x - center.x) - halfSize.x, 0);
+        float dY = Mathf.Max(Mathf.Abs(pos.y - center.y) - halfSize.y, 0);
+        float dZ = Mathf.Max(Mathf.Abs(pos.z - center.z) - halfSize.z, 0);
+
+        return Mathf.Sqrt(dX * dX + dY * dY + dZ * dZ);
+    }
+
+    static float DistanceToBorderInsideCube(Vector3 pos, Bounds bounds)
+    {
+        Vector3 min = bounds.min;
+        Vector3 max = bounds.max;
+        Vector3 center = bounds.center;
+
+        float dX = pos.x < center.x ? pos.x - min.x : max.x - pos.x;
+        float dY = pos.y < center.y ? pos.y - min.y : max.y - pos.y;
+        float dZ = pos.z < center.z ? pos.z - min.z : max.z - pos.z;
+
+        return - Mathf.Min(dX, dY, dZ);
+    }
+
+    static float DistanceToPoint(Vector3 pos, Vector3 point)
+    {
+        return (point - pos).magnitude;
+    }
+
+    static float DistanceToPoint(Vector2 pos, Vector2 point)
+    {
+        return (point - pos).magnitude;
+    }
 }

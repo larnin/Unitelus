@@ -5,20 +5,79 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-//generals settings
-//ocean settings
-//plain settings
-//mountains settings
-//desert settings
-
 public class WorldGeneratorSettings : ScriptableObject
 {
+    public MainGeneratorSettings main;
+
+    public BiomesSettings biomes;
+
+    public PlainBiomeSettings plain;
+    public OceanBiomeSettings ocean;
+    public DesertBiomeSettings desert;
+    public SnowBiomeSettings snow;
+    public MountainBiomeSettings mountain;
+}
+
+[Serializable]
+public class MainGeneratorSettings
+{
+    [HideInInspector]
     public int seed = 0;
     public int size = 1;
 
-    public List<WorldGeneratorSettingPerlin> perlins = new List<WorldGeneratorSettingPerlin>();
+    public List<WorldGeneratorSettingPerlin> base2DPerlin = new List<WorldGeneratorSettingPerlin>();
+    public List<WorldGeneratorSettingPerlin> base3DPerlin = new List<WorldGeneratorSettingPerlin>();
+}
 
-    public VoronoiBiomesSettings m_biomes;
+[Serializable]
+public class OneBiomeSettings
+{
+    public BiomeType biome;
+    public float weight;
+    public Bounds bounds;
+}
+
+[Serializable]
+public class BiomesSettings
+{
+    public BiomeType defaultBiome;
+    public List<OneBiomeSettings> biomes;
+    public float smoothSize;
+    public float borderSize;
+
+    public List<WorldGeneratorSettingPerlin> noiseX = new List<WorldGeneratorSettingPerlin>();
+    public List<WorldGeneratorSettingPerlin> noiseY = new List<WorldGeneratorSettingPerlin>();
+    public List<WorldGeneratorSettingPerlin> noiseZ = new List<WorldGeneratorSettingPerlin>();
+}
+
+[Serializable]
+public class PlainBiomeSettings
+{
+
+}
+
+[Serializable]
+public class OceanBiomeSettings
+{
+    public int waterLevel;
+}
+
+[Serializable]
+public class DesertBiomeSettings
+{
+    
+}
+
+[Serializable]
+public class SnowBiomeSettings
+{
+
+}
+
+[Serializable]
+public class MountainBiomeSettings
+{
+
 }
 
 [Serializable]

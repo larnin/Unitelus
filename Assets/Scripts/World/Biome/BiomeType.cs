@@ -11,6 +11,7 @@ public enum BiomeType
     Ocean,
     Desert,
     Snow,
+    Mountain,
 }
 
 [Serializable]

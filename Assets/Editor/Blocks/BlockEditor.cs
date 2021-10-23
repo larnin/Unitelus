@@ -2,6 +2,7 @@
 using Sirenix.Utilities.Editor;
 using System;
 using System.Linq;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -46,7 +47,7 @@ public class OneBlockEditor
 
         var name = "Blocks/" + id.ToString();
 
-        var file = Resources.Load<ScriptableObject>(name);
+        var file = AssetDatabase.LoadAssetAtPath("Assets/Resources/Blocks/" + id.ToString() + ".asset", typeof(ScriptableObject));
         if (file == null)
             return;
 
@@ -94,8 +95,11 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
                 break;
         }
 
-        if(EditorGUI.EndChangeCheck())
+        if (EditorGUI.EndChangeCheck())
+        {
+            EditorUtility.SetDirty(value.block);
             AssetDatabase.SaveAssets();
+        }
     }
 
     int m_newAssetIndex = 0;
@@ -170,22 +174,27 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
 
     void DrawBlockTypeEmpty()
     {
+        EditorGUILayout.LabelField("Empty block");
         EditorGUILayout.HelpBox("Nothing to edit here, this block type is invisible and have no effect", MessageType.Info, true);
     }
 
     void DrawBlockTypeCube()
     {
+        EditorGUILayout.LabelField("Cubic block");
         var value = ValueEntry.SmartValue;
         var block = value.block as BlockTypeCube;
         DrawBlockUV(block.m_UV, ref value.m_editUVIndex);
+        block.m_material = EditorGUILayout.ObjectField("Material", block.m_material, typeof(Material), false) as Material;
         DrawMaterial(block.m_material, block.m_UV, ref value.m_editUVIndex);
     }
 
     void DrawBlockTypeSmoothed()
     {
+        EditorGUILayout.LabelField("Smoothed block");
         var value = ValueEntry.SmartValue;
         var block = value.block as BlockTypeSmoothed;
         DrawBlockUV(block.m_UV, ref value.m_editUVIndex);
+        block.m_material = EditorGUILayout.ObjectField("Material", block.m_material, typeof(Material), false) as Material;
         DrawMaterial(block.m_material, block.m_UV, ref value.m_editUVIndex);
     }
 
@@ -283,7 +292,7 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
 
     void DrawMaterial(Material m, BlockUV data, ref int editIndex)
     {
-        if(m_materialTexture == null)
+        /*if(m_materialTexture == null)
         {
             m_materialTexture = new RenderTexture(256, 256, 0, RenderTextureFormat.ARGB32);
             m_materialTexture.Create();
@@ -291,7 +300,7 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
 
         m_materialTexture.Release();
         
-        GUILayout.Label(m_materialTexture);
+        GUILayout.Label(m_materialTexture);*/
     }
 }
 
@@ -304,5 +313,26 @@ public class BlockTypeDrawer<T> : OdinValueDrawer<T> where T : BlockTypeBase
         {
             BlockEditor.OpenWindow();
         }
+    }
+}
+
+public class OutputListOfFilesToSave : UnityEditor.AssetModificationProcessor
+{
+    //Will be invoked once for each call to CreateAsset()
+    //and once for calling AssetDatabase.SaveAssets()
+    static string[] OnWillSaveAssets(string[] paths)
+    {
+        StringBuilder assetsToBeSaved = new StringBuilder();
+        assetsToBeSaved.AppendLine();
+
+        foreach (string path in paths)
+        {
+            assetsToBeSaved.Append(path);
+            assetsToBeSaved.AppendLine();
+        }
+
+        Debug.Log("Assets to be saved:" + assetsToBeSaved.ToString());
+
+        return paths;
     }
 }

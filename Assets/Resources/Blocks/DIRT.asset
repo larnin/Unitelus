@@ -14,7 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_id: 3
   m_type: 3
-  m_material: {fileID: 0}
+  m_material: {fileID: 2100000, guid: 5c327cf226d704140a76591b76fd2933, type: 2}
   m_UV:
     uvType: 0
-    uvs: []
+    uvs:
+    - serializedVersion: 2
+      x: 0.5
+      y: 0
+      width: 0.25
+      height: 1

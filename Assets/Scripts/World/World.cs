@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class World
 {
-    public VoronoiBiomes m_biomes;
-
     readonly object dataLock = new object();
 
     bool m_worldLoop;

@@ -30,7 +30,7 @@ public class WorldGenerator
 
     WorldGeneratorSettings m_settings = null;
 
-    VoronoiBiomes m_biomes;
+    BiomeGenerator m_biomes = null;
 
     public State state
     {
@@ -118,16 +118,15 @@ public class WorldGenerator
 
         statusText = "Generating biomes ...";
 
-        m_biomes = new VoronoiBiomes();
-        m_biomes.Generate(m_settings.m_biomes, m_settings.size * Chunk.chunkSize);
+        m_biomes = new BiomeGenerator();
+        m_biomes.Generate(m_settings.biomes, m_settings.main.size, m_settings.main.seed + 1);
 
         timer.LogAndRestart(statusText);
         statusText = "Generating surface ...";
 
-        world = new World(m_settings.size, true);
-        world.m_biomes = m_biomes;
+        world = new World(m_settings.main.size, true);
 
-        List<Perlin> perlins = new List<Perlin>();
+        /*List<Perlin> perlins = new List<Perlin>();
         foreach (var p in m_settings.perlins)
             perlins.Add(new Perlin(world.size, p.amplitude, p.frequency, m_settings.seed + perlins.Count));
 
@@ -148,7 +147,7 @@ public class WorldGenerator
                 world.SetBlock(x, minHeight, z, b, false);
             }
         }
-        minHeight--;
+        minHeight--;*/
 
         /*
         int minHeight = int.MaxValue;
@@ -171,9 +170,9 @@ public class WorldGenerator
         timer.LogAndRestart(statusText);
         statusText = "Generating ground ...";
 
-        for (int x = 0; x < m_settings.size * Chunk.chunkSize; x++)
+        /*for (int x = 0; x < m_settings.main.size * Chunk.chunkSize; x++)
         {
-            for (int z = 0; z < m_settings.size * Chunk.chunkSize; z++)
+            for (int z = 0; z < m_settings.main.size * Chunk.chunkSize; z++)
             {
                 int height = world.GetTopBlockHeight(x, z);
 
@@ -182,7 +181,7 @@ public class WorldGenerator
                 for (int y = height - 1; y >= minHeight; y--)
                     world.SetBlock(x, y, z, b, false);
             }
-        }
+        }*/
 
         timer.LogAndRestart(statusText);
         statusText = "Updating blocks state ...";

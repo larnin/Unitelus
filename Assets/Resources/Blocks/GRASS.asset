@@ -9,17 +9,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c6b9543bfb49ad74c8ce904e45f12995, type: 3}
-  m_Name: STONE
+  m_Script: {fileID: 11500000, guid: 4f3fc0cbffb661f4786e31db9f3e8a70, type: 3}
+  m_Name: GRASS
   m_EditorClassIdentifier: 
-  m_id: 2
-  m_type: 1
-  m_material: {fileID: 2100000, guid: 963a033a029db40408f6c6e7f6b137b6, type: 2}
+  m_id: 4
+  m_type: 3
+  m_material: {fileID: 0}
   m_UV:
-    uvType: 0
+    uvType: 1
     uvs:
+    - serializedVersion: 2
+      x: 0.25
+      y: 0
+      width: 0.25
+      height: 1
+    - serializedVersion: 2
+      x: 0.5
+      y: 0
+      width: 0.25
+      height: 1
     - serializedVersion: 2
       x: 0
       y: 0
-      width: 1
+      width: 0.25
       height: 1

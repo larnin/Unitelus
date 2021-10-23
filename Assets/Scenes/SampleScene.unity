@@ -433,7 +433,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 252455911}
-  - component: {fileID: 252455910}
   - component: {fileID: 252455912}
   m_Layer: 0
   m_Name: BlocksHolder
@@ -442,104 +441,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &252455910
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 252455909}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fdf45b44ee6468d4396f71ce6fc989e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  serializationData:
-    SerializedFormat: 2
-    SerializedBytes: 
-    ReferencedUnityObjects:
-    - {fileID: 2100000, guid: f4e7efe8b9e16504fab88a23f482174f, type: 2}
-    - {fileID: 2100000, guid: 85911febed12fc24ca13b76be7af6770, type: 2}
-    - {fileID: 2100000, guid: 708ea5c46a19f6e4fbadb0b2c950faa0, type: 2}
-    - {fileID: 2100000, guid: edc2db4d3d54d644fb664b923ad57997, type: 2}
-    SerializedBytesString: 
-    Prefab: {fileID: 0}
-    PrefabModificationsReferencedUnityObjects: []
-    PrefabModifications: []
-    SerializationNodes:
-    - Name: m_blockRenderer
-      Entry: 7
-      Data: 0|System.Collections.Generic.List`1[[BlockTypeBase, Assembly-CSharp]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 4
-    - Name: 
-      Entry: 7
-      Data: 1|BlockTypeCube, Assembly-CSharp
-    - Name: m_id
-      Entry: 3
-      Data: 1
-    - Name: m_type
-      Entry: 3
-      Data: 1
-    - Name: m_material
-      Entry: 10
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 2|BlockTypeCube, Assembly-CSharp
-    - Name: m_id
-      Entry: 3
-      Data: 2
-    - Name: m_type
-      Entry: 3
-      Data: 1
-    - Name: m_material
-      Entry: 10
-      Data: 1
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 3|BlockTypeCube, Assembly-CSharp
-    - Name: m_id
-      Entry: 3
-      Data: 3
-    - Name: m_type
-      Entry: 3
-      Data: 1
-    - Name: m_material
-      Entry: 10
-      Data: 2
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 4|BlockTypeCube, Assembly-CSharp
-    - Name: m_id
-      Entry: 3
-      Data: 4
-    - Name: m_type
-      Entry: 3
-      Data: 1
-    - Name: m_material
-      Entry: 10
-      Data: 3
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
 --- !u!4 &252455911
 Transform:
   m_ObjectHideFlags: 0
@@ -1443,22 +1344,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24a023c11edfad5449fb15c3802473b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_settings:
-    seed: 152
-    size: 16
-    perlins:
-    - amplitude: 15
-      frequency: 2
-    - amplitude: 7
-      frequency: 4
-    m_biomes:
-      seed: 15
-      nbBiome: 200
-      relaxingPower: 5
-      relaxingForce: 20
-      magnetPower: 30
-      magnetForce: 20
-      validBiomes: 01000000040000000300000002000000
+  m_settings: {fileID: 0}
   m_playerPrefab: {fileID: 7660277646467561147, guid: 013c65f2d2d77514d863733b3ab45470,
     type: 3}
 --- !u!4 &1996218792
