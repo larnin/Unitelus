@@ -119,12 +119,12 @@ public class WorldGenerator
         statusText = "Generating biomes ...";
 
         m_biomes = new BiomeGenerator();
-        m_biomes.Generate(m_settings.biomes, m_settings.main.size * Chunk.chunkSize, m_settings.main.seed + 1);
+        m_biomes.Generate(m_settings.biomes, m_settings.main.size + Chunk.chunkScale, m_settings.main.seed + 1);
 
         timer.LogAndRestart(statusText);
         statusText = "Generating surface ...";
 
-        world = new World(m_settings.main.size, true);
+        world = new World(m_settings.main.GetChunkNb(), true);
 
         int minHeight = 2;
 
@@ -132,9 +132,11 @@ public class WorldGenerator
         b.id = BlockID.INVALID;
         b.data = 0;
 
-        for (int x = 0; x < m_settings.main.size * Chunk.chunkSize; x++)
+        int worldSize = m_settings.main.GetWorldSize();
+
+        for (int x = 0; x < worldSize; x++)
         {
-            for (int z = 0; z < m_settings.main.size * Chunk.chunkSize; z++)
+            for (int z = 0; z < worldSize; z++)
             {
                 var biome = m_biomes.GetBiome(x, z);
                 if (biome == BiomeType.Invalid)
@@ -201,9 +203,9 @@ public class WorldGenerator
         timer.LogAndRestart(statusText);
         statusText = "Generating ground ...";
 
-        for (int x = 0; x < m_settings.main.size * Chunk.chunkSize; x++)
+        for (int x = 0; x < worldSize; x++)
         {
-            for (int z = 0; z < m_settings.main.size * Chunk.chunkSize; z++)
+            for (int z = 0; z < worldSize; z++)
             {
                 int height = world.GetTopBlockHeight(x, z);
 

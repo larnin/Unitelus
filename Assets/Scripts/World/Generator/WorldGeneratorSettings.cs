@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sirenix.OdinInspector;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,7 +24,18 @@ public class MainGeneratorSettings
 {
     [HideInInspector]
     public int seed = 0;
+    [InfoBox("@\"Real world Size \" + GetWorldSize()")]
     public int size = 1;
+
+    public int GetChunkNb()
+    {
+        return 1 << size;
+    }
+
+    public int GetWorldSize()
+    {
+        return GetChunkNb() * Chunk.chunkSize;
+    }
 
     public List<WorldGeneratorSettingPerlin> base2DPerlin = new List<WorldGeneratorSettingPerlin>();
     public List<WorldGeneratorSettingPerlin> base3DPerlin = new List<WorldGeneratorSettingPerlin>();
@@ -34,20 +46,31 @@ public class OneBiomeSettings
 {
     public BiomeType biome;
     public float weight;
-    public Bounds bounds;
+    public float temperature;
+    public float humidity;
+}
+
+[Serializable]
+public class OneSubBiomeSettings
+{
+    public BiomeType biome;
+    public BiomeType baseBiome;
+    public float weight;
+    public int size;
 }
 
 [Serializable]
 public class BiomesSettings
 {
     public BiomeType defaultBiome;
-    public List<OneBiomeSettings> biomes;
-    public float smoothSize;
-    public float borderSize;
+    
+    public List<OneBiomeSettings> initialBiomes;
+    public List<OneSubBiomeSettings> subBiomes;
+    public int smoothSize;
+    public int borderSize;
+    public int biomeSize;
 
-    public List<WorldGeneratorSettingPerlin> noiseX = new List<WorldGeneratorSettingPerlin>();
-    public List<WorldGeneratorSettingPerlin> noiseY = new List<WorldGeneratorSettingPerlin>();
-    public List<WorldGeneratorSettingPerlin> noiseZ = new List<WorldGeneratorSettingPerlin>();
+    public float packingProbabiity;
 }
 
 [Serializable]

@@ -59,7 +59,8 @@ public class ChunkLayer
 
 public class Chunk
 {
-    public const int chunkSize = 16;
+    public const int chunkScale = 4;
+    public const int chunkSize = 1 << chunkScale;
 
     World m_world = null;
     int m_x = 0;

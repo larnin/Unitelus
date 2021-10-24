@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NRand;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,124 +20,214 @@ public class BiomeGenerator
         m_size = size;
         m_settings = settings;
 
-        var grid = GenerateGrid();
-        if (m_settings.smoothSize < 0.5f)
-            m_grid = grid;
-        else m_grid = SmoothGrid(grid, m_settings.smoothSize);
-    }
+        int gridSize = m_size - m_settings.biomeSize;
+        if (gridSize < 1)
+            gridSize = 1;
 
-    Matrix<BiomeType> GenerateGrid()
-    {
-        Matrix<Vector3> values = new Matrix<Vector3>(m_size, m_size);
-        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
-        Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
-        
-        List<Perlin> xPerlin = new List<Perlin>();
-        foreach (var p in m_settings.noiseX)
-            xPerlin.Add(new Perlin(m_size, p.amplitude, p.frequency, m_seed++));
-        List<Perlin> yPerlin = new List<Perlin>();
-        foreach (var p in m_settings.noiseY)
-            yPerlin.Add(new Perlin(m_size, p.amplitude, p.frequency, m_seed++));
-        List<Perlin> zPerlin = new List<Perlin>();
-        foreach (var p in m_settings.noiseZ)
-            zPerlin.Add(new Perlin(m_size, p.amplitude, p.frequency, m_seed++));
+        var grid = GenerateFirstGrid(gridSize);
 
-        for(int i = 0; i < m_size; i++)
+        while(gridSize < m_size - 2)
         {
-            for(int j = 0; j < m_size; j++)
-            {
-                Vector3 value = Vector3.zero;
-                foreach (var p in xPerlin)
-                    value.x += p.Get(i, j);
-                foreach (var p in yPerlin)
-                    value.y += p.Get(i, j);
-                foreach (var p in zPerlin)
-                    value.z += p.Get(i, j);
-                values.Set(i, j, value);
-
-                min.x = Mathf.Min(min.x, value.x);
-                min.y = Mathf.Min(min.y, value.y);
-                min.z = Mathf.Min(min.z, value.z);
-
-                max.x = Mathf.Max(max.x, value.x);
-                max.y = Mathf.Max(max.y, value.y);
-                max.z = Mathf.Max(max.z, value.z);
-            }
+            gridSize++;
+            grid = IncreaseGridSize(grid, gridSize);
         }
 
-        Vector3 offset = -min;
-        Vector3 multiplier = max - min;
-        if (multiplier.x < 0.0001f)
-            multiplier.x = 1;
-        else multiplier.x = 1 / multiplier.x;
-        if (multiplier.y < 0.0001f)
-            multiplier.y = 1;
-        else multiplier.y = 1 / multiplier.y;
-        if (multiplier.z < 0.0001f)
-            multiplier.z = 1;
-        else multiplier.z = 1 / multiplier.z;
+        m_grid = GenerateFinalGrid(grid, gridSize);
+    }
 
-        Matrix<BiomeType> grid = new Matrix<BiomeType>(m_size, m_size);
-        grid.SetAll(BiomeType.Invalid);
+    Matrix<BiomeType> GenerateFirstGrid(int gridSize)
+    {
 
-        for (int i = 0; i < m_size; i++)
+        gridSize = 1 << gridSize;
+
+        Matrix<BiomeType> grid = new Matrix<BiomeType>(gridSize, gridSize);
+        grid.SetAll(m_settings.defaultBiome);
+
+        MT19937 rand = new MT19937((uint)m_seed);
+
+        int nbCell = gridSize * gridSize;
+        float totalWeight = 0;
+        List<BiomeType> biomes = new List<BiomeType>();
+        foreach (var b in m_settings.initialBiomes)
         {
-            for (int j = 0; j < m_size; j++)
-            {
-                Vector3 value = values.Get(i, j);
-                value += offset;
-                value.x *= multiplier.x;
-                value.y *= multiplier.y;
-                value.z *= multiplier.z;
+            int nb = Mathf.RoundToInt(nbCell * b.weight / 100);
+            for(int i = 0; i < nb; i++)
+                biomes.Add(b.biome);
+        }
+        biomes.Shuffle(rand);
+        if (totalWeight > 100)
+            totalWeight = 100;
 
-                grid.Set(i, j, GetBiomeAt(value));
+        List<Vector2Int> usedPos = new List<Vector2Int>(nbCell);
+        List<Vector2Int> validPos = new List<Vector2Int>(nbCell);
+        List<Vector2Int> packedPos = new List<Vector2Int>(nbCell);
+
+        for(int i = 0; i < gridSize; i++)
+            for(int j = 0; j < gridSize; j++)
+                validPos.Add(new Vector2Int(i, j));
+
+        BernoulliDistribution dPack = new BernoulliDistribution(m_settings.packingProbabiity);
+        UniformIntDistribution dIndex = new UniformIntDistribution();
+
+        Action<Vector2Int> testPos = (Vector2Int pos) => 
+        {
+            if (pos.x < 0)
+                pos.x = grid.width - 1;
+            if (pos.x >= grid.width)
+                pos.x = 0;
+            if (pos.y < 0)
+                pos.y = grid.depth - 1;
+            if (pos.y >= grid.depth)
+                pos.y = 0;
+
+            if (usedPos.Contains(pos))
+                return;
+            if (packedPos.Contains(pos))
+                return;
+            packedPos.Add(pos);
+        };
+
+        int nbBiome = biomes.Count;
+        for(int i = 0; i < nbBiome; i++)
+        {
+            Vector2Int pos;
+            if(dPack.Next(rand) && packedPos.Count > 0)
+            {
+                dIndex.SetParams(packedPos.Count);
+                int index = dIndex.Next(rand);
+                pos = packedPos[index];
+                packedPos.RemoveAt(index);
+                validPos.Remove(pos);
             }
+            else
+            {
+                dIndex.SetParams(validPos.Count);
+                int index = dIndex.Next(rand);
+                pos = validPos[index];
+                validPos.RemoveAt(index);
+            }
+
+            usedPos.Add(pos);
+
+            testPos(new Vector2Int(pos.x, pos.y - 1));
+            testPos(new Vector2Int(pos.x, pos.y + 1));
+            testPos(new Vector2Int(pos.x - 1, pos.y));
+            testPos(new Vector2Int(pos.x + 1, pos.y));
+        }
+
+        //todo place similar biomes next to each other
+        for(int i = 0; i < usedPos.Count; i++)
+        {
+            Vector2Int pos = usedPos[i];
+            grid.Set(pos.x, pos.y, biomes[i]);
         }
 
         return grid;
     }
 
-    Matrix<BiomeType> SmoothGrid(Matrix<BiomeType> biomes, float smoothRadius)
+    Matrix<BiomeType> IncreaseGridSize(Matrix<BiomeType> grid, int gridSize)
     {
-        List<float> weights = new List<float>();
-        Matrix<BiomeType> newGrid = new Matrix<BiomeType>(biomes.width, biomes.depth); 
+        Debug.Assert(grid.width * 2 == (1 << gridSize));
 
-        int radius = Mathf.CeilToInt(smoothRadius);
-        for(int i = 0; i < biomes.width; i++)
-        {
-            for(int j = 0; j < biomes.depth; j++)
+        Matrix<BiomeType> newGrid = new Matrix<BiomeType>(grid.width * 2, grid.depth * 2);
+
+        for(int i = 0; i < grid.width; i++)
+            for (int j = 0; j < grid.depth; j++)
             {
-                GetBiomesAtRadius(biomes, i, j, smoothRadius, weights);
+                var biome = grid.Get(i, j);
 
-                int maxIndex = 0;
-                for (int k = 1; k < weights.Count; k++)
-                    if (weights[k] > weights[maxIndex])
-                        maxIndex = k;
-
-                newGrid.Set(i, j, (BiomeType)maxIndex);
+                newGrid.Set(i * 2, j * 2, biome);
+                newGrid.Set(i * 2, j * 2 + 1, biome);
+                newGrid.Set(i * 2 + 1, j * 2, biome);
+                newGrid.Set(i * 2 + 1, j * 2 + 1, biome);
             }
+
+        int sizeIndex = m_size - gridSize;
+
+        List<Vector2Int> validPos = new List<Vector2Int>();
+        MT19937 rand = new MT19937((uint)m_seed);
+
+        foreach (var subBiome in m_settings.subBiomes)
+        {
+            if (subBiome.size != sizeIndex)
+                continue;
+
+            validPos.Clear();
+
+            for(int i = 0; i < newGrid.width; i++)
+                for(int j = 0; j < newGrid.depth; j++)
+                {
+                    var biome = newGrid.Get(i, j);
+                    if (biome == subBiome.baseBiome)
+                        validPos.Add(new Vector2Int(i, j));
+                }
+
+            int nb = Mathf.RoundToInt(validPos.Count * subBiome.weight / 100);
+            if (nb == 0)
+                continue;
+
+            if(validPos.Count <= nb)
+                nb = validPos.Count;
+            else validPos.Shuffle(rand);
+
+            for (int i = 0; i < nb; i++)
+                newGrid.Set(validPos[i].x, validPos[i].y, subBiome.biome);
         }
 
         return newGrid;
     }
 
-    BiomeType GetBiomeAt(Vector3 pos)
+    Matrix<BiomeType> GenerateFinalGrid(Matrix<BiomeType> grid, int currentSize)
     {
-        BiomeType bestBiome = m_settings.defaultBiome;
-        float bestWeight = float.MinValue;
+        Debug.Assert(grid.width == (1 << currentSize));
 
-        foreach(var b in m_settings.biomes)
-        {
-            if (b.weight > bestWeight && b.bounds.Contains(pos))
+        int multiplier = 1 << (m_size - currentSize);
+        if (multiplier <= 1)
+            return grid;
+
+        Matrix<BiomeType> newGrid = new Matrix<BiomeType>(1 << m_size, 1 << m_size);
+        for (int i = 0; i < grid.width; i++)
+            for (int j = 0; j < grid.depth; j++)
             {
-                bestBiome = b.biome;
-                bestWeight = b.weight;
+                var biome = grid.Get(i, j);
+                
+                for(int k = 0; k < multiplier; k++)
+                    for (int l = 0; l < multiplier; l++)
+                    {
+                        newGrid.Set(i * multiplier + k, j * multiplier + l, biome);
+                    }
             }
-        }
 
-        return bestBiome;
+        return SmoothGrid(newGrid, m_settings.smoothSize);
     }
 
+    Matrix<BiomeType> SmoothGrid(Matrix<BiomeType> grid, float radius)
+    {
+        if (radius < 1)
+            return grid;
+
+        Matrix<BiomeType> newGrid = new Matrix<BiomeType>(grid.width, grid.depth);
+
+        List<float> weights = new List<float>();
+
+        for(int i = 0; i < grid.width; i++)
+        {
+            for(int j = 0; j < grid.depth; j++)
+            {
+                GetBiomesAtRadius(grid, i, j, radius, weights);
+
+                int best = 0;
+                for(int k = 1; k < weights.Count; k++)
+                {
+                    if (weights[k] > weights[best])
+                        best = k;
+                }
+                newGrid.Set(i, j, (BiomeType)best);
+            }
+        }
+        return newGrid;
+    }
+    
     void GetBiomesAtRadius(Matrix<BiomeType> biomes, int x, int y, float radius, List<float> weights)
     {
         int nbBiome = Enum.GetValues(typeof(BiomeType)).Length;
