@@ -12,8 +12,8 @@ namespace NRand
 
         public UniformFloatDistribution()
         {
-            _minValue = 0;
-            _maxValue = 1;
+            _minValue = 0.0f;
+            _maxValue = 1.0f;
         }
 
         public UniformFloatDistribution(float max)
@@ -26,6 +26,18 @@ namespace NRand
         {
             _minValue = Math.Min(min, max);
             _maxValue = Math.Max(min, max);
+        }
+
+        public void SetParams(float max = 1.0f)
+        {
+            _minValue = 0.0f;
+            _maxValue = max;
+        }
+
+        public void SetParams(float min, float max)
+        {
+            _minValue = min;
+            _maxValue = max;
         }
 
         public float Max()

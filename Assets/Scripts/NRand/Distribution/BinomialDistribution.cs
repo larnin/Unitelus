@@ -16,6 +16,12 @@ namespace NRand
             _probability = probability;
         }
 
+        public void SetParams(int rollCount, float probability)
+        {
+            _rollCount = rollCount;
+            _probability = probability;
+        }
+
         public int Max()
         {
             return _rollCount;

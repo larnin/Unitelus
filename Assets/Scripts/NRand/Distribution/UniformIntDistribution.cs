@@ -28,6 +28,18 @@ namespace NRand
             _maxValue = Math.Max(min, max);
         }
 
+        public void SetParams(int max = 1)
+        {
+            _minValue = 0;
+            _maxValue = max;
+        }
+
+        public void SetParams(int min, int max)
+        {
+            _minValue = min;
+            _maxValue = max;
+        }
+
         public int Max()
         {
             return _maxValue;

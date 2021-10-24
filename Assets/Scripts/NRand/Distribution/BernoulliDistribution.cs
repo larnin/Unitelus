@@ -14,6 +14,11 @@ namespace NRand
             _trueProbability = p;
         }
 
+        public void SetParams(float p = 0.5f)
+        {
+            _trueProbability = p;
+        }
+
         public bool Max()
         {
             return true;

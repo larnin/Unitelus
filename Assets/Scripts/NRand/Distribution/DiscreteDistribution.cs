@@ -16,6 +16,12 @@ namespace NRand
             _distrib = new UniformFloatDistribution(weights.Sum());
         }
 
+        public void SetParams(List<float> weights)
+        {
+            _weights = weights.ToList();
+            _distrib.SetParams(weights.Sum());
+        }
+
         public int Max()
         {
             return _weights.Count() - 1;

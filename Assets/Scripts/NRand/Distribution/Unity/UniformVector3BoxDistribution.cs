@@ -14,16 +14,16 @@ namespace NRand
 
         public UniformVector3BoxDistribution()
         {
-            _dX = new UniformFloatDistribution(0, 1);
-            _dY = new UniformFloatDistribution(0, 1);
-            _dZ = new UniformFloatDistribution(0, 1);
+            _dX = new UniformFloatDistribution(0.0f, 1.0f);
+            _dY = new UniformFloatDistribution(0.0f, 1.0f);
+            _dZ = new UniformFloatDistribution(0.0f, 1.0f);
         }
 
         public UniformVector3BoxDistribution(float max)
         {
-            _dX = new UniformFloatDistribution(0, max);
-            _dY = new UniformFloatDistribution(0, max);
-            _dZ = new UniformFloatDistribution(0, max);
+            _dX = new UniformFloatDistribution(0.0f, max);
+            _dY = new UniformFloatDistribution(0.0f, max);
+            _dZ = new UniformFloatDistribution(0.0f, max);
         }
 
         public UniformVector3BoxDistribution(float min, float max)
@@ -45,6 +45,34 @@ namespace NRand
             _dX = new UniformFloatDistribution(minX, maxX);
             _dY = new UniformFloatDistribution(minY, maxY);
             _dZ = new UniformFloatDistribution(minZ, maxZ);
+        }
+
+        public void SetParams(float max = 1.0f)
+        {
+            _dX.SetParams(0.0f, max);
+            _dY.SetParams(0.0f, max);
+            _dZ.SetParams(0.0f, max);
+        }
+
+        public void SetParams(float min, float max)
+        {
+            _dX.SetParams(min, max);
+            _dY.SetParams(min, max);
+            _dZ.SetParams(min, max);
+        }
+
+        public void SetParams(float maxX, float maxY, float maxZ)
+        {
+            _dX.SetParams(0.0f, maxX);
+            _dY.SetParams(0.0f, maxY);
+            _dZ.SetParams(0.0f, maxZ);
+        }
+
+        public void SetParams(float minX, float maxX, float minY, float maxY, float minZ, float maxZ)
+        {
+            _dX.SetParams(minX, maxX);
+            _dY.SetParams(minY, maxY);
+            _dZ.SetParams(minZ, maxZ);
         }
 
         public Vector3 Max()

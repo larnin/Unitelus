@@ -14,10 +14,15 @@ namespace NRand
 
         public UniformVector2CircleDistribution()
         {
-            _radius = 1;
+            _radius = 1.0f;
         }
 
         public UniformVector2CircleDistribution(float radius)
+        {
+            _radius = radius;
+        }
+
+        public void SetParams(float radius = 1.0f)
         {
             _radius = radius;
         }
