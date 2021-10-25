@@ -279,25 +279,56 @@ public class BiomeGenerator
             return grid;
 
         Matrix<BiomeType> newGrid = new Matrix<BiomeType>(grid.width, grid.depth);
-
-        List<float> weights = new List<float>();
-
+        
         for(int i = 0; i < grid.width; i++)
         {
             for(int j = 0; j < grid.depth; j++)
             {
-                GetBiomesAtRadius(grid, i, j, radius, weights);
+                BiomeType best = GetBestBiomeAtRadius(grid, i, j, radius);
 
-                int best = 0;
-                for(int k = 1; k < weights.Count; k++)
-                {
-                    if (weights[k] > weights[best])
-                        best = k;
-                }
-                newGrid.Set(i, j, (BiomeType)best);
+                newGrid.Set(i, j, best);
             }
         }
         return newGrid;
+    }
+
+    float[] biomesWeights = new float[Enum.GetValues(typeof(BiomeType)).Length];
+
+    BiomeType GetBestBiomeAtRadius(Matrix<BiomeType> grid, int x, int y, float radius)
+    {
+        for (int i = 0; i < biomesWeights.Length; i++)
+            biomesWeights[i] = 0;
+
+        int iRadius = Mathf.CeilToInt(radius);
+
+        for (int k = -iRadius; k <= iRadius; k++)
+        {
+            for (int l = -iRadius; l <= iRadius; l++)
+            {
+                float normalizedDist = (k * k + l * l) / (radius * radius);
+                if (normalizedDist > 1)
+                    continue;
+
+                float weight = Lerp.Linear(1, 0, normalizedDist);
+
+                int pX = x + k;
+                if (pX < 0) pX += grid.width;
+                else if (pX >= grid.width) pX -= grid.width;
+                int pY = y + l;
+                if (pY < 0) pY += grid.depth;
+                else if (pY >= grid.depth) pY -= grid.depth;
+
+                var biome = grid.Get(pX, pY);
+                biomesWeights[(int)biome] += weight;
+            }
+        }
+
+        int maxIndex = 0;
+        for (int i = 1; i < biomesWeights.Length; i++)
+            if (biomesWeights[i] > biomesWeights[maxIndex])
+                maxIndex = i;
+
+        return (BiomeType)maxIndex;
     }
     
     void GetBiomesAtRadius(Matrix<BiomeType> biomes, int x, int y, float radius, List<float> weights)
@@ -316,11 +347,11 @@ public class BiomeGenerator
         {
             for (int l = -iRadius; l <= iRadius; l++)
             {
-                float normalizedDist = Mathf.Sqrt(k * k + l * l) / radius;
+                float normalizedDist = /*Mathf.Sqrt*/(k * k + l * l) / (radius * radius);
                 if (normalizedDist > 1)
                     continue;
 
-                float weight = Lerp.Square(1, 0, normalizedDist);
+                float weight = Lerp.Linear(1, 0, normalizedDist);
 
                 int pX = x + k;
                 if (pX < 0) pX += biomes.width;

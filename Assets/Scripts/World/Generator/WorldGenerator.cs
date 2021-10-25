@@ -211,6 +211,7 @@ public class WorldGenerator
 
                 if (height <= minHeight)
                     continue;
+                b.id = world.GetBlock(x, height, z).id;
                 for (int y = height - 1; y >= minHeight; y--)
                     world.SetBlock(x, y, z, b, false);
             }
