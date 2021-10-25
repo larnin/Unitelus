@@ -12,11 +12,14 @@ public class BiomeGenerator
     int m_size;
     BiomesSettings m_settings;
 
+    MT19937 m_rand;
+
     Matrix<BiomeType> m_grid;
 
     public void Generate(BiomesSettings settings, int size, int seed)
     {
         m_seed = seed;
+        m_rand = new MT19937((uint)seed);
         m_size = size;
         m_settings = settings;
 
@@ -26,10 +29,11 @@ public class BiomeGenerator
 
         var grid = GenerateFirstGrid(gridSize);
 
-        while(gridSize < m_size - 2)
+        while(gridSize < m_size)
         {
             gridSize++;
             grid = IncreaseGridSize(grid, gridSize);
+            RandomizePoints(grid);
         }
 
         m_grid = GenerateFinalGrid(grid, gridSize);
@@ -42,9 +46,7 @@ public class BiomeGenerator
 
         Matrix<BiomeType> grid = new Matrix<BiomeType>(gridSize, gridSize);
         grid.SetAll(m_settings.defaultBiome);
-
-        MT19937 rand = new MT19937((uint)m_seed);
-
+        
         int nbCell = gridSize * gridSize;
         float totalWeight = 0;
         List<BiomeType> biomes = new List<BiomeType>();
@@ -54,7 +56,7 @@ public class BiomeGenerator
             for(int i = 0; i < nb; i++)
                 biomes.Add(b.biome);
         }
-        biomes.Shuffle(rand);
+        biomes.Shuffle(m_rand);
         if (totalWeight > 100)
             totalWeight = 100;
 
@@ -91,10 +93,10 @@ public class BiomeGenerator
         for(int i = 0; i < nbBiome; i++)
         {
             Vector2Int pos;
-            if(dPack.Next(rand) && packedPos.Count > 0)
+            if(dPack.Next(m_rand) && packedPos.Count > 0)
             {
                 dIndex.SetParams(packedPos.Count);
-                int index = dIndex.Next(rand);
+                int index = dIndex.Next(m_rand);
                 pos = packedPos[index];
                 packedPos.RemoveAt(index);
                 validPos.Remove(pos);
@@ -102,7 +104,7 @@ public class BiomeGenerator
             else
             {
                 dIndex.SetParams(validPos.Count);
-                int index = dIndex.Next(rand);
+                int index = dIndex.Next(m_rand);
                 pos = validPos[index];
                 validPos.RemoveAt(index);
             }
@@ -145,7 +147,6 @@ public class BiomeGenerator
         int sizeIndex = m_size - gridSize;
 
         List<Vector2Int> validPos = new List<Vector2Int>();
-        MT19937 rand = new MT19937((uint)m_seed);
 
         foreach (var subBiome in m_settings.subBiomes)
         {
@@ -168,7 +169,7 @@ public class BiomeGenerator
 
             if(validPos.Count <= nb)
                 nb = validPos.Count;
-            else validPos.Shuffle(rand);
+            else validPos.Shuffle(m_rand);
 
             for (int i = 0; i < nb; i++)
                 newGrid.Set(validPos[i].x, validPos[i].y, subBiome.biome);
@@ -177,13 +178,84 @@ public class BiomeGenerator
         return newGrid;
     }
 
+    void RandomizePoints(Matrix<BiomeType> grid)
+    {
+        for(int i = 0; i < grid.width / 2; i++)
+            for(int j = 0; j < grid.depth / 2; j++)
+                RandomizePoint(grid, i * 2 + 1, j * 2 + 1, m_rand);
+    }
+
+    BernoulliDistribution dRandPoint = new BernoulliDistribution();
+    BernoulliDistribution dRandPointDir = new BernoulliDistribution();
+
+    void RandomizePoint(Matrix<BiomeType> grid, int x, int y, IRandomGenerator rand)
+    {
+        Vector2Int[] pos = new Vector2Int[4] { new Vector2Int(x, y), new Vector2Int(x + 1, y), new Vector2Int(x, y + 1), new Vector2Int(x + 1, y + 1) };
+        for(int i = 1; i < pos.Length; i++)
+        {
+            if (pos[i].x >= grid.width)
+                pos[i].x = 0;
+            if (pos[i].y >= grid.depth)
+                pos[i].y = 0;
+        }
+        var originalPos = pos.ToArray(); //copy
+        pos.Shuffle(rand);
+        BiomeType[] biomes = new BiomeType[4] { grid.Get(pos[0].x, pos[0].y), grid.Get(pos[1].x, pos[1].y), grid.Get(pos[2].x, pos[2].y), grid.Get(pos[3].x, pos[3].y) };
+        dRandPoint.SetParams(m_settings.randomizeWeight);
+
+        for(int i = 0; i < pos.Length; i++)
+        {
+            if (!dRandPoint.Next(rand))
+                continue;
+            Vector2Int p1, p2;
+            var p = pos[i];
+            if((p.x == x && p.y == y) || (p.x != x && p.y != y))
+            {
+                p1 = originalPos[1];
+                p2 = originalPos[2];
+            }
+            else
+            {
+                p1 = originalPos[0];
+                p2 = originalPos[3];
+            }
+
+            bool dir = dRandPointDir.Next(rand);
+            var pCopy = dir ? p1 : p2;
+
+            var newBiome = grid.Get(pCopy.x, pCopy.y);
+            if (biomes[i] == newBiome)
+                continue;
+
+            int index = -1;
+            for(int j = 0; j < pos.Length; j++)
+            {
+                if(pos[j] == pCopy)
+                {
+                    index = j;
+                    break;
+                }
+            }
+
+            if (index < 0)
+                continue;
+            if (biomes[index] != newBiome)
+                continue;
+
+            biomes[i] = newBiome;
+        }
+
+        for(int i = 0; i < pos.Length; i++)
+            grid.Set(pos[i].x, pos[i].y, biomes[i]);
+    }
+
     Matrix<BiomeType> GenerateFinalGrid(Matrix<BiomeType> grid, int currentSize)
     {
         Debug.Assert(grid.width == (1 << currentSize));
 
         int multiplier = 1 << (m_size - currentSize);
         if (multiplier <= 1)
-            return grid;
+            return SmoothGrid(grid, m_settings.smoothSize);
 
         Matrix<BiomeType> newGrid = new Matrix<BiomeType>(1 << m_size, 1 << m_size);
         for (int i = 0; i < grid.width; i++)

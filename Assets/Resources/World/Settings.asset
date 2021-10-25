@@ -36,10 +36,11 @@ MonoBehaviour:
     - biome: 4
       baseBiome: 5
       weight: 10
-      size: 2
-    smoothSize: 0
+      size: 3
+    smoothSize: 2
     borderSize: 8
-    biomeSize: 4
+    biomeSize: 5
+    randomizeWeight: 0.4
     packingProbabiity: 1
   ocean:
     waterLevel: 0

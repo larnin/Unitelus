@@ -69,6 +69,7 @@ public class BiomesSettings
     public int smoothSize;
     public int borderSize;
     public int biomeSize;
+    public float randomizeWeight;
 
     public float packingProbabiity;
 }
