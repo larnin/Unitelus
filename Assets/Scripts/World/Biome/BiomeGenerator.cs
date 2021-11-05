@@ -15,6 +15,7 @@ public class BiomeGenerator
     MT19937 m_rand;
 
     Matrix<BiomeType> m_grid;
+    public QuadTree<BorderData> m_borders;
 
     public void Generate(BiomesSettings settings, int size, int seed)
     {
@@ -37,6 +38,8 @@ public class BiomeGenerator
         }
 
         m_grid = GenerateFinalGrid(grid, gridSize);
+
+        DetectBiomesBorders(m_grid);
     }
 
     Matrix<BiomeType> GenerateFirstGrid(int gridSize)
@@ -290,6 +293,45 @@ public class BiomeGenerator
             }
         }
         return newGrid;
+    }
+
+    public class BorderData
+    {
+        public BiomeType current;
+        public BiomeType right;
+        public BiomeType down;
+        public BorderData(BiomeType _current, BiomeType _right, BiomeType _down)
+        {
+            current = _current;
+            right = _right;
+            down = _down;
+        }
+    }
+
+    void DetectBiomesBorders(Matrix<BiomeType> grid)
+    {
+        QuadTree<BorderData> borders = new QuadTree<BorderData>(grid.width, grid.depth, 16);
+        for(int i = 0; i < grid.width; i++)
+        {
+            int nextI = i + 1;
+            if (nextI >= grid.width)
+                nextI = 0;
+            for(int j = 0; j < grid.depth; j++)
+            {
+                int nextJ = j + 1;
+                if (nextJ >= grid.depth)
+                    nextJ = 0;
+                BiomeType current = grid.Get(i, j);
+                BiomeType right = grid.Get(nextI, j);
+                BiomeType down = grid.Get(i, nextJ);
+
+                if (current == right && current == down)
+                    continue;
+
+                borders.AddElement(i, j, new BorderData(current, right, down));
+            }
+        }
+        m_borders = borders;
     }
 
     float[] biomesWeights = new float[Enum.GetValues(typeof(BiomeType)).Length];

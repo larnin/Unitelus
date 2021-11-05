@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class QuadTree<T>
 {
@@ -42,7 +43,7 @@ public class QuadTree<T>
         m_x = x;
         m_y = y;
 
-        m_elements = new List<Element>();
+        m_elements = new List<Element>(maxElemInCell);
     }
 
     public int GetSizeX()
@@ -55,6 +56,11 @@ public class QuadTree<T>
         return m_sizeY;
     }
 
+    public Vector2Int GetSize()
+    {
+        return new Vector2Int(m_sizeX, m_sizeY);
+    }
+
     public int GetX()
     {
         return m_x;
@@ -63,6 +69,11 @@ public class QuadTree<T>
     public int GetY()
     {
         return m_y;
+    }
+
+    public Vector2Int GetPos()
+    {
+        return new Vector2Int(m_x, m_y);
     }
 
     public bool AddElement(int x, int y, T element)
@@ -127,6 +138,27 @@ public class QuadTree<T>
         return nb;
     }
 
+    public int GetNbLocalElement()
+    {
+        if (m_elements != null)
+            return m_elements.Count();
+        return 0;
+    }
+
+    public T GetLocalElement(int index)
+    {
+        if (m_elements != null && index >= 0 && index < m_elements.Count())
+            return m_elements[index].value;
+        return default(T);
+    }
+
+    public Vector2Int GetLocalElementPosition(int index)
+    {
+        if (m_elements != null && index >= 0 && index < m_elements.Count())
+            return new Vector2Int(m_elements[index].x, m_elements[index].y);
+        return Vector2Int.zero;
+    }
+
     public int GetNbElementAt(int x, int y)
     {
         if(m_elements != null)
@@ -182,6 +214,31 @@ public class QuadTree<T>
                 return r;
         
         return null;
+    }
+
+    public void Draw()
+    {
+        int y = 5;
+        if(m_elements != null)
+        {
+            Color borderColor = new Color(0, 1, 0);
+            Debug.DrawLine(new Vector3(m_x, y, m_y), new Vector3(m_x, y, m_y + m_sizeY), borderColor);
+            Debug.DrawLine(new Vector3(m_x, y, m_y + m_sizeY), new Vector3(m_x + m_sizeX, y, m_y + m_sizeY), borderColor);
+            Debug.DrawLine(new Vector3(m_x + m_sizeX, y, m_y + m_sizeY), new Vector3(m_x + m_sizeX, y, m_y), borderColor);
+            Debug.DrawLine(new Vector3(m_x + m_sizeX, y, m_y), new Vector3(m_x, y, m_y), borderColor);
+
+            Color elementColor = new Color(1, 0, 0);
+            foreach(var e in m_elements)
+            {
+                Debug.DrawLine(new Vector3(e.x, y, e.y), new Vector3(e.x + 1, y, e.y + 1), elementColor);
+                Debug.DrawLine(new Vector3(e.x, y, e.y + 1), new Vector3(e.x + 1, y, e.y), elementColor);
+            }
+        }
+        else
+        {
+            foreach (var r in m_regions)
+                r.Draw();
+        }
     }
 
     void Split()

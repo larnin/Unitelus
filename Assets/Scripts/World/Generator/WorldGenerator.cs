@@ -125,6 +125,7 @@ public class WorldGenerator
         statusText = "Generating surface ...";
 
         world = new World(m_settings.main.GetChunkNb(), true);
+        world.m_borders = m_biomes.m_borders;
 
         int minHeight = 2;
 

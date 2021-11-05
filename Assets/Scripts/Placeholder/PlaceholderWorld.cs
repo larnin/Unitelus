@@ -37,4 +37,10 @@ public class PlaceholderWorld : MonoBehaviour
     {
         m_world = e.world;
     }
+
+    private void Update()
+    {
+        if(m_world != null && m_world.m_borders != null)
+            m_world.m_borders.Draw();
+    }
 }

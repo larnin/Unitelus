@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class World
 {
+    public QuadTree<BiomeGenerator.BorderData> m_borders;
+
     readonly object dataLock = new object();
 
     bool m_worldLoop;
