@@ -8,6 +8,31 @@ using UnityEngine;
 
 public class BiomeGenerator
 {
+    public class BiomeDistance
+    {
+        public BiomeType biome;
+        public float distance;
+
+        public BiomeDistance(BiomeType _biome, float _distance = 0)
+        {
+            biome = _biome;
+            distance = _distance;
+        }
+    }
+
+    class BorderData
+    {
+        public BiomeType current;
+        public BiomeType right;
+        public BiomeType down;
+        public BorderData(BiomeType _current, BiomeType _right, BiomeType _down)
+        {
+            current = _current;
+            right = _right;
+            down = _down;
+        }
+    }
+
     int m_seed;
     int m_size;
     BiomesSettings m_settings;
@@ -297,19 +322,6 @@ public class BiomeGenerator
         return newGrid;
     }
 
-    public class BorderData
-    {
-        public BiomeType current;
-        public BiomeType right;
-        public BiomeType down;
-        public BorderData(BiomeType _current, BiomeType _right, BiomeType _down)
-        {
-            current = _current;
-            right = _right;
-            down = _down;
-        }
-    }
-
     void DetectBiomesBorders(Matrix<BiomeType> grid)
     {
         QuadTree<BorderData> borders = new QuadTree<BorderData>(grid.width, grid.depth, 16);
@@ -375,38 +387,59 @@ public class BiomeGenerator
         return (BiomeType)maxIndex;
     }
     
-    void GetBiomesAtRadius(Matrix<BiomeType> biomes, int x, int y, float radius, List<float> weights)
+    public List<BiomeDistance> GetBiomeDistances(int x, int y, float radius)
     {
-        int nbBiome = Enum.GetValues(typeof(BiomeType)).Length;
-        while (weights.Count < nbBiome)
-            weights.Add(0);
-        while (weights.Count > nbBiome)
-            weights.RemoveAt(weights.Count - 1);
-        for (int i = 0; i < weights.Count; i++)
-            weights[i] = 0;
+        List<BiomeDistance> biomes = new List<BiomeDistance>();
+        GetBiomesDistanceNoAlloc(x, y, radius, biomes);
+        return biomes;
+    }
 
-        int iRadius = Mathf.CeilToInt(radius);
+    static List<QuadTree<BorderData>> m_regionsTemp = new List<QuadTree<BorderData>>();
+    static float[] m_biomesDistance = new float[Enum.GetValues(typeof(BiomeType)).Length];
 
-        for (int k = -iRadius; k <= iRadius; k++)
+    public void GetBiomesDistanceNoAlloc(int x, int y, float radius, List<BiomeDistance> biomes)
+    {
+        float offset = -0.5f;
+        Vector2 pos = new Vector2(x + offset, y + offset);
+        m_borders.GetRegionsInCircleNoAlloc(pos.x, pos.y, radius, m_regionsTemp);
+
+        for (int i = 0; i < m_biomesDistance.Length; i++)
+            m_biomesDistance[i] = -1;
+
+        BiomeType current = m_grid.Get(x, y);
+
+        foreach(var r in m_regionsTemp)
         {
-            for (int l = -iRadius; l <= iRadius; l++)
+            int nbBlock = r.GetNbLocalElement();
+
+            for(int i = 0; i < nbBlock; i++)
             {
-                float normalizedDist = /*Mathf.Sqrt*/(k * k + l * l) / (radius * radius);
-                if (normalizedDist > 1)
+                var elemPos = r.GetLocalElementPosition(i);
+                float dist = (pos - elemPos).magnitude;
+                if (dist > radius)
                     continue;
-
-                float weight = Lerp.Linear(1, 0, normalizedDist);
-
-                int pX = x + k;
-                if (pX < 0) pX += biomes.width;
-                else if (pX >= biomes.width) pX -= biomes.width;
-                int pY = y + l;
-                if (pY < 0) pY += biomes.depth;
-                else if (pY >= biomes.depth) pY -= biomes.depth;
-
-                var biome = biomes.Get(pX, pY);
-                weights[(int)biome] += weight;
+                var elem = r.GetLocalElement(i);
+                if(elem.current != elem.right && (current == elem.current || current == elem.right))
+                {
+                    int other = (int)(elem.current == current ? elem.right : elem.current);
+                    if (m_biomesDistance[i] < 0 || m_biomesDistance[i] > dist)
+                        m_biomesDistance[i] = dist;
+                }
+                if(elem.current != elem.down && (current == elem.current || current == elem.down))
+                {
+                    int other = (int)(elem.current == current ? elem.down : elem.current);
+                    if (m_biomesDistance[i] < 0 || m_biomesDistance[i] > dist)
+                        m_biomesDistance[i] = dist;
+                }
             }
+        }
+
+        biomes.Clear();
+
+        for(int i = 0; i < m_biomesDistance.Length; i++)
+        {
+            if (m_biomesDistance[i] >= 0)
+                biomes.Add(new BiomeDistance((BiomeType)i, m_biomesDistance[i]));
         }
     }
 
@@ -416,20 +449,5 @@ public class BiomeGenerator
         Debug.Assert(y >= 0 && y < m_grid.depth);
 
         return m_grid.Get(x, y);
-    }
-
-    public List<float> GetBiomesWeights(int x, int y, float radius)
-    {
-        List<float> weights = new List<float>();
-        GetBiomesWeightsNoAlloc(x, y, radius, weights);
-        return weights;
-    }
-
-    public void GetBiomesWeightsNoAlloc(int x, int y, float radius, List<float> weights)
-    {
-        if (weights == null)
-            return;
-
-        GetBiomesAtRadius(m_grid, x, y, radius, weights);
     }
 }
