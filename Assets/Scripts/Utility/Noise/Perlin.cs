@@ -8,8 +8,6 @@ using UnityEngine;
 
 public class Perlin
 {
-
-
     int m_size;
     float m_amplitude;
     int m_frequency;

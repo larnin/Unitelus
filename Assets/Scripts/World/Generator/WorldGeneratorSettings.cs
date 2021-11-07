@@ -86,19 +86,24 @@ public class BiomesSettings
 [Serializable]
 public class PlainBiomeSettings
 {
-
+    public int baseLevel;
+    public int amplitude2D;
+    public int amplitude3D;
 }
 
 [Serializable]
 public class OceanBiomeSettings
 {
     public int waterLevel;
+    public int groundLevel;
+    public int groundAmplitude;
 }
 
 [Serializable]
 public class DesertBiomeSettings
 {
-    
+    public int amplitude2D;
+    public int amplitude3D;
 }
 
 [Serializable]
