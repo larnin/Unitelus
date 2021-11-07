@@ -216,6 +216,72 @@ public class QuadTree<T>
         return null;
     }
 
+    public List<QuadTree<T>> GetRegionsInCircle(float x, float y, float radius)
+    {
+        List<QuadTree<T>> result = new List<QuadTree<T>>();
+        GetRegionsInCircleNoAlloc(x, y, radius, result);
+        return result;
+    }
+
+    public void GetRegionsInCircleNoAlloc(float x, float y, float radius, List<QuadTree<T>> result)
+    {
+        result.Clear();
+        GetRegionsInCircleNoAllocImpl(x, y, radius, result);
+    }
+
+    void GetRegionsInCircleNoAllocImpl(float x, float y, float radius, List<QuadTree<T>> result)
+    {
+        float distX = x - m_x;
+        float distY = y - m_y;
+        if (x > m_x && x <= m_x + m_sizeX)
+            distX = 0;
+        else if (x > m_x + m_sizeX)
+            distX -= m_sizeX;
+        if (y > m_y && y <= m_y + m_sizeY)
+            distY = 0;
+        else if (y > m_y + m_sizeY)
+            distY -= m_sizeY;
+
+        float sqrDist = distX * distX + distY * distY;
+        if(sqrDist <= radius)
+        {
+            if (m_elements != null)
+                result.Add(this);
+            else
+            {
+                foreach (var r in m_regions)
+                    r.GetRegionsInCircleNoAllocImpl(x, y, radius, result);
+            }
+        }
+    }
+
+    public List<QuadTree<T>> GetRegionsInRect(float x, float y, float sizeX, float sizeY)
+    {
+        List<QuadTree<T>> result = new List<QuadTree<T>>();
+        GetRegionsInRectNoAlloc(x, y, sizeX, sizeY, result);
+        return result;
+    }
+
+    public void GetRegionsInRectNoAlloc(float x, float y, float sizeX, float sizeY, List<QuadTree<T>> result)
+    {
+        result.Clear();
+        GetRegionsInRectNoAllocImpl(x, y, sizeX, sizeY, result);
+    }
+
+    void GetRegionsInRectNoAllocImpl(float x, float y, float sizeX, float sizeY, List<QuadTree<T>> result)
+    {
+        if (x + sizeX < m_x || m_x + m_sizeX < x || y + sizeY < m_y || m_y + m_sizeY < y)
+            return;
+
+        if (m_elements != null)
+            result.Add(this);
+        else
+        {
+            foreach (var r in m_regions)
+                r.GetRegionsInRectNoAllocImpl(x, y, sizeX, sizeY, result);
+        }
+    }
+
     public void Draw()
     {
         int y = 5;

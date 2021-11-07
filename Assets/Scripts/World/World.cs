@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class World
 {
-    public QuadTree<BiomeGenerator.BorderData> m_borders;
-
     readonly object dataLock = new object();
 
     bool m_worldLoop;
@@ -524,5 +522,29 @@ public class World
     public float Distance(Vector3 posA, Vector3 posB)
     {
         return Mathf.Sqrt(SqrDistance(posA, posB));
+    }
+
+    public void SetBiome(int x, int z, BiomeType biome)
+    {
+        int chunkX;
+        int chunkZ;
+        int blockX;
+        int blockZ;
+        PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
+
+        var chunk = GetChunk(chunkX, chunkZ);
+        chunk.SetBiome(blockX, blockZ, biome);
+    }
+
+    public BiomeType GetBiome(int x, int z)
+    {
+        int chunkX;
+        int chunkZ;
+        int blockX;
+        int blockZ;
+        PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
+
+        var chunk = GetChunk(chunkX, chunkZ);
+        return chunk.GetBiome(blockX, blockZ);
     }
 }

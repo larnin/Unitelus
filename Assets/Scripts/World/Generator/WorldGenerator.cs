@@ -121,12 +121,12 @@ public class WorldGenerator
         m_biomes = new BiomeGenerator();
         m_biomes.Generate(m_settings.biomes, m_settings.main.size + Chunk.chunkScale, m_settings.main.seed + 1);
 
+        world = new World(m_settings.main.GetChunkNb(), true);
+        SetWorldBiome(world, m_biomes);
+
         timer.LogAndRestart(statusText);
         statusText = "Generating surface ...";
-
-        world = new World(m_settings.main.GetChunkNb(), true);
-        world.m_borders = m_biomes.m_borders;
-
+        
         int minHeight = 2;
 
         BlockData b;
@@ -272,6 +272,19 @@ public class WorldGenerator
                         }
                     }
                 }
+            }
+        }
+    }
+
+    static void SetWorldBiome(World world, BiomeGenerator biomes)
+    {
+        Debug.Assert(world.size == biomes.GetSize());
+        int size = world.size;
+        for(int i = 0; i < size; i++)
+        {
+            for(int j = 0; j < size; j++)
+            {
+                world.SetBiome(i, j, biomes.GetBiome(i, j));
             }
         }
     }

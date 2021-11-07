@@ -15,7 +15,9 @@ public class BiomeGenerator
     MT19937 m_rand;
 
     Matrix<BiomeType> m_grid;
-    public QuadTree<BorderData> m_borders;
+    QuadTree<BorderData> m_borders;
+
+    public int GetSize() { return 1 << m_size; }
 
     public void Generate(BiomesSettings settings, int size, int seed)
     {

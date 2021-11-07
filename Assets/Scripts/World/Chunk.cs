@@ -67,6 +67,7 @@ public class Chunk
     int m_z = 0;
 
     Dictionary<int, ChunkLayer> m_layers = new Dictionary<int, ChunkLayer>();
+    BiomeType[] m_biomes = new BiomeType[chunkSize * chunkSize];
 
     public World world { get { return m_world; } }
     public int x { get { return m_x; } }
@@ -294,5 +295,22 @@ public class Chunk
         Debug.Assert(block >= 0 && block < chunkSize);
 
         return layer * chunkSize + block;
+    }
+
+    public void SetBiome(int x, int z, BiomeType biome)
+    {
+        m_biomes[PosToBiomeIndex(x, z)] = biome;
+    }
+
+    public BiomeType GetBiome(int x, int z)
+    {
+        return m_biomes[PosToBiomeIndex(x, z)];
+    }
+
+    int PosToBiomeIndex(int x, int z)
+    {
+        Debug.Assert(x >= 0 && z >= 0 && x < chunkSize && z < chunkSize);
+
+        return x * chunkSize + z;
     }
 }
