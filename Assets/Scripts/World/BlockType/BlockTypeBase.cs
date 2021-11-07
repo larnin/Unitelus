@@ -11,6 +11,7 @@ public enum BlockType
     Cube,
     Empty,
     Smoothed,
+    Water,
 }
 
 public abstract class BlockTypeBase : ScriptableObject

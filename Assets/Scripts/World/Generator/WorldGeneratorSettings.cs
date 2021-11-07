@@ -37,8 +37,17 @@ public class MainGeneratorSettings
         return GetChunkNb() * Chunk.chunkSize;
     }
 
-    public List<WorldGeneratorSettingPerlin> base2DPerlin = new List<WorldGeneratorSettingPerlin>();
-    public List<WorldGeneratorSettingPerlin> base3DPerlin = new List<WorldGeneratorSettingPerlin>();
+    public PerlinSettings perlin2D;
+    public PerlinSettings perlin3D;
+}
+
+[Serializable]
+public class PerlinSettings
+{
+    public int baseFrequency = 1;
+    public float baseAmplitude = 1;
+    public int nbLayers = 1;
+    public float layerAmplitudeScale = 0.5f;
 }
 
 [Serializable]

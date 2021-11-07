@@ -90,6 +90,9 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
             case BlockType.Smoothed:
                 DrawBlockTypeSmoothed();
                 break;
+            case BlockType.Water:
+                DrawBlockTypeWater();
+                break;
             default:
                 DrawUncompatypeType();
                 break;
@@ -196,6 +199,20 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
         DrawBlockUV(block.m_UV, ref value.m_editUVIndex);
         block.m_material = EditorGUILayout.ObjectField("Material", block.m_material, typeof(Material), false) as Material;
         DrawMaterial(block.m_material, block.m_UV, ref value.m_editUVIndex);
+    }
+
+    void DrawBlockTypeWater()
+    {
+        EditorGUILayout.LabelField("Water block");
+        var value = ValueEntry.SmartValue;
+        var block = value.block as BlockTypeWater;
+
+        if (EditorGUILayout.BeginFoldoutHeaderGroup(true, "UV"))
+        {
+            block.m_UV = EditorGUILayout.RectField(block.m_UV);
+        }
+        EditorGUILayout.EndFoldoutHeaderGroup();
+        block.m_material = EditorGUILayout.ObjectField("Material", block.m_material, typeof(Material), false) as Material;
     }
 
     void DrawUncompatypeType()

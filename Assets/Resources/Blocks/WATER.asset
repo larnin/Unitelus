@@ -9,17 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c6b9543bfb49ad74c8ce904e45f12995, type: 3}
+  m_Script: {fileID: 11500000, guid: d0694b3df64e3cb47b1e0f51e1df587b, type: 3}
   m_Name: WATER
   m_EditorClassIdentifier: 
   m_id: 2
-  m_type: 1
+  m_type: 4
   m_material: {fileID: 2100000, guid: 57ae8d499498d92438bd84fb193e6b13, type: 2}
   m_UV:
-    uvType: 0
-    uvs:
-    - serializedVersion: 2
-      x: 0
-      y: 0
-      width: 1
-      height: 1
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
