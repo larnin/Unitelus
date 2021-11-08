@@ -9,7 +9,6 @@ using UnityEngine;
 public class Perlin
 {
     int m_size;
-    float m_amplitude;
     int m_frequency;
 
     RandomHash m_generator;
@@ -18,7 +17,6 @@ public class Perlin
     public Perlin(int size, float amplitude, int frequency, Int32 seed)
     {
         m_size = size;
-        m_amplitude = amplitude;
         m_frequency = frequency;
 
         m_generator = new RandomHash(seed);
@@ -76,14 +74,24 @@ public class Perlin
 
     static void SplitValue(float value, int size, int frequency, out int outX1, out int outX2, out float outDec)
     {
-        float x = value / size * frequency;
+        if (value < 0)
+            value = (value % size + size) % size;
+        else value = value % size;
+        //value in [0;size] bouds
+
+        float x = value / size * frequency; 
 
         outDec = x - Mathf.Floor(x);
 
-        int intValue = Mathf.FloorToInt(x);
+        outX1 = Mathf.FloorToInt(x);
+        outX2 = outX1 + 1;
+        if (outX2 > frequency)
+            outX2 = 0;
+
+        /*int intValue = Mathf.FloorToInt(x);
         int chunk = ((intValue < 0 ? -frequency + 1 : 0) + intValue) / frequency;
 
         outX1 = intValue - chunk * frequency;
-        outX2 = outX1 < frequency - 1 ? outX1 + 1 : 0;
+        outX2 = outX1 < frequency - 1 ? outX1 + 1 : 0;*/
     }
 }
