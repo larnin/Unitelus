@@ -48,7 +48,10 @@ namespace NRand
 
         public ulong Next()
         {
-            return m_value;
+            ulong value = m_value;
+            m_value = Hash(m_value);
+
+            return value;
         }
 
         static ulong Hash(ulong value)

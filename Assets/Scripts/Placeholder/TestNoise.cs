@@ -70,10 +70,10 @@ public class TestNoise : MonoBehaviour
                 value = worley[0].Get(i, j, 1, Lerp.Operator.Linear);
                 m_textures[3].SetPixel(i, j, new Color(value, value, value));
 
-                value = perlin[1].Get(i, j, Lerp.Operator.Square) / 2 + 0.5f;
+                value = perlin[0].Get(i, j, Lerp.Operator.Square) / 2 + 0.5f;
                 m_textures[4].SetPixel(i, j, new Color(value, value, value));
 
-                value = turbulence[1].Get(i, j, Lerp.Operator.Square);
+                value = turbulence[0].Get(i, j, Lerp.Operator.Square);
                 m_textures[5].SetPixel(i, j, new Color(value, value, value));
             }
 

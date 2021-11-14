@@ -112,30 +112,30 @@ public static class Lerp
 
     public static float Linear3D(float a, float b, float c, float d, float e, float f, float g, float h, float x, float y, float z)
     {
-        float x1 = Linear(a, e, x);
-        float x2 = Linear(b, f, x);
-        float x3 = Linear(c, g, x);
-        float x4 = Linear(d, h, x);
+        float x1 = Linear(a, b, x);
+        float x2 = Linear(c, d, x);
+        float x3 = Linear(e, f, x);
+        float x4 = Linear(g, h, x);
 
         return Linear2D(x1, x2, x3, x4, y, z);
     }
 
     public static float Square3D(float a, float b, float c, float d, float e, float f, float g, float h, float x, float y, float z)
     {
-        float x1 = Square(a, e, x);
-        float x2 = Square(b, f, x);
-        float x3 = Square(c, g, x);
-        float x4 = Square(d, h, x);
+        float x1 = Square(a, b, x);
+        float x2 = Square(c, d, x);
+        float x3 = Square(e, f, x);
+        float x4 = Square(g, h, x);
 
         return Square2D(x1, x2, x3, x4, y, z);
     }
 
     public static float Cos3D(float a, float b, float c, float d, float e, float f, float g, float h, float x, float y, float z)
     {
-        float x1 = Cos(a, e, x);
-        float x2 = Cos(b, f, x);
-        float x3 = Cos(c, g, x);
-        float x4 = Cos(d, h, x);
+        float x1 = Cos(a, b, x);
+        float x2 = Cos(c, d, x);
+        float x3 = Cos(e, f, x);
+        float x4 = Cos(g, h, x);
 
         return Cos2D(x1, x2, x3, x4, y, z);
     }
