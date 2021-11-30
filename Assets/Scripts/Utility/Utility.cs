@@ -201,4 +201,14 @@ public static class Utility
     {
         return (point - pos).magnitude;
     }
+
+    public static bool IsLeft(Vector2 line1, Vector2 line2, Vector2 pos)
+    {
+        return ((line2.x - line1.x) * (pos.y - line1.y) - (line2.y - line1.y) * (pos.x - line1.x)) > 0;
+    }
+
+    public static bool IsRight(Vector2 line1, Vector2 line2, Vector2 pos)
+    {
+        return ((line2.x - line1.x) * (pos.y - line1.y) - (line2.y - line1.y) * (pos.x - line1.x)) < 0;
+    }
 }

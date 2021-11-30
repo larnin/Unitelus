@@ -13,10 +13,27 @@ namespace NDelaunay
             point3
         }
 
+        static TrianglePoint Offset(TrianglePoint point, int offset)
+        {
+            int value = (int)point + offset;
+
+            if (value < 0)
+                value = (value % 3 + 3) % 3;
+            else value = value % 3;
+            return (TrianglePoint)value;
+        }
+
         public enum EdgePoint
         {
             point1,
             point2
+        }
+
+        static EdgePoint Offset(EdgePoint point, int offset)
+        {
+            if (offset % 2 == 0)
+                return point;
+            return point == EdgePoint.point1 ? EdgePoint.point2 : EdgePoint.point1;
         }
 
         class Vertex
@@ -882,6 +899,15 @@ namespace NDelaunay
             return min1.vertex == min2.vertex && max1.vertex == max2.vertex;
         }
 
+        void GetEdgesOffset(LocalVertex e1a, LocalVertex e1b, LocalVertex e2a, LocalVertex e2b, out int chunkOffsetX, out int chunkOffsetY)
+        {
+            LocalVertex min1 = e1a < e1b ? e1a : e1b;
+            LocalVertex min2 = e2a < e2b ? e2a : e2b;
+
+            chunkOffsetX = min2.chunkX - min1.chunkX;
+            chunkOffsetY = min2.chunkY - min1.chunkY;
+        }
+
         public int GetOtherTriangleFromEdge(int edge, int triangle)
         {
             Debug.Assert(edge >= 0 && edge < m_edges.Count);
@@ -892,6 +918,7 @@ namespace NDelaunay
             return e.triangle1;
         }
 
+        //return the chunk in the reference of the first triangle
         public void GetOppositeVertexFromEdge(int edge, int triangle, out int vertex, out int chunkX, out int chunkY)
         {
             vertex = -1;
@@ -902,30 +929,52 @@ namespace NDelaunay
             if (triangle2 < 0)
                 return;
 
-            var t = m_triangles[triangle2];
+            var t2 = m_triangles[triangle2];
             var e = m_edges[edge];
 
-            if(AreSameEdge(t.vertex2, t.vertex3, e.vertex1, e.vertex2))
+            int offsetX = 0;
+            int offsetY = 0;
+
+            if (AreSameEdge(t2.vertex2, t2.vertex3, e.vertex1, e.vertex2))
             {
-                vertex = t.vertex1.vertex;
-                chunkX = t.vertex1.chunkX;
-                chunkY = t.vertex1.chunkY;
+                vertex = t2.vertex1.vertex;
+                chunkX = t2.vertex1.chunkX;
+                chunkY = t2.vertex1.chunkY;
+                GetEdgesOffset(t2.vertex2, t2.vertex3, e.vertex1, e.vertex2, out offsetX, out offsetY);
+            }
+            else if (AreSameEdge(t2.vertex1, t2.vertex3, e.vertex1, e.vertex2))
+            {
+                vertex = t2.vertex2.vertex;
+                chunkX = t2.vertex2.chunkX;
+                chunkY = t2.vertex2.chunkY;
+                GetEdgesOffset(t2.vertex1, t2.vertex3, e.vertex1, e.vertex2, out offsetX, out offsetY);
+            }
+            else if (AreSameEdge(t2.vertex1, t2.vertex2, e.vertex1, e.vertex2))
+            {
+                vertex = t2.vertex3.vertex;
+                chunkX = t2.vertex3.chunkX;
+                chunkY = t2.vertex3.chunkY;
+                GetEdgesOffset(t2.vertex1, t2.vertex2, e.vertex1, e.vertex2, out offsetX, out offsetY);
+            }
+            else
+            {
+                Debug.Assert(false);
                 return;
             }
-            if(AreSameEdge(t.vertex1, t.vertex3, e.vertex1, e.vertex2))
-            {
-                vertex = t.vertex2.vertex;
-                chunkX = t.vertex2.chunkX;
-                chunkY = t.vertex2.chunkY;
-                return;
-            }
-            if(AreSameEdge(t.vertex1, t.vertex2, e.vertex1, e.vertex2))
-            {
-                vertex = t.vertex3.vertex;
-                chunkX = t.vertex3.chunkX;
-                chunkY = t.vertex3.chunkY;
-                return;
-            }
+
+            var t = m_triangles[triangle];
+
+            int offsetX2 = 0;
+            int offsetY2 = 0;
+            if (AreSameEdge(t.vertex2, t.vertex3, e.vertex1, e.vertex2))
+                GetEdgesOffset(t.vertex2, t.vertex3, e.vertex1, e.vertex2, out offsetX2, out offsetY2);
+            else if (AreSameEdge(t.vertex1, t.vertex3, e.vertex1, e.vertex2))
+                GetEdgesOffset(t.vertex1, t.vertex3, e.vertex1, e.vertex2, out offsetX2, out offsetY2);
+            else if (AreSameEdge(t.vertex1, t.vertex2, e.vertex1, e.vertex2))
+                GetEdgesOffset(t.vertex1, t.vertex2, e.vertex1, e.vertex2, out offsetX2, out offsetY2);
+
+            chunkX -= offsetX - offsetX2;
+            chunkX -= offsetY - offsetY2;
         }
 
         //keep the order of vertices, triangles and edges
