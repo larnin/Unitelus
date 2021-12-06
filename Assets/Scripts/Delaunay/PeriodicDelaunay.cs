@@ -39,9 +39,6 @@ namespace NDelaunay
                 return false;
 
             int v = m_grid.AddVertex(vertex);
-            
-            float y = 10;
-            float duration = 1000;
 
             int v1, chunkX1, chunkY1;
             int v2, chunkX2, chunkY2;

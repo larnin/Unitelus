@@ -13,11 +13,11 @@ class TestVoronoi : MonoBehaviour
     public int nbCell;
     public int seed;
 
-    PeriodicDelaunay m_delaunay;
+    PeriodicDelaunayV2 m_delaunay;
 
     private void Start()
     {
-        m_delaunay = new PeriodicDelaunay(gridSize);
+        m_delaunay = new PeriodicDelaunayV2(gridSize);
 
         float cellSize = gridSize / (float)(nbCell);
 
