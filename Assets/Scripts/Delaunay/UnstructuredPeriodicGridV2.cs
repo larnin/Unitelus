@@ -19,7 +19,7 @@ namespace NDelaunay
             public Point(Vector2 _pos) { pos = _pos; }
         }
 
-        public class LocalPoint
+        public class LocalPoint : IComparable
         {
             public int point;
             public int chunkX;
@@ -28,6 +28,7 @@ namespace NDelaunay
             public LocalPoint() { point = -1; }
             public LocalPoint(int _point, int _chunkX = 0, int _chunkY = 0) { point = _point; chunkX = _chunkX; chunkY = _chunkY; }
             public LocalPoint(LocalPoint other) { Copy(other); }
+            public LocalPoint(PointView other) { point = other.point; chunkX = other.chunkX; chunkY = other.chunkY; }
             public void Copy(LocalPoint other) { point = other.point; chunkX = other.chunkX; chunkY = other.chunkY; }
             public LocalPoint Copy() { return new LocalPoint(this); }
 
@@ -46,8 +47,24 @@ namespace NDelaunay
                 return hashCode;
             }
 
+            public int CompareTo(object obj)
+            {
+                var p = obj as LocalPoint;
+                if (p == null)
+                    return -1;
+                if (p == this)
+                    return 0;
+                if (p < this)
+                    return -1;
+                return 1;
+            }
+
             public static bool operator ==(LocalPoint a, LocalPoint b)
             {
+                //stupid null test ....
+                if(a is null || b is null)
+                    return a is null && b is null;
+
                 return a.point == b.point && a.chunkX == b.chunkX && a.chunkY == b.chunkY;
             }
             public static bool operator !=(LocalPoint a, LocalPoint b) { return !(a == b); }
@@ -438,6 +455,23 @@ namespace NDelaunay
 
                 return new EdgeView(m_grid, edgeID, offsetX, offsetY);
             }
+
+            public int GetEdgeIndex(EdgeView edge)
+            {
+                PointView point1 = edge.GetPoint(0);
+                PointView point2 = edge.GetPoint(1);
+
+                for(int i = 0; i < 3; i++)
+                {
+                    var e = GetEdge(i);
+                    PointView p1 = e.GetPoint(0);
+                    PointView p2 = e.GetPoint(1);
+                    if (m_grid.AreSameEdge(new LocalPoint(p1), new LocalPoint(p2), new LocalPoint(point1), new LocalPoint(point2)))
+                        return i;
+                }
+
+                return -1;
+            }
         }
 
         float m_size;
@@ -539,6 +573,8 @@ namespace NDelaunay
                     i--;
                 }
             }
+
+            m_points.RemoveAt(index);
         }
 
         public int GetPointCount()
@@ -626,6 +662,11 @@ namespace NDelaunay
             return AddTriangle(point1, 0, 0, point2, 0, 0, point3, 0, 0);
         }
 
+        public TriangleView AddTriangle(PointView p1, PointView p2, PointView p3)
+        {
+            return AddTriangle(p1.point, p1.chunkX, p1.chunkY, p2.point, p2.chunkX, p2.chunkY, p3.point, p3.chunkX, p3.chunkY);
+        }
+
         public TriangleView AddTriangle(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3)
         {
             LocalPoint p1 = new LocalPoint(point1, chunkX1, chunkY1);
@@ -706,7 +747,6 @@ namespace NDelaunay
                 return;
 
             Triangle triangle = m_triangles[index];
-            m_triangles.RemoveAt(index);
 
             foreach (var p in triangle.points)
                 m_points[p.point].triangles.Remove(index);
@@ -768,6 +808,8 @@ namespace NDelaunay
                         e.triangles[i]--;
                 }
             }
+
+            m_triangles.RemoveAt(index);
         }
 
         public int GetTriangleCount()

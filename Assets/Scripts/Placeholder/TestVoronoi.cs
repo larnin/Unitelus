@@ -24,10 +24,15 @@ class TestVoronoi : MonoBehaviour
         MT19937 rand = new MT19937((uint)seed);
         UniformVector2SquareDistribution d = new UniformVector2SquareDistribution();
 
+        int count = 0;
         for(int i = 0; i < nbCell; i++)
         {
             for(int j = 0; j < nbCell; j++)
             {
+                count++;
+                if (count > 2)
+                    break;
+
                 d.SetParams(i * cellSize, (i + 1) * cellSize, j * cellSize, (j + 1) * cellSize);
                 var pos = d.Next(rand);
 

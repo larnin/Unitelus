@@ -236,7 +236,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridSize: 100
-  nbCell: 10
+  nbCell: 2
   seed: 1
 --- !u!4 &237100204
 Transform:
