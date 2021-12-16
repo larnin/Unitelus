@@ -12,12 +12,13 @@ class TestVoronoi : MonoBehaviour
     public int gridSize;
     public int nbCell;
     public int seed;
+    public int breakCount;
 
-    PeriodicDelaunayV2 m_delaunay;
+    PeriodicDelaunayV3 m_delaunay;
 
     private void Start()
     {
-        m_delaunay = new PeriodicDelaunayV2(gridSize);
+        m_delaunay = new PeriodicDelaunayV3(gridSize);
 
         float cellSize = gridSize / (float)(nbCell);
 
@@ -30,7 +31,7 @@ class TestVoronoi : MonoBehaviour
             for(int j = 0; j < nbCell; j++)
             {
                 count++;
-                if (count > 2)
+                if (count > breakCount)
                     break;
 
                 d.SetParams(i * cellSize, (i + 1) * cellSize, j * cellSize, (j + 1) * cellSize);

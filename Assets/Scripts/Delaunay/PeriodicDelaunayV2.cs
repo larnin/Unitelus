@@ -75,6 +75,8 @@ namespace NDelaunay
         bool AddPointV2(Vector2 vertex)
         {
             //https://fr.wikipedia.org/wiki/Algorithme_de_Bowyer-Watson
+            //https://hal.inria.fr/hal-02923439/file/slides-Generalizing%20CGAL%20Periodic%20Delaunay%20Triangulations.pdf
+            //https://www.youtube.com/watch?v=apahul7lHO4
 
             InitBuffers();
 
@@ -134,14 +136,48 @@ namespace NDelaunay
                     if (i == edgeIndex)
                         continue;
                     var e = workTriangle.GetEdge(i);
-                    if (m_borderEdges.Exists(x => x.edge == e.edge))
-                        continue;
                     m_borderEdges.Add(e);
                 }
                 m_registeredTriangles[workTriangle.triangle] = true;
                 m_toRemoveTriangles.Add(workTriangle);
 
             } while (true);
+
+            //remove double edges
+            for(int i = 0; i < m_borderEdges.Count; i++)
+            {
+                int other = -1;
+                var p1 = m_borderEdges[i].GetPoint(0).ToLocalPoint();
+                var p2 = m_borderEdges[i].GetPoint(1).ToLocalPoint();
+                for(int j = i + 1; j < m_borderEdges.Count; j++)
+                {
+                    if (m_borderEdges[j].edge != m_borderEdges[i].edge)
+                        continue;
+
+                    var p11 = m_borderEdges[j].GetPoint(0).ToLocalPoint();
+                    var p22 = m_borderEdges[j].GetPoint(1).ToLocalPoint();
+
+                    if(p11 != p1)
+                    {
+                        var p33 = p11;
+                        p11 = p22;
+                        p22 = p33;
+                    }
+
+                    if(p1 == p11 && p2 == p22)
+                    {
+                        other = j;
+                        break;
+                    }
+                }
+
+                if(other >= 0)
+                {
+                    m_borderEdges.RemoveAt(other);
+                    m_borderEdges.RemoveAt(i);
+                    i--;
+                }
+            }
 
             //copy edge points, removing triangle are going to fuckup edge views
             while (m_borderEdgePoints.Count < m_borderEdges.Count)
@@ -197,9 +233,31 @@ namespace NDelaunay
                 if (m_testedEdges[m_borderEdges[i].edge])
                     continue;
 
-                var edgePos = (m_grid.GetPointPos(m_borderEdges[i].GetPoint(0)) + m_grid.GetPointPos(m_borderEdges[i].GetPoint(1))) / 2.0f;
+                var t1 = m_borderEdges[i].GetTriangle(0);
+                var t2 = m_borderEdges[i].GetTriangle(1);
 
-                float sqrDist = (pos - edgePos).SqrMagnitude();
+                if (t1.triangle < 0 || t2.triangle < 0)
+                    continue;
+                var workTriangle = m_registeredTriangles[t1.triangle] ? t2 : t1;
+                if (m_registeredTriangles[workTriangle.triangle])
+                    continue;
+
+                Vector2[] pointsPos = new Vector2[3];
+                for (int j = 0; j < 3; j++)
+                {
+                    var point = workTriangle.GetPoint(j);
+                    pointsPos[j] = m_grid.GetPointPos(point);
+                }
+
+                var center = Utility.TriangleOmega(pointsPos[0], pointsPos[1], pointsPos[2]);
+                float sqrRadius = (center - pointsPos[0]).sqrMagnitude;
+                float sqrDist = (center - pos).sqrMagnitude;
+                if (sqrDist > sqrRadius)
+                    continue;
+
+                //var edgePos = (m_grid.GetPointPos(m_borderEdges[i].GetPoint(0)) + m_grid.GetPointPos(m_borderEdges[i].GetPoint(1))) / 2.0f;
+
+                //float sqrDist = (pos - edgePos).SqrMagnitude();
 
                 if(sqrDist < bestDist)
                 {

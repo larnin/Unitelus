@@ -193,6 +193,27 @@ namespace NDelaunay
                 return new EdgeView(m_grid, edgeID, chunkX - pivot.chunkX, chunkY - pivot.chunkY);
             }
 
+            public PointView GetPoint(int edgeIndex)
+            {
+                EdgeView e = GetEdge(edgeIndex);
+                if (e == null)
+                    return null;
+
+                Edge edge = m_grid.m_edges[e.edge];
+
+                if(edge.points[0].point == edge.points[1].point)
+                {
+                    PointView p = e.GetPoint(0);
+                    if (p.chunkX == chunkX && p.chunkY == chunkY)
+                        return e.GetPoint(1);
+                    return p;
+                }
+
+                if (edge.points[0].point == point)
+                    return e.GetPoint(1);
+                return e.GetPoint(0);
+            }
+
             public int GetTriangleCount()
             {
                 if (point < 0 || point >= m_grid.m_points.Count)
@@ -431,6 +452,18 @@ namespace NDelaunay
                 var pointID = t.points[index];
 
                 return new PointView(m_grid, pointID.point, pointID.chunkX + chunkX, pointID.chunkY + chunkY);
+            }
+
+            public TriangleView GetTriangle(int edgeIndex)
+            {
+                EdgeView e = GetEdge(edgeIndex);
+                if (e == null)
+                    return null;
+
+                Edge edge = m_grid.m_edges[e.edge];
+                if (edge.triangles[0] == triangle)
+                    return e.GetTriangle(1);
+                return e.GetTriangle(0);
             }
 
             public EdgeView GetEdge(int index)
@@ -907,7 +940,7 @@ namespace NDelaunay
             if (a[1].chunkX - b[1].chunkX != offsetX || a[2].chunkX - b[2].chunkX != offsetX)
                 return false;
 
-            int offsetY = a[0].chunkY - b[1].chunkY;
+            int offsetY = a[0].chunkY - b[0].chunkY; 
             return a[1].chunkY - b[1].chunkY == offsetY && a[2].chunkY - b[2].chunkY == offsetY;
         }
 
