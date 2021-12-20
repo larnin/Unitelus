@@ -314,10 +314,25 @@ namespace NDelaunay
                 LocalPoint pMin = t.points[index1] < t.points[index2] ? t.points[index1] : t.points[index2];
                 LocalPoint p2Min = e.points[0] < e.points[1] ? e.points[0] : e.points[1];
 
-                int offsetX = pMin.chunkX - p2Min.chunkX;
-                int offsetY = pMin.chunkY - p2Min.chunkY;
+                int offsetX = p2Min.chunkX - pMin.chunkX + chunkX;
+                int offsetY = p2Min.chunkY - pMin.chunkY + chunkY;
 
                 return new TriangleView(m_grid, triangleID, offsetX, offsetY);
+            }
+
+            public TriangleView GetOppositeTriangle(int triangle)
+            {
+                if (edge < 0 || edge > m_grid.GetEdgeCount())
+                    return null;
+
+                Edge e = m_grid.m_edges[edge];
+
+                int triangleIndex = e.triangles[0] == triangle ? 1 : e.triangles[1] == triangle ? 0 : -1;
+
+                if (triangleIndex < 0)
+                    return null;
+
+                return GetTriangle(triangleIndex);
             }
 
             bool Flip()
@@ -483,8 +498,8 @@ namespace NDelaunay
                 LocalPoint pMin = t.points[index] < t.points[index2] ? t.points[index] : t.points[index2];
                 LocalPoint p2Min = e.points[0] < e.points[1] ? e.points[0] : e.points[1];
 
-                int offsetX = pMin.chunkX - p2Min.chunkX;
-                int offsetY = pMin.chunkY - p2Min.chunkY;
+                int offsetX = pMin.chunkX - p2Min.chunkX + chunkX;
+                int offsetY = pMin.chunkY - p2Min.chunkY + chunkY;
 
                 return new EdgeView(m_grid, edgeID, offsetX, offsetY);
             }

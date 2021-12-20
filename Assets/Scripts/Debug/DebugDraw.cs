@@ -7,7 +7,12 @@ using UnityEngine;
 
 public static class DebugDraw
 {
-    static void Line(Vector3 pos1, Vector3 pos2, Color color, float duration = -1)
+    public static void Line(Vector2 pos1, Vector2 pos2, float y, Color color, float duration = -1)
+    {
+        Line(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), color, duration);
+    }
+
+    public static void Line(Vector3 pos1, Vector3 pos2, Color color, float duration = -1)
     {
         if (duration < 0)
             Debug.DrawLine(pos1, pos2, color);
@@ -51,6 +56,11 @@ public static class DebugDraw
 
             Circle(pos, radius, angle, color, duration);
         }
+    }
+
+    public static void Triangle(Vector2 pos1, Vector2 pos2, Vector2 pos3, float y, Color color, float duration)
+    {
+        Triangle(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), color, duration);
     }
 
     public static void Triangle(Vector3 pos1, Vector3 pos2, Vector3 pos3, Color color, float duration = -1)
