@@ -1,211 +1,563 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace NDelaunay
 {
     public class UnstructuredPeriodicGrid
     {
-        public enum TrianglePoint
-        {
-            point1,
-            point2,
-            point3
-        }
-
-        static TrianglePoint Offset(TrianglePoint point, int offset)
-        {
-            int value = (int)point + offset;
-
-            if (value < 0)
-                value = (value % 3 + 3) % 3;
-            else value = value % 3;
-            return (TrianglePoint)value;
-        }
-
-        public enum EdgePoint
-        {
-            point1,
-            point2
-        }
-
-        static EdgePoint Offset(EdgePoint point, int offset)
-        {
-            if (offset % 2 == 0)
-                return point;
-            return point == EdgePoint.point1 ? EdgePoint.point2 : EdgePoint.point1;
-        }
-
-        class Vertex
+        class Point
         {
             public Vector2 pos;
-            public List<int> triangles = new List<int>();
-            public List<int> edges = new List<int>();
 
-            public Vertex(Vector2 _pos)
-            {
-                pos = _pos;
-            }
+            public List<int> edges = new List<int>();
+            public List<int> triangles = new List<int>();
+
+            public Point(Vector2 _pos) { pos = _pos; }
         }
 
-        class LocalVertex
+        public class LocalPoint : IComparable
         {
-            public int vertex;
+            public int point;
             public int chunkX;
             public int chunkY;
 
-            public LocalVertex(int _vertex, int _chunkX = 0, int _chunkY = 0)
-            {
-                vertex = _vertex;
-                chunkX = _chunkX;
-                chunkY = _chunkY;
-            }
+            public LocalPoint() { point = -1; }
+            public LocalPoint(int _point, int _chunkX = 0, int _chunkY = 0) { point = _point; chunkX = _chunkX; chunkY = _chunkY; }
+            public LocalPoint(LocalPoint other) { Copy(other); }
+            public LocalPoint(PointView other) { point = other.point; chunkX = other.chunkX; chunkY = other.chunkY; }
+            public void Copy(LocalPoint other) { point = other.point; chunkX = other.chunkX; chunkY = other.chunkY; }
+            public LocalPoint Copy() { return new LocalPoint(this); }
 
-            public LocalVertex(LocalVertex other)
+            public override bool Equals(object obj)
             {
-                Set(other);
-            }
-
-            public void Set(LocalVertex other)
-            {
-                vertex = other.vertex;
-                chunkX = other.chunkX;
-                chunkY = other.chunkY;
-            }
-
-            public static bool operator==(LocalVertex a, LocalVertex b)
-            {
-                return a.vertex == b.vertex && a.chunkX == b.chunkX && a.chunkY == b.chunkY;
-            }
-
-            public static bool operator!=(LocalVertex a, LocalVertex b)
-            {
-                return !(a == b);
-            }
-
-            public static bool operator>(LocalVertex a, LocalVertex b)
-            {
-                if (a.vertex > b.vertex)
-                    return true;
-                if (a.vertex == b.vertex)
-                {
-                    if (a.chunkX > b.chunkX)
-                        return true;
-                    if (a.chunkX == b.chunkX)
-                        return a.chunkY > b.chunkY;
-                }
-                return false;
-            }
-
-            public static bool operator<(LocalVertex a, LocalVertex b)
-            {
-                if (a.vertex < b.vertex)
-                    return true;
-                if (a.vertex == b.vertex)
-                {
-                    if (a.chunkX < b.chunkX)
-                        return true;
-                    if (a.chunkX == b.chunkX)
-                        return a.chunkY < b.chunkY;
-                }
-                return false;
-            }
-
-            public static bool operator>=(LocalVertex a, LocalVertex b)
-            {
-                return !(a < b);
-            }
-            
-            public static bool operator<=(LocalVertex a, LocalVertex b)
-            {
-                return !(a > b);
-            }
-
-            public override bool Equals(object o)
-            {
-                var v = o as LocalVertex;
-                if (v == null)
-                    return false;
-
-                return v == this;
-
+                var p = obj as LocalPoint;
+                return p != null && p == this;
             }
 
             public override int GetHashCode()
             {
-                int hash = 13;
-                hash = (hash * 7) + vertex.GetHashCode();
-                hash = (hash * 7) + chunkX.GetHashCode();
-                hash = (hash * 7) + chunkY.GetHashCode();
-                return hash;
+                var hashCode = 100676032;
+                hashCode = hashCode * -1521134295 + point.GetHashCode();
+                hashCode = hashCode * -1521134295 + chunkX.GetHashCode();
+                hashCode = hashCode * -1521134295 + chunkY.GetHashCode();
+                return hashCode;
             }
+
+            public int CompareTo(object obj)
+            {
+                var p = obj as LocalPoint;
+                if (p == null)
+                    return -1;
+                if (p == this)
+                    return 0;
+                if (p < this)
+                    return -1;
+                return 1;
+            }
+
+            public static bool operator ==(LocalPoint a, LocalPoint b)
+            {
+                //stupid null test ....
+                if(a is null || b is null)
+                    return a is null && b is null;
+
+                return a.point == b.point && a.chunkX == b.chunkX && a.chunkY == b.chunkY;
+            }
+            public static bool operator !=(LocalPoint a, LocalPoint b) { return !(a == b); }
+
+            public static bool operator <(LocalPoint a, LocalPoint b)
+            {
+                if (a.point == b.point)
+                {
+                    if (a.chunkX == b.chunkX)
+                        return a.chunkY < b.chunkY;
+                    return a.chunkX < b.chunkX;
+                }
+                return a.point < b.point;
+            }
+            public static bool operator >(LocalPoint a, LocalPoint b) { return !(a <= b); }
+            public static bool operator <=(LocalPoint a, LocalPoint b) { return (a < b) || (a == b); }
+            public static bool operator >=(LocalPoint a, LocalPoint b) { return !(a < b); }
         }
 
         class Edge
         {
-            public LocalVertex vertex1;
-            public LocalVertex vertex2;
+            public LocalPoint[] points = new LocalPoint[2];
+            public int[] triangles = new int[2];
 
-            public int triangle1;
-            public int triangle2;
-
-            public Edge(LocalVertex _vertex1, LocalVertex _vertex2)
+            public Edge() : this(-1, -1) { }
+            public Edge(int point1, int point2) : this(point1, 0, 0, point2, 0, 0) { }
+            public Edge(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2) : this(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, -1, -1) { }
+            public Edge(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int triangle1, int triangle2)
             {
-                vertex1 = new LocalVertex(_vertex1);
-                vertex2 = new LocalVertex(_vertex2);
-                triangle1 = -1;
-                triangle2 = -1;
+                points[0] = new LocalPoint(point1, chunkX1, chunkY1);
+                points[1] = new LocalPoint(point2, chunkX2, chunkY2);
+                triangles[0] = triangle1;
+                triangles[1] = triangle2;
             }
 
-            public Edge(LocalVertex _vertex1, LocalVertex _vertex2, int _triangle1, int _triangle2)
+            public Edge(LocalPoint point1, LocalPoint point2) : this(point1, point2, -1, -1) { }
+            public Edge(LocalPoint point1, LocalPoint point2, int triangle1, int triangle2)
             {
-                vertex1 = new LocalVertex(_vertex1);
-                vertex2 = new LocalVertex(_vertex2);
-                triangle1 = _triangle1;
-                triangle2 = _triangle2;
+                points[0] = new LocalPoint(point1);
+                points[1] = new LocalPoint(point2);
+                triangles[0] = triangle1;
+                triangles[1] = triangle2;
             }
         }
 
         class Triangle
         {
-            public LocalVertex vertex1;
-            public LocalVertex vertex2;
-            public LocalVertex vertex3;
+            public LocalPoint[] points = new LocalPoint[3];
+            public int[] edges = new int[3];
 
-            public int edge1;
-            public int edge2;
-            public int edge3;
-
-            public Triangle(LocalVertex _vertex1, LocalVertex _vertex2, LocalVertex _vertex3)
+            public Triangle() : this(-1, -1, -1) { }
+            public Triangle(int point1, int point2, int point3) : this(point1, 0, 0, point2, 0, 0, point3, 0, 0) { }
+            public Triangle(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3)
+                : this(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3, -1, -1, -1) { }
+            public Triangle(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3, int edge1, int edge2, int edge3)
             {
-                vertex1 = new LocalVertex(_vertex1);
-                vertex2 = new LocalVertex(_vertex2);
-                vertex3 = new LocalVertex(_vertex3);
-                edge1 = -1;
-                edge2 = -1;
-                edge3 = -1;
+                points[0] = new LocalPoint(point1, chunkX1, chunkY1);
+                points[1] = new LocalPoint(point2, chunkX2, chunkY2);
+                points[2] = new LocalPoint(point3, chunkX3, chunkY3);
+                edges[0] = edge1;
+                edges[1] = edge2;
+                edges[2] = edge3;
             }
 
-            public Triangle(LocalVertex _vertex1, LocalVertex _vertex2, LocalVertex _vertex3, int _edge1, int _edge2, int _edge3)
+            public Triangle(LocalPoint point1, LocalPoint point2, LocalPoint point3) : this(point1, point2, point3, -1, -1, -1) { }
+            public Triangle(LocalPoint point1, LocalPoint point2, LocalPoint point3, int edge1, int edge2, int edge3)
             {
-                vertex1 = new LocalVertex(_vertex1);
-                vertex2 = new LocalVertex(_vertex2);
-                vertex3 = new LocalVertex(_vertex3);
-                edge1 = _edge1;
-                edge2 = _edge2;
-                edge3 = _edge3;
+                points[0] = new LocalPoint(point1);
+                points[1] = new LocalPoint(point2);
+                points[2] = new LocalPoint(point3);
+                edges[0] = edge1;
+                edges[1] = edge2;
+                edges[2] = edge3;
             }
         }
 
-        List<Vertex> m_vertices = new List<Vertex>();
+        public struct PointView
+        {
+            UnstructuredPeriodicGrid m_grid;
+            public int point;
+            public int chunkX;
+            public int chunkY;
+
+            public PointView(UnstructuredPeriodicGrid grid, int _point, int _chunkX, int _chunkY) { m_grid = grid; point = _point; chunkX = _chunkX; chunkY = _chunkY; }
+           
+            public static PointView Null() { return new PointView(null, -1, 0, 0); }
+            
+            public bool IsNull()
+            {
+                if (m_grid == null || point < 0)
+                    return true;
+                return point >= m_grid.GetPointCount();
+            }
+
+            public LocalPoint ToLocalPoint()
+            {
+                return new LocalPoint(point, chunkX, chunkY);
+            }
+
+            public int GetEdgeCount()
+            {
+                if (point < 0 || point >= m_grid.m_points.Count)
+                    return 0;
+
+                return m_grid.m_points[point].edges.Count;
+            }
+
+            public EdgeView GetEdge(int edgeIndex)
+            {
+                if (point < 0 || point >= m_grid.m_points.Count)
+                    return EdgeView.Null();
+
+                Point p = m_grid.m_points[point];
+                if (edgeIndex < 0 || edgeIndex >= p.edges.Count)
+                    return EdgeView.Null();
+
+                int edgeID = p.edges[edgeIndex];
+                Edge edge = m_grid.m_edges[edgeID];
+
+                LocalPoint pivot = edge.points[0].point == point ? edge.points[0] : edge.points[1];
+
+                if (edge.points[0].point == edge.points[1].point)
+                {
+                    for (int i = 0; i < edgeIndex; i++)
+                    {
+                        if (p.edges[i] == edgeID)
+                        {
+                            //if not the first edge, take the other point
+                            pivot = edge.points[1];
+                            break;
+                        }
+                    }
+                }
+
+                return new EdgeView(m_grid, edgeID, chunkX - pivot.chunkX, chunkY - pivot.chunkY);
+            }
+
+            public PointView GetPoint(int edgeIndex)
+            {
+                EdgeView e = GetEdge(edgeIndex);
+                if (e.IsNull())
+                    return PointView.Null();
+
+                Edge edge = m_grid.m_edges[e.edge];
+
+                if(edge.points[0].point == edge.points[1].point)
+                {
+                    PointView p = e.GetPoint(0);
+                    if (p.chunkX == chunkX && p.chunkY == chunkY)
+                        return e.GetPoint(1);
+                    return p;
+                }
+
+                if (edge.points[0].point == point)
+                    return e.GetPoint(1);
+                return e.GetPoint(0);
+            }
+
+            public int GetTriangleCount()
+            {
+                if (point < 0 || point >= m_grid.m_points.Count)
+                    return 0;
+
+                return m_grid.m_points[point].triangles.Count;
+            }
+
+            public TriangleView GetTriangle(int triangleIndex)
+            {
+                if (point < 0 || point >= m_grid.m_points.Count)
+                    return TriangleView.Null();
+
+                Point p = m_grid.m_points[point];
+                if (triangleIndex < 0 || triangleIndex >= p.triangles.Count)
+                    return TriangleView.Null();
+
+                int triangleID = p.triangles[triangleIndex];
+                Triangle triangle = m_grid.m_triangles[triangleID];
+
+                int pointIndex = 0;
+                if (triangle.points[0].point == triangle.points[1].point || triangle.points[1].point == triangle.points[2].point || triangle.points[2].point == triangle.points[0].point)
+                {
+                    for (int i = 0; i < triangleIndex; i++)
+                    {
+                        if (p.triangles[i] == triangleID)
+                            pointIndex++;
+                    }
+                }
+
+                LocalPoint pivot = null;
+                for (int i = 0; i < triangle.points.Length; i++)
+                {
+                    if (triangle.points[i].point == point)
+                    {
+                        if (pointIndex == 0)
+                            pivot = triangle.points[i];
+                        else pointIndex--;
+                    }
+                }
+
+                return new TriangleView(m_grid, triangleID, chunkX - pivot.chunkX, chunkY - pivot.chunkY);
+            }
+        }
+
+        public struct EdgeView
+        {
+            UnstructuredPeriodicGrid m_grid;
+            public int edge;
+            public int chunkX;
+            public int chunkY;
+
+            public EdgeView(UnstructuredPeriodicGrid grid, int _edge, int _chunkX, int _chunkY) { m_grid = grid; edge = _edge; chunkX = _chunkX; chunkY = _chunkY; }
+            
+            public static EdgeView Null() { return new EdgeView(null, -1, 0, 0); }
+            
+            public bool IsNull()
+            {
+                if (m_grid == null || edge < 0)
+                    return true;
+                return edge >= m_grid.GetEdgeCount();
+            }
+
+            public PointView GetPoint(int index)
+            {
+                if (edge < 0 || edge >= m_grid.m_edges.Count)
+                    return PointView.Null();
+
+                Edge e = m_grid.m_edges[edge];
+
+                if (index < 0 || index >= e.points.Length)
+                    return PointView.Null();
+
+                var pointID = e.points[index];
+
+                return new PointView(m_grid, pointID.point, pointID.chunkX + chunkX, pointID.chunkY + chunkY);
+            }
+
+            public TriangleView GetTriangle(int index)
+            {
+                if (edge < 0 || edge >= m_grid.m_edges.Count)
+                    return TriangleView.Null();
+
+                Edge e = m_grid.m_edges[edge];
+
+                if (index < 0 || index >= e.triangles.Length)
+                    return TriangleView.Null();
+
+                int triangleID = e.triangles[index];
+                if (triangleID < 0)
+                    return new TriangleView(m_grid, triangleID, 0, 0);
+
+                Triangle t = m_grid.m_triangles[triangleID];
+
+                int index1 = -1;
+                for (int i = 0; i < t.edges.Length; i++)
+                {
+                    if (t.edges[i] == edge)
+                    {
+                        index1 = i;
+                        break;
+                    }
+                }
+                Debug.Assert(index1 >= 0);
+                int index2 = index1 == t.edges.Length - 1 ? 0 : index1 + 1;
+
+                LocalPoint pMin = t.points[index1] < t.points[index2] ? t.points[index1] : t.points[index2];
+                LocalPoint p2Min = e.points[0] < e.points[1] ? e.points[0] : e.points[1];
+
+                int offsetX = p2Min.chunkX - pMin.chunkX + chunkX;
+                int offsetY = p2Min.chunkY - pMin.chunkY + chunkY;
+
+                return new TriangleView(m_grid, triangleID, offsetX, offsetY);
+            }
+
+            public TriangleView GetOppositeTriangle(int triangle)
+            {
+                if (edge < 0 || edge > m_grid.GetEdgeCount())
+                    return TriangleView.Null();
+
+                Edge e = m_grid.m_edges[edge];
+
+                int triangleIndex = e.triangles[0] == triangle ? 1 : e.triangles[1] == triangle ? 0 : -1;
+
+                if (triangleIndex < 0)
+                    return TriangleView.Null();
+
+                return GetTriangle(triangleIndex);
+            }
+
+            bool Flip()
+            {
+                if (edge < 0 || edge >= m_grid.m_edges.Count)
+                    return false;
+
+                Edge e = m_grid.m_edges[edge];
+
+                TriangleView[] trianglesView = new TriangleView[] { GetTriangle(0), GetTriangle(1) };
+                if (trianglesView[0].triangle < 0 || trianglesView[1].triangle < 0)
+                    return false;
+
+                Triangle[] triangles = new Triangle[] { m_grid.m_triangles[trianglesView[0].triangle], m_grid.m_triangles[trianglesView[1].triangle] };
+                int[] edgeTriangleIndex = new int[2] { -1, -1 };
+                for (int i = 0; i < triangles.Length; i++)
+                {
+                    for (int j = 0; j < triangles[i].edges.Length; j++)
+                    {
+                        if (triangles[i].edges[j] == edge)
+                        {
+                            edgeTriangleIndex[i] = j;
+                            break;
+                        }
+                    }
+                    if (edgeTriangleIndex[i] < 0)
+                        return false;
+                }
+
+                int[] secondEdgeTriangleIndex = new int[2];
+                int[] pointTriangleIndex = new int[2];
+                PointView[] pointTriangleView = new PointView[2];
+                for (int i = 0; i < triangles.Length; i++)
+                {
+                    secondEdgeTriangleIndex[i] = edgeTriangleIndex[i] + 1;
+                    if (secondEdgeTriangleIndex[1] >= triangles[i].points.Length)
+                        secondEdgeTriangleIndex[i] -= 3;
+                    pointTriangleIndex[i] = edgeTriangleIndex[i] + 2;
+                    if (pointTriangleIndex[i] >= triangles[i].points.Length)
+                        pointTriangleIndex[i] -= 3;
+                    pointTriangleView[i] = trianglesView[i].GetPoint(pointTriangleIndex[i]);
+                }
+
+                Point[] points = new Point[4];
+                points[0] = m_grid.m_points[e.points[0].point];
+                points[1] = m_grid.m_points[e.points[1].point];
+                points[2] = m_grid.m_points[pointTriangleView[0].point];
+                points[3] = m_grid.m_points[pointTriangleView[1].point];
+
+                //remove old references
+                points[0].triangles.Remove(trianglesView[1].triangle);
+                points[1].triangles.Remove(trianglesView[0].triangle);
+
+                points[0].edges.Remove(edge);
+                points[1].edges.Remove(edge);
+
+                //set new references
+                points[2].triangles.Add(trianglesView[1].triangle);
+                points[3].triangles.Add(trianglesView[0].triangle);
+
+                points[2].edges.Add(edge);
+                points[3].edges.Add(edge);
+
+                int[] triangleEdgeIndexs = new int[4];
+                triangleEdgeIndexs[0] = triangles[0].edges[secondEdgeTriangleIndex[0]];
+                triangleEdgeIndexs[1] = triangles[0].edges[pointTriangleIndex[0]];
+                triangleEdgeIndexs[2] = triangles[1].edges[secondEdgeTriangleIndex[1]];
+                triangleEdgeIndexs[3] = triangles[1].edges[pointTriangleIndex[1]];
+                Edge[] triangleEdge = new Edge[triangleEdgeIndexs.Length];
+                for (int i = 0; i < triangleEdgeIndexs.Length; i++)
+                    triangleEdge[i] = m_grid.m_edges[triangleEdgeIndexs[i]];
+
+                triangles[0].points[2] = e.points[0].Copy();
+                triangles[1].points[2] = e.points[1].Copy();
+
+                e.points[0] = pointTriangleView[0].ToLocalPoint();
+                e.points[1] = pointTriangleView[1].ToLocalPoint();
+
+                triangles[0].points[0] = e.points[0].Copy();
+                triangles[0].points[1] = e.points[1].Copy();
+                triangles[1].points[0] = e.points[0].Copy();
+                triangles[1].points[1] = e.points[1].Copy();
+
+                triangles[0].edges[0] = edge;
+                triangles[1].edges[0] = edge;
+
+                if (m_grid.AreSameEdge(triangleEdge[0].points[0], triangleEdge[0].points[1], triangles[0].points[0], triangles[0].points[2]))
+                {
+                    triangles[0].edges[1] = triangleEdgeIndexs[1];
+                    triangles[0].edges[2] = triangleEdgeIndexs[0];
+                }
+                else
+                {
+                    triangles[0].edges[1] = triangleEdgeIndexs[0];
+                    triangles[0].edges[2] = triangleEdgeIndexs[1];
+                }
+
+                if (m_grid.AreSameEdge(triangleEdge[2].points[0], triangleEdge[2].points[1], triangles[1].points[1], triangles[1].points[2]))
+                {
+                    triangles[1].edges[1] = triangleEdgeIndexs[0];
+                    triangles[1].edges[2] = triangleEdgeIndexs[1];
+                }
+                else
+                {
+                    triangles[1].edges[1] = triangleEdgeIndexs[1];
+                    triangles[1].edges[2] = triangleEdgeIndexs[0];
+                }
+
+                return true;
+            }
+        }
+
+        public struct TriangleView
+        {
+            UnstructuredPeriodicGrid m_grid;
+            public int triangle;
+            public int chunkX;
+            public int chunkY;
+
+            public TriangleView(UnstructuredPeriodicGrid grid, int _triangle, int _chunkX, int _chunkY) { m_grid = grid; triangle = _triangle; chunkX = _chunkX; chunkY = _chunkY; }
+
+            public static TriangleView Null() { return new TriangleView(null, -1, 0, 0); }
+            public bool IsNull()
+            {
+                if (m_grid == null || triangle < 0)
+                    return true;
+                return triangle >= m_grid.GetTriangleCount();
+            }
+
+            public PointView GetPoint(int index)
+            {
+                if (triangle < 0 || triangle >= m_grid.m_triangles.Count)
+                    return PointView.Null();
+
+                Triangle t = m_grid.m_triangles[triangle];
+
+                if (index < 0 || index >= t.points.Length)
+                    return PointView.Null();
+
+                var pointID = t.points[index];
+
+                return new PointView(m_grid, pointID.point, pointID.chunkX + chunkX, pointID.chunkY + chunkY);
+            }
+
+            public TriangleView GetTriangle(int edgeIndex)
+            {
+                EdgeView e = GetEdge(edgeIndex);
+                if (e.IsNull())
+                    return TriangleView.Null();
+
+                Edge edge = m_grid.m_edges[e.edge];
+                if (edge.triangles[0] == triangle)
+                    return e.GetTriangle(1);
+                return e.GetTriangle(0);
+            }
+
+            public EdgeView GetEdge(int index)
+            {
+                if (triangle < 0 || triangle >= m_grid.m_triangles.Count)
+                    return EdgeView.Null();
+
+                Triangle t = m_grid.m_triangles[triangle];
+
+                if (index < 0 || index >= t.points.Length)
+                    return EdgeView.Null();
+
+                int edgeID = t.edges[index];
+                Edge e = m_grid.m_edges[edgeID];
+
+                int index2 = index == t.edges.Length - 1 ? 0 : index + 1;
+                LocalPoint pMin = t.points[index] < t.points[index2] ? t.points[index] : t.points[index2];
+                LocalPoint p2Min = e.points[0] < e.points[1] ? e.points[0] : e.points[1];
+
+                int offsetX = pMin.chunkX - p2Min.chunkX + chunkX;
+                int offsetY = pMin.chunkY - p2Min.chunkY + chunkY;
+
+                return new EdgeView(m_grid, edgeID, offsetX, offsetY);
+            }
+
+            public int GetEdgeIndex(EdgeView edge)
+            {
+                PointView point1 = edge.GetPoint(0);
+                PointView point2 = edge.GetPoint(1);
+
+                for(int i = 0; i < 3; i++)
+                {
+                    var e = GetEdge(i);
+                    PointView p1 = e.GetPoint(0);
+                    PointView p2 = e.GetPoint(1);
+                    if (m_grid.AreSameEdge(new LocalPoint(p1), new LocalPoint(p2), new LocalPoint(point1), new LocalPoint(point2)))
+                        return i;
+                }
+
+                return -1;
+            }
+        }
+
+        float m_size;
+        List<Point> m_points = new List<Point>();
         List<Edge> m_edges = new List<Edge>();
         List<Triangle> m_triangles = new List<Triangle>();
 
-        int m_size;
-
-        public UnstructuredPeriodicGrid(int size)
+        public UnstructuredPeriodicGrid(float size)
         {
             m_size = size;
+            if (m_size < 0)
+                m_size = 1;
         }
 
         public float GetSize()
@@ -215,336 +567,323 @@ namespace NDelaunay
 
         public void Clear()
         {
-            m_triangles.Clear();
+            m_points.Clear();
             m_edges.Clear();
-            m_vertices.Clear();
+            m_triangles.Clear();
         }
 
-        #region vertices
-        //return vertexIndex, keep all the index valid and add the vertex at the end
-        public int AddVertex(Vector2 pos)
+        public PointView AddPoint(Vector2 pos)
         {
-            var v = new Vertex(ClampPos(pos));
-            m_vertices.Add(v);
-            return m_vertices.Count - 1;
+            pos = ClampPosOnSize(pos);
+
+            m_points.Add(new Point(pos));
+
+            return new PointView(this, m_points.Count - 1, 0, 0);
         }
 
-        //the index of vertex, triangles and edges are moved
-        public void RemoveVertex(int index)
+        public void RemovePoint(int index)
         {
-            if (index < 0 || index >= m_vertices.Count)
+            if (index < 0 || index >= m_points.Count)
                 return;
 
-            m_vertices.RemoveAt(index);
-
-            //destroy edges that have this vertex
-            for (int i = 0; i < m_edges.Count; i++)
-            {
-                var e = m_edges[i];
-                if (e.vertex1.vertex == index || e.vertex2.vertex == index)
-                {
-                    var otherVertex = e.vertex1.vertex == index ? e.vertex2.vertex : e.vertex1.vertex;
-                    var otherV = m_vertices[otherVertex];
-                    otherV.edges.Remove(i);
-
-                    for (int j = 0; j < m_vertices.Count; j++)
-                    {
-                        var v = m_vertices[j];
-                        for (int k = 0; k < v.edges.Count; k++)
-                            if (v.edges[k] > i)
-                                v.edges[k]--;
-                    }
-                    //we don't bother to remove triangle from edge it's removed with the vertex
-                    for (int j = 0; j < m_triangles.Count; j++)
-                    {
-                        var t = m_triangles[j];
-                        if (t.edge1 > i)
-                            t.edge1--;
-                        if (t.edge2 > i)
-                            t.edge2--;
-                        if (t.edge3 > i)
-                            t.edge3--;
-                    }
-                    m_edges.RemoveAt(i);
-                    i--;
-                }
-                else
-                {
-                    if (e.vertex1.vertex > index)
-                        e.vertex1.vertex--;
-                    if (e.vertex2.vertex > index)
-                        e.vertex2.vertex--;
-                }
-            }
-            //destroy triangles too
+            //remove connected triangles
             for (int i = 0; i < m_triangles.Count; i++)
             {
-                var t = m_triangles[i];
-                if (t.vertex1.vertex == index || t.vertex2.vertex == index || t.vertex3.vertex == index)
+                bool needToRemove = false;
+                foreach (var p in m_triangles[i].points)
                 {
-                    if (t.vertex1.vertex != index)
-                        m_vertices[t.vertex1.vertex].triangles.Remove(i);
-                    if (t.vertex2.vertex != index)
-                        m_vertices[t.vertex2.vertex].triangles.Remove(i);
-                    if (t.vertex3.vertex != index)
-                        m_vertices[t.vertex3.vertex].triangles.Remove(i);
+                    if (p.point == index)
+                    {
+                        needToRemove = true;
+                        break;
+                    }
+                }
 
-                    for (int j = 0; j < m_vertices.Count; j++)
+                if (needToRemove)
+                {
+                    foreach (var p in m_triangles[i].points)
+                        m_points[p.point].triangles.Remove(i);
+
+                    foreach (var e in m_triangles[i].edges)
                     {
-                        var v = m_vertices[j];
-                        for (int k = 0; k < v.triangles.Count; k++)
-                            if (v.triangles[k] > i)
-                                v.triangles[k]--;
+                        Edge edge = m_edges[e];
+                        if (edge.triangles[0] == i)
+                            edge.triangles[0] = -1;
+                        else if (edge.triangles[1] == i)
+                            edge.triangles[1] = -1;
+                        //destroy the edges later
                     }
-                    //we don't need to remove edge here
-                    for (int j = 0; j < m_edges.Count; j++)
+
+                    //decrease next triangles reference on point and edge
+                    foreach (var p in m_points)
                     {
-                        var e = m_edges[j];
-                        if (e.triangle1 > i)
-                            e.triangle1--;
-                        if (e.triangle2 > i)
-                            e.triangle2--;
+                        for (int j = 0; j < p.triangles.Count; j++)
+                            if (p.triangles[j] > i)
+                                p.triangles[j]--;
                     }
+
+                    foreach (var e in m_edges)
+                    {
+                        for (int j = 0; j < e.triangles.Length; j++)
+                            if (e.triangles[j] > i)
+                                e.triangles[j]--;
+                    }
+
                     m_triangles.RemoveAt(i);
                     i--;
                 }
-                else
+            }
+
+            //remove invalid edges
+            for (int i = 0; i < m_edges.Count; i++)
+            {
+                Edge e = m_edges[i];
+                if (e.triangles[0] < 0 && e.triangles[1] < 0)
                 {
-                    if (t.vertex1.vertex > index)
-                        t.vertex1.vertex--;
-                    if (t.vertex2.vertex > index)
-                        t.vertex2.vertex--;
-                    if (t.vertex3.vertex > index)
-                        t.vertex3.vertex--;
+                    foreach (var p in e.points)
+                        m_points[p.point].edges.Remove(i);
+
+                    m_edges.RemoveAt(i);
+                    i--;
                 }
             }
+
+            m_points.RemoveAt(index);
         }
 
-        public int GetVerticesCount()
+        public int GetPointCount()
         {
-            return m_vertices.Count;
+            return m_points.Count;
         }
 
-        public Vector2 GetVertex(int index, int chunkX = 0, int chunkY = 0)
+        public PointView GetPoint(int index, int chunkX = 0, int chunkY = 0)
         {
-            Debug.Assert(index >= 0 && index < m_vertices.Count);
-            var v = m_vertices[index];
-            return GetPos(v.pos, chunkX, chunkY);
+            Debug.Assert(index >= 0 && index < m_points.Count);
+
+            return new PointView(this, index, chunkX, chunkY);
         }
 
-        public int GetVertexTriangleCount(int index)
+        public Vector2 GetPointPos(LocalPoint point)
         {
-            Debug.Assert(index >= 0 && index < m_vertices.Count);
-            var v = m_vertices[index];
-            return v.triangles.Count;
+            return GetPointPos(point.point, point.chunkX, point.chunkY);
         }
 
-        public int GetVertexTriangle(int vertex, int triangle)
+        public Vector2 GetPointPos(PointView point)
         {
-            Debug.Assert(vertex >= 0 && vertex < m_vertices.Count);
-            var v = m_vertices[vertex];
-
-            Debug.Assert(triangle >= 0 && triangle < v.triangles.Count);
-            return v.triangles[triangle];
+            return GetPointPos(point.point, point.chunkX, point.chunkY);
         }
 
-        public int GetVertexEdgeCount(int index)
+        public Vector2 GetPointPos(int index, int chunkX = 0, int chunkY = 0)
         {
-            Debug.Assert(index >= 0 && index < m_vertices.Count);
-            var v = m_vertices[index];
-            return v.edges.Count;
+            Debug.Assert(index >= 0 && index < m_points.Count);
+
+            Vector2 pos = m_points[index].pos;
+            pos.x += chunkX * m_size;
+            pos.y += chunkY * m_size;
+
+            return pos;
         }
 
-        public int GetVertexEdge(int vertex, int edge)
+        public int GetEdgeCount()
         {
-            Debug.Assert(vertex >= 0 && vertex < m_vertices.Count);
-            var v = m_vertices[vertex];
-
-            Debug.Assert(edge >= 0 && edge <= v.edges.Count);
-            return v.edges[edge];
+            return m_edges.Count;
         }
 
-        #endregion
-
-        #region triangles
-        //return triangle index, if a triangle with the same vertices already exist return it instead of creating a new one
-        //keep all the indexs valid, add the triangle at the end if it's a new one
-        public int AddTriangle(int vertex1, int vertex2, int vertex3, bool checkAlreadyIn = true)
+        public EdgeView GetEdge(int index)
         {
-            return AddTriangle(vertex1, 0, 0, vertex2, 0, 0, vertex3, 0, 0, checkAlreadyIn);
+            Debug.Assert(index >= 0 && index < m_edges.Count);
+
+            return new EdgeView(this, index, 0, 0);
         }
 
-        public int AddTriangle(int vertex1, int chunkX1, int chunkY1, int vertex2, int chunkX2, int chunkY2, int vertex3, int chunkX3, int chunkY3, bool checkAlreadyIn = true)
+        public EdgeView GetEdge(int index, int chunkX, int chunkY)
         {
-            if (checkAlreadyIn)
+            Debug.Assert(index >= 0 && index < m_edges.Count);
+
+            return new EdgeView(this, index, chunkX, chunkY);
+        }
+
+        bool AreSameEdge(LocalPoint a1, LocalPoint a2, LocalPoint b1, LocalPoint b2)
+        {
+            var aMin = a1 < a2 ? a1 : a2;
+            var aMax = a1 < a2 ? a2 : a1;
+            var bMin = b1 < b2 ? b1 : b2;
+            var bMax = b1 < b2 ? b2 : b1;
+
+            if (aMin.point != bMin.point || aMax.point != bMax.point)
+                return false;
+
+            if (aMin.chunkX - bMin.chunkX != aMax.chunkX - bMax.chunkX)
+                return false;
+
+            return aMin.chunkY - bMin.chunkY == aMax.chunkY - bMax.chunkY;
+        }
+
+        int FindEdgeIndex(LocalPoint a, LocalPoint b)
+        {
+            for (int i = 0; i < m_edges.Count; i++)
             {
-                int oldIndex = GetTriangle(vertex1, chunkX1, chunkY1, vertex2, chunkX2, chunkY2, vertex3, chunkX3, chunkY3);
-                if (oldIndex >= 0)
-                    return oldIndex;
+                Edge e = m_edges[i];
+                if (AreSameEdge(e.points[0], e.points[1], a, b))
+                    return i;
             }
 
-            var v1 = new LocalVertex(vertex1, chunkX1, chunkY1);
-            var v2 = new LocalVertex(vertex2, chunkX2, chunkY2);
-            var v3 = new LocalVertex(vertex3, chunkX3, chunkY3);
+            return -1;
+        }
 
-            var vert1 = m_vertices[v1.vertex];
-            var vert2 = m_vertices[v2.vertex];
-            var vert3 = m_vertices[v3.vertex];
+        public TriangleView AddTriangle(int point1, int point2, int point3)
+        {
+            return AddTriangle(point1, 0, 0, point2, 0, 0, point3, 0, 0);
+        }
 
-            int edge1 = GetEdge(v1, v2);
-            int edge2 = GetEdge(v2, v3);
-            int edge3 = GetEdge(v3, v1);
+        public TriangleView AddTriangle(PointView p1, PointView p2, PointView p3)
+        {
+            return AddTriangle(p1.point, p1.chunkX, p1.chunkY, p2.point, p2.chunkX, p2.chunkY, p3.point, p3.chunkX, p3.chunkY);
+        }
 
-            int triangleIndex = m_triangles.Count;
+        public TriangleView AddTriangle(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3)
+        {
+            LocalPoint p1 = new LocalPoint(point1, chunkX1, chunkY1);
+            LocalPoint p2 = new LocalPoint(point2, chunkX2, chunkY2);
+            LocalPoint p3 = new LocalPoint(point3, chunkX3, chunkY3);
 
-            if (edge1 < 0)
+            for (int i = 0; i < m_triangles.Count; i++)
             {
-                edge1 = m_edges.Count;
-                m_edges.Add(new Edge(v1, v2, triangleIndex, -1));
-
-                vert1.edges.Add(edge1);
-                vert2.edges.Add(edge1);
+                var t = m_triangles[i];
+                if (AreSameTriangle(t.points[0], t.points[1], t.points[2], p1, p2, p3))
+                    return GetTriangle(i);
             }
-            else
+
+            return AddTriangleNoCheck(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3);
+        }
+
+        //don't check if this triangle already exist
+        public TriangleView AddTriangleNoCheck(int point1, int point2, int point3)
+        {
+            return AddTriangleNoCheck(point1, 0, 0, point2, 0, 0, point3, 0, 0);
+        }
+
+        public TriangleView AddTriangleNoCheck(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3)
+        {
+            chunkX2 -= chunkX1;
+            chunkX3 -= chunkX1;
+            chunkX1 = 0;
+
+            chunkY2 -= chunkY1;
+            chunkY3 -= chunkY1;
+            chunkY1 = 0;
+
+            int triangleIndex = m_triangles.Count();
+            Triangle triangle = new Triangle(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3);
+
+            m_triangles.Add(triangle);
+
+            for (int i = 0; i < triangle.edges.Length; i++)
             {
-                var e = m_edges[edge1];
-                if (e.triangle1 < 0)
-                    e.triangle1 = triangleIndex;
-                else if (e.triangle2 < 0)
-                    e.triangle2 = triangleIndex;
+                int i2 = i == triangle.edges.Length - 1 ? 0 : i + 1;
+
+                triangle.edges[i] = FindEdgeIndex(triangle.points[i], triangle.points[i2]);
+
+                Edge e = null;
+                if (triangle.edges[i] >= 0)
+                    e = m_edges[triangle.edges[i]];
+                else
+                {
+                    e = new Edge(triangle.points[i], triangle.points[i2]);
+                    triangle.edges[i] = m_edges.Count;
+                    foreach (var point in e.points)
+                        m_points[point.point].edges.Add(triangle.edges[i]);
+
+                    e.points[1].chunkX -= e.points[0].chunkX;
+                    e.points[0].chunkX = 0;
+                    e.points[1].chunkY -= e.points[0].chunkY;
+                    e.points[0].chunkY = 0;
+
+                    m_edges.Add(e);
+                }
+
+                if (e.triangles[0] < 0)
+                    e.triangles[0] = triangleIndex;
+                else if (e.triangles[1] < 0)
+                    e.triangles[1] = triangleIndex;
                 else Debug.Assert(false);
             }
 
-            if (edge2 < 0)
-            {
-                edge2 = m_edges.Count;
-                m_edges.Add(new Edge(v2, v3, triangleIndex, -1));
+            foreach (var point in triangle.points)
+                m_points[point.point].triangles.Add(triangleIndex);
 
-                vert2.edges.Add(edge2);
-                vert3.edges.Add(edge2);
-            }
-            else
-            {
-                var e = m_edges[edge2];
-                if (e.triangle1 < 0)
-                    e.triangle1 = triangleIndex;
-                else if (e.triangle2 < 0)
-                    e.triangle2 = triangleIndex;
-                else Debug.Assert(false);
-            }
-
-            if (edge3 < 0)
-            {
-                edge3 = m_edges.Count;
-                m_edges.Add(new Edge(v3, v1, triangleIndex, -1));
-
-                vert3.edges.Add(edge3);
-                vert1.edges.Add(edge3);
-            }
-            else
-            {
-                var e = m_edges[edge3];
-                if (e.triangle1 < 0)
-                    e.triangle1 = triangleIndex;
-                else if (e.triangle2 < 0)
-                    e.triangle2 = triangleIndex;
-                else Debug.Assert(false);
-            }
-
-            vert1.triangles.Add(triangleIndex);
-            vert2.triangles.Add(triangleIndex);
-            vert3.triangles.Add(triangleIndex);
-
-            m_triangles.Add(new Triangle(v1, v2, v3, edge1, edge2, edge3));
-
-            return triangleIndex;
+            return GetTriangle(triangleIndex);
         }
 
-        //change triangles and edges indexs, don't change vertices indexs
-        public void RemoveTriangle(int triangle)
+        public void RemoveTriangle(int index)
         {
-            if (triangle < 0 || triangle >= m_triangles.Count)
+            if (index < 0 || index >= m_triangles.Count)
                 return;
 
-            var t = m_triangles[triangle];
-            m_triangles.RemoveAt(triangle);
+            Triangle triangle = m_triangles[index];
 
-            var edgeToCheck = new int[] { t.edge1, t.edge2, t.edge3 };
-            foreach (var edgeIndex in edgeToCheck)
+            foreach (var p in triangle.points)
+                m_points[p.point].triangles.Remove(index);
+
+            foreach (var e in triangle.edges)
             {
-                var e = m_edges[edgeIndex];
-                //remove edge if no triangle on the other side
-                if (e.triangle1 < 0 || e.triangle2 < 0)
+                Edge edge = m_edges[e];
+                bool needToRemove = true;
+                for (int i = 0; i < edge.triangles.Length; i++)
                 {
-                    m_vertices[e.vertex1.vertex].edges.Remove(edgeIndex);
-                    m_vertices[e.vertex2.vertex].edges.Remove(edgeIndex);
+                    if (edge.triangles[i] == index)
+                        edge.triangles[i] = -1;
+                    else if (edge.triangles[i] >= 0)
+                        needToRemove = false;
+                }
+                if (needToRemove)
+                {
+                    foreach (var p in edge.points)
+                        m_points[p.point].edges.Remove(e);
 
-                    //decrease edge indexs
-                    for (int i = 0; i < m_vertices.Count; i++)
+                    //decrease edge reference in point and triangle
+                    foreach (var p in m_points)
                     {
-                        var v = m_vertices[i];
-                        for (int j = 0; j < v.edges.Count; j++)
+                        for (int i = 0; i < p.edges.Count; i++)
                         {
-                            if (v.edges[j] > edgeIndex)
-                                v.edges[j]--;
+                            if (p.edges[i] > e)
+                                p.edges[i]--;
                         }
                     }
 
-                    for (int i = 0; i < m_triangles.Count; i++)
+                    foreach (var t in m_triangles)
                     {
-                        var tr = m_triangles[i];
-                        if (tr.edge1 > edgeIndex)
-                            tr.edge1--;
-                        if (tr.edge2 > edgeIndex)
-                            tr.edge2--;
-                        if (tr.edge3 > edgeIndex)
-                            tr.edge3--;
+                        for (int i = 0; i < t.edges.Length; i++)
+                        {
+                            if (t.edges[i] > e)
+                                t.edges[i]--;
+                        }
                     }
 
-                    for (int i = 0; i < edgeToCheck.Length; i++)
-                        if (edgeToCheck[i] > edgeIndex)
-                            edgeToCheck[i]--;
-
-                    m_edges.RemoveAt(edgeIndex);
+                    m_edges.RemoveAt(e);
                 }
-                else
+            }
+
+            //decrease triangle reference in point and edge
+            foreach (var p in m_points)
+            {
+                for (int i = 0; i < p.triangles.Count; i++)
                 {
-                    //remove only triangle on this edge
-                    if (e.triangle1 == triangle)
-                        e.triangle1 = -1;
-                    else if (e.triangle2 == triangle)
-                        e.triangle2 = -1;
-                    else Debug.Assert(false);
+                    if (p.triangles[i] > index)
+                        p.triangles[i]--;
                 }
             }
 
-            //remove edge on triangle
-            var vertices = new int[] { t.vertex1.vertex, t.vertex2.vertex, t.vertex3.vertex };
-            foreach (var vertex in vertices)
+            foreach (var e in m_edges)
             {
-                var v = m_vertices[vertex];
-                v.triangles.Remove(triangle);
-            }
-
-            //decrease triangle indexs
-            for (int i = 0; i < m_vertices.Count; i++)
-            {
-                var v = m_vertices[i];
-                for (int j = 0; j < v.triangles.Count; j++)
+                for (int i = 0; i < e.triangles.Length; i++)
                 {
-                    if (v.triangles[j] > triangle)
-                        v.triangles[j]--;
+                    if (e.triangles[i] > index)
+                        e.triangles[i]--;
                 }
             }
 
-            for (int i = 0; i < m_edges.Count; i++)
-            {
-                var e = m_edges[i];
-                if (e.triangle1 > triangle)
-                    e.triangle1--;
-                if (e.triangle2 > triangle)
-                    e.triangle2--;
-            }
+            m_triangles.RemoveAt(index);
         }
 
         public int GetTriangleCount()
@@ -552,178 +891,51 @@ namespace NDelaunay
             return m_triangles.Count;
         }
 
-        public int GetTriangle(int vertex1, int vertex2, int vertex3)
+        public TriangleView GetTriangle(int index)
         {
-            return GetTriangle(vertex1, vertex2, vertex3);
+            Debug.Assert(index >= 0 && index < m_triangles.Count);
+
+            return new TriangleView(this, index, 0, 0);
         }
 
-        public int GetTriangle(int vertex1, int chunkX1, int chunkY1, int vertex2, int chunkX2, int chunkY2, int vertex3, int chunkX3, int chunkY3)
+        public TriangleView GetTriangle(int index, int chunkX, int chunkY)
         {
-            var ta = new LocalVertex(vertex1, chunkX1, chunkY1);
-            var tb = new LocalVertex(vertex2, chunkX2, chunkY2);
-            var tc = new LocalVertex(vertex3, chunkX3, chunkY3);
+            Debug.Assert(index >= 0 && index < m_triangles.Count);
 
-            for (int i = 0; i < m_triangles.Count; i++)
-            {
-                var t = m_triangles[i];
-                if (AreSameTriangle(ta, tb, tc, t.vertex1, t.vertex2, t.vertex3))
-                    return i;
-            }
-
-            return -1;
+            return new TriangleView(this, index, chunkX, chunkY);
         }
 
-        public void GetTriangleVertex(int triangle, TrianglePoint point, out int vertex, out int chunkX, out int chunkY)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            LocalVertex v = null;
-
-            if (point == TrianglePoint.point1)
-                v = t.vertex1;
-            else if (point == TrianglePoint.point2)
-                v = t.vertex2;
-            else //if(point == TrianglePoint.point3)
-                v = t.vertex3;
-
-            vertex = v.vertex;
-            chunkX = v.chunkX;
-            chunkY = v.chunkY;
-        }
-
-        public int GetTriangleVertex(int triangle, TrianglePoint point)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            if (point == TrianglePoint.point1)
-                return t.vertex1.vertex;
-            if (point == TrianglePoint.point2)
-                return t.vertex2.vertex;
-            return t.vertex3.vertex;
-        }
-
-        public void GetTriangleVertices(int triangle, out int vertex1, out int chunkX1, out int chunkY1, out int vertex2, out int chunkX2, out int chunkY2, out int vertex3, out int chunkX3, out int chunkY3)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            vertex1 = t.vertex1.vertex;
-            chunkX1 = t.vertex1.chunkX;
-            chunkY1 = t.vertex1.chunkY;
-            vertex2 = t.vertex2.vertex;
-            chunkX2 = t.vertex2.chunkX;
-            chunkY2 = t.vertex2.chunkY;
-            vertex3 = t.vertex3.vertex;
-            chunkX3 = t.vertex3.chunkX;
-            chunkY3 = t.vertex3.chunkY;
-        }
-
-        public void GetTriangleVertices(int triangle, out int vertex1, out int vertex2, out int vertex3)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            vertex1 = t.vertex1.vertex;
-            vertex2 = t.vertex2.vertex;
-            vertex3 = t.vertex3.vertex;
-        }
-
-        public Vector2 GetTriangleVertexPos(int triangle, TrianglePoint point)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            if (point == TrianglePoint.point1)
-                return GetPos(t.vertex1);
-            if (point == TrianglePoint.point2)
-                return GetPos(t.vertex2);
-            return GetPos(t.vertex3);
-        }
-
-        public void GetTriangleVerticesPos(int triangle, out Vector2 vec1, out Vector2 vec2, out Vector2 vec3)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            vec1 = GetPos(t.vertex1);
-            vec2 = GetPos(t.vertex2);
-            vec3 = GetPos(t.vertex3);
-        }
-
-        public int GetTriangleEdge(int triangle, TrianglePoint point)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            if (point == TrianglePoint.point1)
-                return t.edge1;
-            if (point == TrianglePoint.point2)
-                return t.edge2;
-            return t.edge3;
-        }
-
-        //return true if this edge is on this triangle
-        public bool FindTriangleEdge(int triangle, int edge, out TrianglePoint point)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            if (edge == t.edge1)
-                point = TrianglePoint.point1;
-            else if (edge == t.edge2)
-                point = TrianglePoint.point2;
-            else if (edge == t.edge3)
-                point = TrianglePoint.point3;
-            else
-            {
-                point = TrianglePoint.point1;
-                return false;
-            }
-            return true;
-        }
-
-        public void GetTriangleEdges(int triangle, out int edge1, out int edge2, out int edge3)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            var t = m_triangles[triangle];
-
-            edge1 = t.edge1;
-            edge2 = t.edge2;
-            edge3 = t.edge3;
-        }
-
-        public int GetTriangleAt(Vector2 pos)
+        public TriangleView GetTriangleAt(Vector2 pos)
         {
             Matrix<bool> testPos = new Matrix<bool>(3, 3);
 
-            pos = ClampPos(pos);
-            for(int i = 0; i < m_triangles.Count; i++)
+            pos = ClampPosOnSize(pos);
+            for (int i = 0; i < m_triangles.Count; i++)
             {
                 var t = m_triangles[i];
 
                 bool testAllPos = false;
-                if (t.vertex1.chunkX != t.vertex2.chunkX || t.vertex1.chunkX != t.vertex3.chunkX || t.vertex1.chunkX != 0)
+                if(t.points[0].chunkX != t.points[1].chunkX || t.points[0].chunkX != t.points[2].chunkX)
                 {
-                    testPos.Set(0, 1, t.vertex1.chunkX < 0 || t.vertex2.chunkX < 0 || t.vertex3.chunkX < 0);
-                    testPos.Set(2, 1, t.vertex1.chunkX > 0 || t.vertex2.chunkX > 0 || t.vertex3.chunkX > 0);
+                    testPos.Set(0, 1, t.points[0].chunkX < 0 || t.points[1].chunkX < 0 || t.points[2].chunkX < 0);
+                    testPos.Set(2, 1, t.points[0].chunkX > 0 || t.points[1].chunkX > 0 || t.points[2].chunkX > 0);
                     testAllPos = true;
                 }
-                if (t.vertex1.chunkY != t.vertex2.chunkY || t.vertex1.chunkY != t.vertex3.chunkY || t.vertex1.chunkY != 0)
+                if (t.points[0].chunkY != t.points[1].chunkY || t.points[0].chunkY != t.points[2].chunkY)
                 {
-                    testPos.Set(1, 0, t.vertex1.chunkY < 0 || t.vertex2.chunkY < 0 || t.vertex3.chunkY < 0);
-                    testPos.Set(1, 2, t.vertex1.chunkY > 0 || t.vertex2.chunkY > 0 || t.vertex3.chunkY > 0);
+                    testPos.Set(1, 0, t.points[0].chunkY < 0 || t.points[1].chunkY < 0 || t.points[2].chunkY < 0);
+                    testPos.Set(1, 2, t.points[0].chunkY > 0 || t.points[1].chunkY > 0 || t.points[2].chunkY > 0);
                     testAllPos = true;
                 }
-                if(!testAllPos)
+
+                if (!testAllPos)
                 {
-                    Vector2 pos1 = m_vertices[t.vertex1.vertex].pos;
-                    Vector2 pos2 = m_vertices[t.vertex2.vertex].pos;
-                    Vector2 pos3 = m_vertices[t.vertex3.vertex].pos;
+                    Vector2 pos1 = m_points[t.points[0].point].pos;
+                    Vector2 pos2 = m_points[t.points[1].point].pos;
+                    Vector2 pos3 = m_points[t.points[2].point].pos;
 
                     if (Utility.IsOnTriangle(pos, pos1, pos2, pos3))
-                        return i;
+                        return new TriangleView(this, i, 0, 0);
 
                     continue;
                 }
@@ -733,525 +945,74 @@ namespace NDelaunay
                 testPos.Set(0, 2, testPos.Get(0, 1) && testPos.Get(1, 2));
                 testPos.Set(2, 2, testPos.Get(1, 2) && testPos.Get(2, 1));
 
-                for(int j = -1; j <= 1; j++)
+                for (int j = -1; j <= 1; j++)
                 {
-                    for(int k = -1; k <= 1; k++)
+                    for (int k = -1; k <= 1; k++)
                     {
                         if (!testPos.Get(j + 1, k + 1))
                             continue;
 
-                        Vector2 pos1 = GetPos(t.vertex1.vertex, t.vertex1.chunkX - j, t.vertex1.chunkY - k);
-                        Vector2 pos2 = GetPos(t.vertex2.vertex, t.vertex2.chunkX - j, t.vertex2.chunkY - k);
-                        Vector2 pos3 = GetPos(t.vertex3.vertex, t.vertex3.chunkX - j, t.vertex3.chunkY - k);
-                        
+                        Vector2 pos1 = GetPointPos(t.points[0].point, t.points[0].chunkX - j, t.points[0].chunkY - k);
+                        Vector2 pos2 = GetPointPos(t.points[1].point, t.points[1].chunkX - j, t.points[1].chunkY - k);
+                        Vector2 pos3 = GetPointPos(t.points[2].point, t.points[2].chunkX - j, t.points[2].chunkY - k);
+
                         if (Utility.IsOnTriangle(pos, pos1, pos2, pos3))
-                            return i;
+                            return new TriangleView(this, i, -j, -k);
                     }
                 }
-                
+
                 testPos.SetAll(false);
             }
 
-            return -1;
+            return new TriangleView(this, -1, 0, 0);
         }
 
-        bool AreSameTriangle(LocalVertex t1a, LocalVertex t1b, LocalVertex t1c, LocalVertex t2a, LocalVertex t2b, LocalVertex t2c)
+        bool AreSameTriangle(LocalPoint a1, LocalPoint a2, LocalPoint a3, LocalPoint b1, LocalPoint b2, LocalPoint b3)
         {
-            LocalVertex[] indexs1 = new LocalVertex[] { t1a, t1b, t1c };
-            LocalVertex[] indexs2 = new LocalVertex[] { t2a, t2b, t2c };
+            var a = new LocalPoint[] { a1, a2, a3 };
+            var b = new LocalPoint[] { b1, b2, b3 };
+            Array.Sort(a);
+            Array.Sort(b);
 
-            Array.Sort(indexs1, (x, y) => { return x.vertex.CompareTo(y.vertex); });
-            Array.Sort(indexs2, (x, y) => { return x.vertex.CompareTo(y.vertex); });
-
-            int offsetX = indexs1[0].chunkX - indexs2[0].chunkX;
-            int offsetY = indexs1[0].chunkY - indexs2[0].chunkY;
-
-            if (indexs1[1].chunkX - indexs2[1].chunkX != offsetX || indexs1[2].chunkX - indexs2[2].chunkX != offsetX)
+            if (a[0].point != b[0].point || a[1].point != b[1].point || a[2].point != b[2].point)
                 return false;
 
-            if (indexs1[1].chunkY - indexs2[1].chunkY != offsetY || indexs1[2].chunkY - indexs2[2].chunkY != offsetY)
+            int offsetX = a[0].chunkX - b[0].chunkX;
+            if (a[1].chunkX - b[1].chunkX != offsetX || a[2].chunkX - b[2].chunkX != offsetX)
                 return false;
 
-            return indexs1[0].vertex == indexs2[0].vertex && indexs1[1].vertex == indexs2[1].vertex && indexs1[2].vertex == indexs2[2].vertex;
-        }
-        #endregion
-
-        #region edges
-        public int GetEdgeCount()
-        {
-            return m_edges.Count;
+            int offsetY = a[0].chunkY - b[0].chunkY; 
+            return a[1].chunkY - b[1].chunkY == offsetY && a[2].chunkY - b[2].chunkY == offsetY;
         }
 
-        public int GetEdge(int vertex1, int vertex2)
-        {
-            return GetEdge(vertex1, 0, 0, vertex2, 0, 0);
-        }
-
-        public int GetEdge(int vertex1, int chunkX1, int chunkY1, int vertex2, int chunkX2, int chunkY2)
-        {
-            var ea = new LocalVertex(vertex1, chunkX1, chunkY1);
-            var eb = new LocalVertex(vertex2, chunkX2, chunkY2);
-
-            return GetEdge(ea, eb);
-        }
-
-        int GetEdge(LocalVertex v1, LocalVertex v2)
-        {
-            var v = m_vertices[v1.vertex];
-            for (int i = 0; i < v.edges.Count; i++)
-            {
-                var e = m_edges[v.edges[i]];
-                if (AreSameEdge(v1, v2, e.vertex1, e.vertex2))
-                    return v.edges[i];
-            }
-
-            return -1;
-        }
-
-        public int GetEdgeVertex(int edge, EdgePoint point)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-            var e = m_edges[edge];
-
-            if (point == EdgePoint.point1)
-                return e.vertex1.vertex;
-            return e.vertex2.vertex;
-        }
-
-        public void GetEdgeVertex(int edge, EdgePoint point, out int vertex, out int chunkX, out int chunkY)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-            var e = m_edges[edge];
-
-            LocalVertex v = null;
-            if (point == EdgePoint.point1)
-                v = e.vertex1;
-            else v = e.vertex2;
-
-            vertex = v.vertex;
-            chunkX = v.chunkX;
-            chunkY = v.chunkY;
-        }
-
-        public void GetEdgeVertices(int edge, out int vertex1, out int vertex2)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-            var e = m_edges[edge];
-
-            vertex1 = e.vertex1.vertex;
-            vertex2 = e.vertex2.vertex;
-        }
-
-        public void GetEdgeVertices(int edge, out int vertex1, out int chunkX1, out int chunkY1, out int vertex2, out int chunkX2, out int chunkY2)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-            var e = m_edges[edge];
-
-            vertex1 = e.vertex1.vertex;
-            chunkX1 = e.vertex1.chunkX;
-            chunkY1 = e.vertex1.chunkY;
-            vertex2 = e.vertex2.vertex;
-            chunkX2 = e.vertex2.chunkX;
-            chunkY2 = e.vertex2.chunkY;
-        }
-
-        public void GetEdgeVerticesPos(int edge, out Vector2 pos1, out Vector2 pos2)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-            var e = m_edges[edge];
-
-            pos1 = GetPos(e.vertex1);
-            pos2 = GetPos(e.vertex2);
-        }
-
-        public int GetEdgeTriange(int edge, EdgePoint point)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-            var e = m_edges[edge];
-
-            if (point == EdgePoint.point1)
-                return e.triangle1;
-            return e.triangle2;
-        }
-
-        public void GetEdgeTriangles(int edge, out int triangle1, out int triangle2)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-            var e = m_edges[edge];
-
-            triangle1 = e.triangle1;
-            triangle2 = e.triangle2;
-        }
-
-        bool AreSameEdge(LocalVertex e1a, LocalVertex e1b, LocalVertex e2a, LocalVertex e2b)
-        {
-            LocalVertex min1 = e1a < e1b ? e1a : e1b;
-            LocalVertex max1 = e1a < e1b ? e1b : e1a;
-            LocalVertex min2 = e2a < e2b ? e2a : e2b;
-            LocalVertex max2 = e2a < e2b ? e2b : e2a;
-
-            if (min1.chunkX - min2.chunkX != max1.chunkX - max2.chunkX)
-                return false;
-
-            if (min1.chunkY - min2.chunkY != max1.chunkY - max2.chunkY)
-                return false;
-
-            return min1.vertex == min2.vertex && max1.vertex == max2.vertex;
-        }
-
-        void GetEdgesOffset(LocalVertex e1a, LocalVertex e1b, LocalVertex e2a, LocalVertex e2b, out int chunkOffsetX, out int chunkOffsetY)
-        {
-            LocalVertex min1 = e1a < e1b ? e1a : e1b;
-            LocalVertex min2 = e2a < e2b ? e2a : e2b;
-
-            chunkOffsetX = min2.chunkX - min1.chunkX;
-            chunkOffsetY = min2.chunkY - min1.chunkY;
-        }
-
-        public int GetOtherTriangleFromEdge(int edge, int triangle)
-        {
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-
-            var e = m_edges[edge];
-            if (e.triangle1 == triangle)
-                return e.triangle2;
-            return e.triangle1;
-        }
-
-        //return the chunk in the reference of the first triangle
-        public void GetOppositeVertexFromEdge(int edge, int triangle, out int vertex, out int chunkX, out int chunkY)
-        {
-            vertex = -1;
-            chunkX = 0;
-            chunkY = 0;
-
-            var triangle2 = GetOtherTriangleFromEdge(edge, triangle);
-            if (triangle2 < 0)
-                return;
-
-            var t2 = m_triangles[triangle2];
-            var e = m_edges[edge];
-
-            int offsetX = 0;
-            int offsetY = 0;
-
-            if (AreSameEdge(t2.vertex2, t2.vertex3, e.vertex1, e.vertex2))
-            {
-                vertex = t2.vertex1.vertex;
-                chunkX = t2.vertex1.chunkX;
-                chunkY = t2.vertex1.chunkY;
-                GetEdgesOffset(t2.vertex2, t2.vertex3, e.vertex1, e.vertex2, out offsetX, out offsetY);
-            }
-            else if (AreSameEdge(t2.vertex1, t2.vertex3, e.vertex1, e.vertex2))
-            {
-                vertex = t2.vertex2.vertex;
-                chunkX = t2.vertex2.chunkX;
-                chunkY = t2.vertex2.chunkY;
-                GetEdgesOffset(t2.vertex1, t2.vertex3, e.vertex1, e.vertex2, out offsetX, out offsetY);
-            }
-            else if (AreSameEdge(t2.vertex1, t2.vertex2, e.vertex1, e.vertex2))
-            {
-                vertex = t2.vertex3.vertex;
-                chunkX = t2.vertex3.chunkX;
-                chunkY = t2.vertex3.chunkY;
-                GetEdgesOffset(t2.vertex1, t2.vertex2, e.vertex1, e.vertex2, out offsetX, out offsetY);
-            }
-            else
-            {
-                Debug.Assert(false);
-                return;
-            }
-
-            var t = m_triangles[triangle];
-
-            int offsetX2 = 0;
-            int offsetY2 = 0;
-            if (AreSameEdge(t.vertex2, t.vertex3, e.vertex1, e.vertex2))
-                GetEdgesOffset(t.vertex2, t.vertex3, e.vertex1, e.vertex2, out offsetX2, out offsetY2);
-            else if (AreSameEdge(t.vertex1, t.vertex3, e.vertex1, e.vertex2))
-                GetEdgesOffset(t.vertex1, t.vertex3, e.vertex1, e.vertex2, out offsetX2, out offsetY2);
-            else if (AreSameEdge(t.vertex1, t.vertex2, e.vertex1, e.vertex2))
-                GetEdgesOffset(t.vertex1, t.vertex2, e.vertex1, e.vertex2, out offsetX2, out offsetY2);
-
-            chunkX -= offsetX - offsetX2;
-            chunkX -= offsetY - offsetY2;
-        }
-
-        //keep the order of vertices, triangles and edges
-        //change triangle list order in vertices in the 2 connected triangles
-        //return true if the edge have been flipped
-        public bool FlipEdge(int edge1)
-        {
-            Debug.Assert(edge1 >= 0 && edge1 < m_edges.Count);
-
-            var e1 = m_edges[edge1];
-
-            if (e1.triangle1 < 0 || e1.triangle2 < 0)
-                return false;
-
-            int triangle1 = e1.triangle1;
-            int triangle2 = e1.triangle2;
-
-            Triangle t1 = m_triangles[triangle1];
-            Triangle t2 = m_triangles[triangle2];
-
-            //move triangles to be relative to the current edge
-            int offsetX, offsetY;
-            bool found = GetTriangleToEdgeOffset(triangle1, edge1, out offsetX, out offsetY);
-            Debug.Assert(found);
-            t1.vertex1.chunkX += offsetX;
-            t1.vertex2.chunkX += offsetX;
-            t1.vertex3.chunkX += offsetX;
-            t1.vertex1.chunkY += offsetY;
-            t1.vertex2.chunkY += offsetY;
-            t1.vertex3.chunkY += offsetY;
-            found = GetTriangleToEdgeOffset(triangle2, edge1, out offsetX, out offsetY);
-            Debug.Assert(found);
-            t2.vertex1.chunkX += offsetX;
-            t2.vertex2.chunkX += offsetX;
-            t2.vertex3.chunkX += offsetX;
-            t2.vertex1.chunkY += offsetY;
-            t2.vertex2.chunkY += offsetY;
-            t2.vertex3.chunkY += offsetY;
-
-
-            //search for vertices and edges
-            LocalVertex lv1 = new LocalVertex(-1);
-            LocalVertex lv2 = new LocalVertex(-1);
-            LocalVertex lv3 = new LocalVertex(e1.vertex1);
-            LocalVertex lv4 = new LocalVertex(e1.vertex2);
-            int edge2 = -1;
-            int edge3 = -1;
-            int edge4 = -1;
-            int edge5 = -1;
-
-            if (AreSameEdge(t1.vertex2, t1.vertex3, e1.vertex1, e1.vertex2))
-            {//e1 == t1.e2
-                lv1.Set(t1.vertex1);
-                var e = m_edges[t1.edge1];
-                if(AreSameEdge(e.vertex1, e.vertex2, lv1, lv3))
-                     { edge2 = t1.edge1; edge3 = t1.edge3; }
-                else { edge2 = t1.edge3; edge3 = t1.edge1; }
-            }
-            if (AreSameEdge(t1.vertex1, t1.vertex3, e1.vertex1, e1.vertex2))
-            {//e1 == t1.e3
-                lv1.Set(t1.vertex2);
-                var e = m_edges[t1.edge1];
-                if (AreSameEdge(e.vertex1, e.vertex2, lv1, lv3))
-                     { edge2 = t1.edge1; edge3 = t1.edge2; }
-                else { edge2 = t1.edge2; edge3 = t1.edge1; }
-            }
-            if (AreSameEdge(t1.vertex1, t1.vertex2, e1.vertex1, e1.vertex2))
-            {//e1 == t1.e1
-                lv1.Set(t1.vertex3);
-                var e = m_edges[t1.edge2];
-                if (AreSameEdge(e.vertex1, e.vertex2, lv1, lv3))
-                     { edge2 = t1.edge2; edge3 = t1.edge3; }
-                else { edge2 = t1.edge3; edge3 = t1.edge2; }
-            }
-
-            if (AreSameEdge(t2.vertex2, t2.vertex3, e1.vertex1, e1.vertex2))
-            {//e1 == t2.e2
-                lv2.Set(t2.vertex1);
-                var e = m_edges[t2.edge1];
-                if (AreSameEdge(e.vertex1, e.vertex2, lv2, lv3))
-                    { edge4 = t2.edge1; edge5 = t2.edge3; }
-                else { edge4 = t2.edge3; edge5 = t2.edge1; }
-            }
-            if (AreSameEdge(t2.vertex1, t2.vertex3, e1.vertex1, e1.vertex2))
-            {//e1 == t2.e3
-                lv2.Set(t2.vertex2);
-                var e = m_edges[t2.edge1];
-                if (AreSameEdge(e.vertex1, e.vertex2, lv2, lv3))
-                     { edge4 = t2.edge1; edge5 = t2.edge2; }
-                else { edge4 = t2.edge2; edge5 = t2.edge1; }
-            }
-            if (AreSameEdge(t2.vertex1, t2.vertex2, e1.vertex1, e1.vertex2))
-            {//e1 == t2.e1
-                lv2.Set(t2.vertex3);
-                var e = m_edges[t2.edge2];
-                if (AreSameEdge(e.vertex1, e.vertex2, lv2, lv3))
-                     { edge4 = t2.edge2; edge5 = t2.edge3; }
-                else { edge4 = t2.edge3; edge5 = t2.edge2; }
-            }
-
-            Debug.Assert(edge2 >= 0 && edge3 >= 0 && edge4 >= 0 && edge5 >= 0);
-
-            Vertex v1 = m_vertices[lv1.vertex];
-            Vertex v2 = m_vertices[lv2.vertex];
-            Vertex v3 = m_vertices[lv3.vertex];
-            Vertex v4 = m_vertices[lv4.vertex];
-
-            Edge e2 = m_edges[edge2];
-            Edge e3 = m_edges[edge3];
-            Edge e4 = m_edges[edge4];
-            Edge e5 = m_edges[edge5];
-
-            //change edge triangles and vertices properties
-            t1.edge1 = edge1;
-            t1.edge2 = edge4;
-            t1.edge3 = edge2;
-            t1.vertex1.Set(lv1);
-            t1.vertex2.Set(lv2);
-            t1.vertex3.Set(lv3);
-
-            t2.edge1 = edge1;
-            t2.edge2 = edge5;
-            t2.edge3 = edge3;
-            t2.vertex1.Set(lv1);
-            t2.vertex2.Set(lv2);
-            t2.vertex3.Set(lv4);
-
-            e1.vertex1.Set(lv1);
-            e1.vertex2.Set(lv2);
-
-            if (e3.triangle1 == triangle1)
-                e3.triangle1 = triangle2;
-            else if (e3.triangle2 == triangle1)
-                e3.triangle2 = triangle2;
-            else Debug.Assert(false);
-
-            if (e4.triangle1 == triangle2)
-                e4.triangle1 = triangle1;
-            else if (e4.triangle2 == triangle2)
-                e4.triangle2 = triangle1;
-            else Debug.Assert(false);
-
-            v1.triangles.Add(triangle2);
-            v1.edges.Add(edge1);
-            v2.triangles.Add(triangle1);
-            v2.edges.Add(edge1);
-            v3.triangles.Remove(triangle2);
-            v3.edges.Remove(edge1);
-            v4.triangles.Remove(triangle1);
-            v4.edges.Remove(edge1);
-
-            return true;
-        }
-        #endregion
-
-        //return true if edge is on the triangle
-        bool GetTriangleToEdgeOffset(int triangle, int edge, out int x, out int y)
-        {
-            Debug.Assert(triangle >= 0 && triangle < m_triangles.Count);
-            Debug.Assert(edge >= 0 && edge < m_edges.Count);
-
-            var t = m_triangles[triangle];
-            var e = m_edges[edge];
-
-            if(AreSameEdge(t.vertex1, t.vertex2, e.vertex1, e.vertex2))
-            {
-                GetEdgeToEdgeOffset(t.vertex1, t.vertex2, e.vertex1, e.vertex2, out x, out y);
-                return true;
-            }
-            if(AreSameEdge(t.vertex2, t.vertex3, e.vertex1, e.vertex2))
-            {
-                GetEdgeToEdgeOffset(t.vertex2, t.vertex3, e.vertex1, e.vertex2, out x, out y);
-                return true;
-            }
-            if(AreSameEdge(t.vertex3, t.vertex1, e.vertex1, e.vertex2))
-            {
-                GetEdgeToEdgeOffset(t.vertex3, t.vertex1, e.vertex1, e.vertex2, out x, out y);
-                return true;
-            }
-
-            x = 0;
-            y = 0;
-            return false;
-        }
-
-        void GetEdgeToEdgeOffset(LocalVertex e1a, LocalVertex e1b, LocalVertex e2a, LocalVertex e2b, out int x, out int y)
-        {
-            LocalVertex min1 = e1a < e1b ? e1a : e1b;
-            LocalVertex max1 = e1a < e1b ? e1b : e1a;
-            LocalVertex min2 = e2a < e2b ? e2a : e2b;
-            LocalVertex max2 = e2a < e2b ? e2b : e2a;
-
-            x = min2.chunkX - min1.chunkX;
-            y = min2.chunkY - min1.chunkY;
-        }
-
-        public Vector2 ClampPos(Vector2 pos)
+        Vector2 ClampPosOnSize(Vector2 pos)
         {
             if (pos.x < 0)
                 pos.x = (pos.x % m_size + m_size) % m_size;
             else pos.x = pos.x % m_size;
-            if (pos.y < 0)
-                pos.y = (pos.y % m_size + m_size) % m_size;
-            else pos.y = pos.y % m_size;
 
             return pos;
         }
 
-        Vector2 GetPos(LocalVertex v)
+        Vector2Int GetPointsChunk(params LocalPoint[] points)
         {
-            var vertex = m_vertices[v.vertex];
-
-            return GetPos(vertex.pos, v.chunkX, v.chunkY);
-        }
-
-        public Vector2 GetPos(int vertex, int chunkX, int chunkY)
-        {
-            return GetPos(m_vertices[vertex].pos, chunkX, chunkY);
-        }
-
-        public Vector2 GetPos(Vector2 pos, int chunkX, int chunkY)
-        {
-            return new Vector2(pos.x + chunkX * m_size, pos.y + chunkY * m_size);
-        }
-
-        public Vector2 GetOffset(Vector2 pos1, Vector2 pos2)
-        {
-            pos1 = ClampPos(pos1);
-            pos2 = ClampPos(pos2);
-
-            if (pos2.x < pos1.x)
-                pos2.x += m_size;
-            if (pos2.y < pos1.y)
-                pos2.y += m_size;
-
-            Vector2[] offsets = new Vector2[4];
-            offsets[0] = pos2 - pos1;
-            offsets[1] = pos2 - new Vector2(pos1.x, pos1.y + m_size);
-            offsets[2] = pos2 - new Vector2(pos1.x + m_size, pos1.y);
-            offsets[3] = pos2 - new Vector2(pos1.x + m_size, pos1.y + m_size);
-
-            float minDist = offsets[0].sqrMagnitude;
-            int minIndex = 0;
-            for (int i = 1; i < 4; i++)
+            Vector2 pos = Vector2.zero;
+            int nb = 0;
+            foreach (var p in points)
             {
-                float dist = offsets[i].sqrMagnitude;
-                if (dist < minDist)
+                if (p.point >= 0)
                 {
-                    minDist = dist;
-                    minIndex = i;
+                    pos += GetPointPos(p.point, p.chunkX, p.chunkY);
+                    nb++;
                 }
             }
-
-            return offsets[minIndex];
+            pos /= nb;
+            return GetPosChunk(pos);
         }
 
-        public float GetDistance(Vector2 pos1, Vector2 pos2)
+        Vector2Int GetPosChunk(Vector2 pos)
         {
-            var offset = GetOffset(pos1, pos2);
-            return offset.magnitude;
-        }
-
-        public PeriodicChunkedGrid ToChunkedGrid(int chunkSize)
-        {
-            PeriodicChunkedGrid grid = new PeriodicChunkedGrid(m_size, chunkSize);
-
-            int triangleNb = m_triangles.Count;
-            for(int i = 0; i < triangleNb; i++)
-            {
-                var t = m_triangles[i];
-                Vector2 pos1, pos2, pos3;
-                GetTriangleVerticesPos(i, out pos1, out pos2, out pos3);
-
-                grid.AddTriangle(pos1, pos2, pos3, t.vertex1.vertex, t.vertex2.vertex, t.vertex3.vertex);
-            }
-
-            return grid;
+            return new Vector2Int(Mathf.FloorToInt(pos.x / m_size), Mathf.FloorToInt(pos.y / m_size));
         }
     }
 }

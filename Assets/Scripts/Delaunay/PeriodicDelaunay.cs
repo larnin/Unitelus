@@ -1,161 +1,367 @@
 ﻿
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace NDelaunay
 {
-    public class PeriodicDelaunay
+    class PeriodicDelaunay
     {
+        /* Point order in the 9 grid
+         * 
+         * 0 3 6
+         * 1 4 7
+         * 2 5 8
+         */
         UnstructuredPeriodicGrid m_grid;
+        float m_size;
+        bool m_9Grid;
 
-        public PeriodicDelaunay(int size)
+        public PeriodicDelaunay(float size)
         {
-            m_grid = new UnstructuredPeriodicGrid(size);
+            m_size = size;
+            m_9Grid = true;
+            m_grid = new UnstructuredPeriodicGrid(size * 3);
         }
 
         public void Clear()
         {
-            m_grid.Clear();
+            m_grid = new UnstructuredPeriodicGrid(m_size * 3);
+            m_9Grid = true;
         }
 
-        public void Add(Vector2 vertex)
+        public float GetSize()
         {
-            if (m_grid.GetTriangleCount() == 0)
-                MakeFirstPoint(vertex);
-            else AddPoint(vertex);
+            if (m_9Grid)
+                return m_grid.GetSize() / 3;
+            return m_grid.GetSize();
         }
 
-        void MakeFirstPoint(Vector2 vertex)
+        public void Add(Vector2 point)
         {
-            m_grid.AddVertex(vertex);
-            m_grid.AddTriangle(0, 0, 0, 0, 1, 0, 0, 0, 1, false);
-            m_grid.AddTriangle(0, 0, 1, 0, 1, 0, 0, 1, 1, false);
+            point = ClampPosOnSize(point);
+
+            if (m_grid.GetPointCount() == 0)
+                AddFirstPoint(point);
+            else if (m_9Grid)
+                AddPoint9Grid(point);
+            else AddPoint(point);
+        }
+
+        void AddFirstPoint(Vector2 point)
+        {
+            //add initial 9 points
+            for(int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    m_grid.AddPoint(point + new Vector2(i * m_size, j * m_size));
+
+            //make initial 18 triangles (9quads)
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    int nextX = i < 2 ? i + 1 : 0;
+                    int offsetX = i < 2 ? 0 : 1;
+                    int nextY = j < 2 ? j + 1 : 0;
+                    int offsetY = j < 2 ? 0 : 1;
+
+                    int p1 = j + i * 3;
+                    int p2 = j + nextX * 3;
+                    int p3 = nextY + i * 3;
+                    int p4 = nextY + nextX * 3;
+
+                    m_grid.AddTriangleNoCheck(p1, 0, 0, p2, offsetX, 0, p3, 0, offsetY);
+                    m_grid.AddTriangleNoCheck(p2, offsetX, 0, p3, 0, offsetY, p4, offsetX, offsetY);
+                }
+            }
+        }
+
+        void AddPoint9Grid(Vector2 point)
+        {
+            point = ClampPosOnSize(point);
+
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                    AddPoint(point + new Vector2(i * m_size, j * m_size));
+            if (CanReduceGrid())
+                ReduceGrid();
+        }
+
+        List<bool> m_registeredTriangles = new List<bool>();
+        List<bool> m_testedEdges = new List<bool>();
+        List<UnstructuredPeriodicGrid.TriangleView> m_toRemoveTriangles = new List<UnstructuredPeriodicGrid.TriangleView>();
+        List<UnstructuredPeriodicGrid.EdgeView> m_borderEdges = new List<UnstructuredPeriodicGrid.EdgeView>();
+        List<Edge> m_borderEdgePoints = new List<Edge>();
+
+        class Edge
+        {
+            public UnstructuredPeriodicGrid.PointView[] points = new UnstructuredPeriodicGrid.PointView[2];
+
+            public Edge() { }
+            public Edge(UnstructuredPeriodicGrid.PointView p1, UnstructuredPeriodicGrid.PointView p2) { points[0] = p1; points[1] = p2; }
+            public Edge(UnstructuredPeriodicGrid.EdgeView edge) { Set(edge); }
+            public void Set(UnstructuredPeriodicGrid.EdgeView edge) { points[0] = edge.GetPoint(0); points[1] = edge.GetPoint(1); }
         }
 
         bool AddPoint(Vector2 vertex)
         {
+            // https://fr.wikipedia.org/wiki/Algorithme_de_Bowyer-Watson
+
+            InitBuffers();
+
+            //find the first triangle
             var t = m_grid.GetTriangleAt(vertex);
-            if (t < 0)
+            if (t.triangle < 0)
                 return false;
 
-            int v = m_grid.AddVertex(vertex);
+            //add it to the buffer lists
+            m_registeredTriangles[t.triangle] = true;
+            m_toRemoveTriangles.Add(t);
+            m_borderEdges.Add(t.GetEdge(0));
+            m_borderEdges.Add(t.GetEdge(1));
+            m_borderEdges.Add(t.GetEdge(2));
 
-            int v1, chunkX1, chunkY1;
-            int v2, chunkX2, chunkY2;
-            int v3, chunkX3, chunkY3;
-            m_grid.GetTriangleVertices(t, out v1, out chunkX1, out chunkY1, out v2, out chunkX2, out chunkY2, out v3, out chunkX3, out chunkY3);
+            //create the border and register all triangles that include the new vertex on their circumscribed circle
+            do
+            {
+                int borderEdgeIndex = GetNearestBorderEdge(vertex);
+                if (borderEdgeIndex < 0)
+                    break;
 
-            Vector2 pos1 = m_grid.GetPos(v1, chunkX1, chunkY1);
-            Vector2 pos2 = m_grid.GetPos(v2, chunkX2, chunkY2);
-            Vector2 pos3 = m_grid.GetPos(v3, chunkX3, chunkY3);
-            
-            float size = m_grid.GetSize();
+                var edge = m_borderEdges[borderEdgeIndex];
+                m_testedEdges[edge.edge] = true;
 
-            while(vertex.x - pos1.x > size || vertex.x - pos2.x > size || vertex.x - pos3.x > size)
-            {
-                pos1.x += size; pos2.x += size; pos3.x += size;
-                chunkX1++; chunkX2++; chunkX3++;
-            }
-            while (vertex.x - pos1.x < -size || vertex.x - pos2.x < -size || vertex.x - pos3.x < -size)
-            {
-                pos1.x -= size; pos2.x -= size; pos3.x -= size;
-                chunkX1--; chunkX2--; chunkX3--;
-            }
-            while (vertex.y - pos1.y > size || vertex.y - pos2.y > size || vertex.y - pos3.y > size)
-            {
-                pos1.y += size; pos2.y += size; pos3.y += size;
-                chunkY1++; chunkY2++; chunkY3++;
-            }
-            while (vertex.y - pos1.y < -size || vertex.y - pos2.y < -size || vertex.y - pos3.y < -size)
-            {
-                pos1.y -= size; pos2.y -= size; pos3.y -= size;
-                chunkY1--; chunkY2--; chunkY3--;
-            }
-            
-            m_grid.RemoveTriangle(t);
-            
-            var t1 = m_grid.AddTriangle(v1, chunkX1, chunkY1, v2, chunkX2, chunkY2, v, 0, 0, false);
-            var t2 = m_grid.AddTriangle(v2, chunkX2, chunkY2, v3, chunkX3, chunkY3, v, 0, 0, false);
-            var t3 = m_grid.AddTriangle(v3, chunkX3, chunkY3, v1, chunkX1, chunkY1, v, 0, 0, false);
+                var t1 = edge.GetTriangle(0);
+                var t2 = edge.GetTriangle(1);
 
-            TestFlipEdge(t1, UnstructuredPeriodicGrid.TrianglePoint.point1);
-            TestFlipEdge(t2, UnstructuredPeriodicGrid.TrianglePoint.point1);
-            TestFlipEdge(t3, UnstructuredPeriodicGrid.TrianglePoint.point1);
+                if (t1.triangle < 0 || t2.triangle < 0)
+                    continue;
+                var workTriangle = m_registeredTriangles[t1.triangle] ? t2 : t1;
+                if (m_registeredTriangles[workTriangle.triangle])
+                    continue;
+
+                Vector2[] pointsPos = new Vector2[3];
+                for (int i = 0; i < 3; i++)
+                {
+                    var point = workTriangle.GetPoint(i);
+                    pointsPos[i] = m_grid.GetPointPos(point);
+                }
+
+                var omega = Utility.TriangleOmega(pointsPos[0], pointsPos[1], pointsPos[2]);
+                float sqrRadius = (omega - pointsPos[0]).sqrMagnitude;
+                float sqrDist = (omega - vertex).sqrMagnitude;
+
+                if (sqrRadius < sqrDist)
+                    continue;
+
+                int edgeIndex = workTriangle.GetEdgeIndex(edge);
+                if (edgeIndex < 0)
+                    continue;
+
+                m_borderEdges.RemoveAt(borderEdgeIndex);
+
+                for (int i = 0; i < 3; i++)
+                {
+                    if (i == edgeIndex)
+                        continue;
+                    var e = workTriangle.GetEdge(i);
+                    m_borderEdges.Add(e);
+                }
+                m_registeredTriangles[workTriangle.triangle] = true;
+                m_toRemoveTriangles.Add(workTriangle);
+
+            } while (true);
+
+            //remove double edges
+            for (int i = 0; i < m_borderEdges.Count; i++)
+            {
+                int other = -1;
+                var p1 = m_borderEdges[i].GetPoint(0).ToLocalPoint();
+                var p2 = m_borderEdges[i].GetPoint(1).ToLocalPoint();
+                for (int j = i + 1; j < m_borderEdges.Count; j++)
+                {
+                    if (m_borderEdges[j].edge != m_borderEdges[i].edge)
+                        continue;
+
+                    var p11 = m_borderEdges[j].GetPoint(0).ToLocalPoint();
+                    var p22 = m_borderEdges[j].GetPoint(1).ToLocalPoint();
+
+                    if (p11 != p1)
+                    {
+                        var p33 = p11;
+                        p11 = p22;
+                        p22 = p33;
+                    }
+
+                    if (p1 == p11 && p2 == p22)
+                    {
+                        other = j;
+                        break;
+                    }
+                }
+
+                if (other >= 0)
+                {
+                    m_borderEdges.RemoveAt(other);
+                    m_borderEdges.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            //copy edge points, removing triangle are going to fuckup edge views
+            while (m_borderEdgePoints.Count < m_borderEdges.Count)
+                m_borderEdgePoints.Add(new Edge());
+            if (m_borderEdgePoints.Count > m_borderEdges.Count)
+                m_borderEdgePoints.RemoveRange(m_borderEdges.Count, m_borderEdgePoints.Count - m_borderEdges.Count);
+            for (int i = 0; i < m_borderEdges.Count; i++)
+                m_borderEdgePoints[i].Set(m_borderEdges[i]);
+
+            //delete triangles
+            m_toRemoveTriangles.Sort((a, b) => { return b.triangle.CompareTo(a.triangle); }); //descending order to not fuck up indexs
+            for (int i = 0; i < m_toRemoveTriangles.Count; i++)
+                m_grid.RemoveTriangle(m_toRemoveTriangles[i].triangle);
+
+            //add new point and recreate triangles with border edges
+            var newPoint = m_grid.AddPoint(vertex);
+
+            for (int i = 0; i < m_borderEdgePoints.Count; i++)
+                m_grid.AddTriangle(m_borderEdgePoints[i].points[0], m_borderEdgePoints[i].points[1], newPoint);
 
             return true;
         }
 
-        void TestFlipEdge(int triangle, UnstructuredPeriodicGrid.TrianglePoint edgePoint)
+        void InitBuffers()
         {
-            Vector2 v1, v2, v3;
-            m_grid.GetTriangleVerticesPos(triangle, out v1, out v2, out v3);
+            while (m_registeredTriangles.Count < m_grid.GetTriangleCount())
+                m_registeredTriangles.Add(false);
+            if (m_registeredTriangles.Count > m_grid.GetTriangleCount())
+                m_registeredTriangles.RemoveRange(m_grid.GetTriangleCount(), m_registeredTriangles.Count - m_grid.GetTriangleCount());
+            for (int i = 0; i < m_registeredTriangles.Count; i++)
+                m_registeredTriangles[i] = false;
 
-            int index, chunkX, chunkY;
-            int edge = m_grid.GetTriangleEdge(triangle, edgePoint);
-            m_grid.GetOppositeVertexFromEdge(edge, triangle, out index, out chunkX, out chunkY);
-            Vector2 v4 = m_grid.GetPos(index, chunkX, chunkY);
-            Vector2 omega = Utility.TriangleOmega(v1, v2, v3); 
+            while (m_testedEdges.Count < m_grid.GetEdgeCount())
+                m_testedEdges.Add(false);
+            if (m_testedEdges.Count > m_grid.GetEdgeCount())
+                m_testedEdges.RemoveRange(m_grid.GetEdgeCount(), m_testedEdges.Count - m_grid.GetEdgeCount());
+            for (int i = 0; i < m_testedEdges.Count; i++)
+                m_testedEdges[i] = false;
 
-            float radius = (omega - v1).magnitude;
-            float offset = m_grid.GetDistance(v4, omega);
-            if (offset >= radius)
-                return;
-
-            //test if the edge can be flipped
-            {
-                Vector2[] pos = new Vector2[4];
-                int pIndex = 0;
-                pos[pIndex++] = v1;
-                if (edgePoint == UnstructuredPeriodicGrid.TrianglePoint.point1)
-                    pos[pIndex++] = v4;
-                pos[pIndex++] = v2;
-                if (edgePoint == UnstructuredPeriodicGrid.TrianglePoint.point2)
-                    pos[pIndex++] = v4;
-                pos[pIndex++] = v3;
-                if (edgePoint == UnstructuredPeriodicGrid.TrianglePoint.point3)
-                    pos[pIndex++] = v4;
-
-                bool left1 = Utility.IsLeft(pos[0], pos[1], pos[2]);
-                bool left2 = Utility.IsLeft(pos[1], pos[2], pos[3]);
-                bool left3 = Utility.IsLeft(pos[2], pos[3], pos[0]);
-                bool left4 = Utility.IsLeft(pos[3], pos[0], pos[1]);
-
-                if (left1 != left2 || left2 != left3 || left3 != left4)
-                    return;
-            }
-
-            int indexE1, chunkXE1, chunkYE1;
-            int indexE2, chunkXE2, chunkYE2;
-            m_grid.GetEdgeVertices(edge, out indexE1, out chunkXE1, out chunkYE1, out indexE2, out chunkXE2, out chunkYE2);
-
-            //flip edge
-            m_grid.FlipEdge(edge);
-            return;
-            //and test the 2 others edges to be fliped
-            //indexE1 - index && indexE2 - index
-
-            int t1, t2;
-            m_grid.GetEdgeTriangles(edge, out t1, out t2);
-
-            int e1 = m_grid.GetEdge(indexE1, chunkXE1, chunkYE1, index, chunkX, chunkY);
-            int e2 = m_grid.GetEdge(indexE2, chunkXE2, chunkYE2, index, chunkX, chunkY);
-
-            UnstructuredPeriodicGrid.TrianglePoint edgePoint1, edgePoint2;
-
-            if (!m_grid.FindTriangleEdge(t1, e1, out edgePoint1))
-                if(!m_grid.FindTriangleEdge(t1, e2, out edgePoint1))
-                    Debug.Assert(false);
-            if (!m_grid.FindTriangleEdge(t2, e1, out edgePoint2))
-                if (!m_grid.FindTriangleEdge(t2, e2, out edgePoint2))
-                    Debug.Assert(false);
-
-            TestFlipEdge(t1, edgePoint1);
-            TestFlipEdge(t2, edgePoint2);
+            m_toRemoveTriangles.Clear();
+            m_borderEdges.Clear();
         }
 
-        public PeriodicChunkedGrid GetChunkedGrid(int chunkSize)
+        int GetNearestBorderEdge(Vector2 pos)
         {
-            return m_grid.ToChunkedGrid(chunkSize);
+            int bestIndex = -1;
+            float bestDist = float.MaxValue;
+
+            for (int i = 0; i < m_borderEdges.Count; i++)
+            {
+                if (m_borderEdges[i].edge < 0)
+                    continue;
+                if (m_testedEdges[m_borderEdges[i].edge])
+                    continue;
+
+                var p1 = m_grid.GetPointPos(m_borderEdges[i].GetPoint(0));
+                var p2 = m_grid.GetPointPos(m_borderEdges[i].GetPoint(1));
+
+                var center = (p1 + p2) / 2;
+                float sqrDist = (center - pos).sqrMagnitude;
+
+                if (sqrDist < bestDist)
+                {
+                    bestDist = sqrDist;
+                    bestIndex = i;
+                }
+            }
+
+            return bestIndex;
+        }
+
+
+        bool CanReduceGrid()
+        {
+            if (!m_9Grid)
+                return false;
+
+            //the grid is valid only if a point does not have the same neightbor 2 times
+            //a point have 9 shared index - [0-8] = p0, [9-15] = p1 ...
+
+            int nbPoint = m_grid.GetPointCount() / 9;
+            List<UnstructuredPeriodicGrid.PointView> points = new List<UnstructuredPeriodicGrid.PointView>();
+            for(int i = 0; i < nbPoint; i++)
+            {
+                UnstructuredPeriodicGrid.PointView p = m_grid.GetPoint(i * 9);
+                int nbEdge = p.GetEdgeCount();
+                for(int j = 0; j < nbEdge; j++)
+                {
+                    UnstructuredPeriodicGrid.PointView p2 = p.GetPoint(j);
+                    for (int k = 0; k < j; k++)
+                        if (points[k].point / 9 == p2.point / 9)
+                            return false;
+                    if (points.Count <= j)
+                        points.Add(p2);
+                    else points[j] = p2;
+                }
+            }
+
+            return true;
+        }
+
+        void ReduceGrid()
+        {
+            if (!m_9Grid)
+                return;
+
+            UnstructuredPeriodicGrid grid = new UnstructuredPeriodicGrid(m_size);
+
+            int nbPoint = m_grid.GetPointCount() / 9;
+            for (int i = 0; i < nbPoint; i++)
+            {
+                UnstructuredPeriodicGrid.PointView p = m_grid.GetPoint(i * 9);
+                grid.AddPoint(m_grid.GetPointPos(p));
+            }
+
+            int nbTriangle = m_grid.GetTriangleCount();
+            for(int i = 0; i < nbTriangle; i++)
+            {
+                UnstructuredPeriodicGrid.TriangleView t = m_grid.GetTriangle(i);
+
+                UnstructuredPeriodicGrid.PointView[] points = new UnstructuredPeriodicGrid.PointView[3];
+                for(int j = 0; j < 3; j++)
+                {
+                    points[j] = t.GetPoint(j);
+
+                    int offset = points[j].point % 9;
+                    int offsetX = offset / 3;
+                    int offsetY = offset % 3;
+                    points[j].point /= 9;
+                    points[j].chunkX *= 3;
+                    points[j].chunkX += offsetX;
+                    points[j].chunkY *= 3;
+                    points[j].chunkY += offsetY;
+                }
+
+                //we need to check triangle, the order is not certain
+                grid.AddTriangle(points[0].point, points[0].chunkX, points[0].chunkY
+                               , points[1].point, points[1].chunkX, points[1].chunkY
+                               , points[2].point, points[2].chunkX, points[2].chunkY);
+            }
+
+            m_9Grid = false;
+            m_grid = grid;
+        }
+
+        Vector2 ClampPosOnSize(Vector2 pos)
+        {
+            if (pos.x < 0)
+                pos.x = (pos.x % m_size + m_size) % m_size;
+            else pos.x = pos.x % m_size;
+
+            return pos;
         }
 
         public void Draw()
@@ -164,23 +370,21 @@ namespace NDelaunay
 
             DebugDraw.Rectangle(new Vector3(0, y, 0), new Vector2(m_grid.GetSize(), m_grid.GetSize()), Color.green);
 
-            for(int i = 0; i < m_grid.GetTriangleCount(); i++)
-            {
-                Vector2 pos1, pos2, pos3;
+            int nbTriangle = m_grid.GetTriangleCount();
 
-                m_grid.GetTriangleVerticesPos(i, out pos1, out pos2, out pos3);
+            for (int i = 0; i < nbTriangle; i++)
+            {
+                var t = m_grid.GetTriangle(i);
+                var p1 = t.GetPoint(0);
+                var p2 = t.GetPoint(1);
+                var p3 = t.GetPoint(2);
+
+                var pos1 = m_grid.GetPointPos(p1);
+                var pos2 = m_grid.GetPointPos(p2);
+                var pos3 = m_grid.GetPointPos(p3);
 
                 DebugDraw.Triangle(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), Color.red);
             }
-
-            /*for(int i = 0; i < m_grid.GetEdgeCount(); i++)
-            {
-                Vector2 pos1, pos2;
-                m_grid.GetEdgeVerticesPos(i, out pos1, out pos2);
-
-                float y = 15;
-                Debug.DrawLine(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), Color.blue);
-            }*/
         }
     }
 }

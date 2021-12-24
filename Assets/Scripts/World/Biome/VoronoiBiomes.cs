@@ -205,6 +205,7 @@ public class VoronoiBiomes
 
     void GenerateTriangles()
     {
+        /*
         var delaunay = new PeriodicDelaunay(m_size);
 
         for(int i = 0; i < m_vertices.Count; i++)
@@ -213,6 +214,7 @@ public class VoronoiBiomes
         }
 
         m_grid = delaunay.GetChunkedGrid(Chunk.chunkSize);
+        */
     }
 
     float NormalizeMoisture(float moisture)
