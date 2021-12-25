@@ -19,7 +19,7 @@ namespace NDelaunay
             public Point(Vector2 _pos) { pos = _pos; }
         }
 
-        public class LocalPoint : IComparable
+        class LocalPoint : IComparable
         {
             public int point;
             public int chunkX;
@@ -157,11 +157,6 @@ namespace NDelaunay
                 if (m_grid == null || point < 0)
                     return true;
                 return point >= m_grid.GetPointCount();
-            }
-
-            public LocalPoint ToLocalPoint()
-            {
-                return new LocalPoint(point, chunkX, chunkY);
             }
 
             public int GetEdgeCount()
@@ -426,8 +421,8 @@ namespace NDelaunay
                 triangles[0].points[2] = e.points[0].Copy();
                 triangles[1].points[2] = e.points[1].Copy();
 
-                e.points[0] = pointTriangleView[0].ToLocalPoint();
-                e.points[1] = pointTriangleView[1].ToLocalPoint();
+                e.points[0] = new LocalPoint(pointTriangleView[0]);
+                e.points[1] = new LocalPoint(pointTriangleView[1]);
 
                 triangles[0].points[0] = e.points[0].Copy();
                 triangles[0].points[1] = e.points[1].Copy();
@@ -663,7 +658,7 @@ namespace NDelaunay
             return new PointView(this, index, chunkX, chunkY);
         }
 
-        public Vector2 GetPointPos(LocalPoint point)
+        Vector2 GetPointPos(LocalPoint point)
         {
             return GetPointPos(point.point, point.chunkX, point.chunkY);
         }
@@ -761,6 +756,11 @@ namespace NDelaunay
         public TriangleView AddTriangleNoCheck(int point1, int point2, int point3)
         {
             return AddTriangleNoCheck(point1, 0, 0, point2, 0, 0, point3, 0, 0);
+        }
+
+        public TriangleView AddTriangleNoCheck(PointView p1, PointView p2, PointView p3)
+        {
+            return AddTriangleNoCheck(p1.point, p1.chunkX, p1.chunkY, p2.point, p2.chunkX, p2.chunkY, p3.point, p3.chunkX, p3.chunkY);
         }
 
         public TriangleView AddTriangleNoCheck(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3)
