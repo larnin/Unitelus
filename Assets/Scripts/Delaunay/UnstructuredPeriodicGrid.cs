@@ -9,32 +9,45 @@ namespace NDelaunay
 {
     public class UnstructuredPeriodicGrid
     {
-        class Point
+        class Point : ObjectPoolItem
         {
+            static int m_nextUID = 0;
+            public int UID { get; private set; }
+
             public Vector2 pos;
 
-            public List<int> edges = new List<int>();
-            public List<int> triangles = new List<int>();
+            public List<int> edges = new List<int>(10);
+            public List<int> triangles = new List<int>(10);
 
-            public Point(Vector2 _pos) { pos = _pos; }
+            public Point() :this(Vector2.zero) { }
+            public Point(Vector2 _pos) { pos = _pos; UID = m_nextUID++; }
+            public void SetPos(Vector2 _Pos) { pos = _Pos; }
+
+            public override void Reset()
+            {
+                pos = Vector2.zero;
+                edges.Clear();
+                triangles.Clear();
+            }
         }
 
-        class LocalPoint : IComparable
+        struct LocalPoint : IComparable
         {
             public int point;
             public int chunkX;
             public int chunkY;
 
-            public LocalPoint() { point = -1; }
             public LocalPoint(int _point, int _chunkX = 0, int _chunkY = 0) { point = _point; chunkX = _chunkX; chunkY = _chunkY; }
-            public LocalPoint(LocalPoint other) { Copy(other); }
             public LocalPoint(PointView other) { point = other.point; chunkX = other.chunkX; chunkY = other.chunkY; }
             public void Copy(LocalPoint other) { point = other.point; chunkX = other.chunkX; chunkY = other.chunkY; }
-            public LocalPoint Copy() { return new LocalPoint(this); }
+            public LocalPoint Copy() { return this; }
+            public void Reset() { point = -1; chunkX = 0; chunkY = 0; }
+
+            static public LocalPoint Null() { return new LocalPoint(-1, 0, 0); }
 
             public override bool Equals(object obj)
             {
-                var p = obj as LocalPoint;
+                var p = obj as LocalPoint?;
                 return p != null && p == this;
             }
 
@@ -49,7 +62,7 @@ namespace NDelaunay
 
             public int CompareTo(object obj)
             {
-                var p = obj as LocalPoint;
+                var p = obj as LocalPoint?;
                 if (p == null)
                     return -1;
                 if (p == this)
@@ -61,10 +74,6 @@ namespace NDelaunay
 
             public static bool operator ==(LocalPoint a, LocalPoint b)
             {
-                //stupid null test ....
-                if(a is null || b is null)
-                    return a is null && b is null;
-
                 return a.point == b.point && a.chunkX == b.chunkX && a.chunkY == b.chunkY;
             }
             public static bool operator !=(LocalPoint a, LocalPoint b) { return !(a == b); }
@@ -84,7 +93,7 @@ namespace NDelaunay
             public static bool operator >=(LocalPoint a, LocalPoint b) { return !(a < b); }
         }
 
-        class Edge
+        class Edge : ObjectPoolItem
         {
             public LocalPoint[] points = new LocalPoint[2];
             public int[] triangles = new int[2];
@@ -93,6 +102,13 @@ namespace NDelaunay
             public Edge(int point1, int point2) : this(point1, 0, 0, point2, 0, 0) { }
             public Edge(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2) : this(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, -1, -1) { }
             public Edge(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int triangle1, int triangle2)
+            { Set(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, triangle1, triangle2); }
+
+            public Edge(LocalPoint point1, LocalPoint point2) : this(point1, point2, -1, -1) { }
+            public Edge(LocalPoint point1, LocalPoint point2, int triangle1, int triangle2)
+            { Set(point1, point2, triangle1, triangle2); }
+
+            public void Set(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int triangle1 = -1, int triangle2 = -1)
             {
                 points[0] = new LocalPoint(point1, chunkX1, chunkY1);
                 points[1] = new LocalPoint(point2, chunkX2, chunkY2);
@@ -100,17 +116,24 @@ namespace NDelaunay
                 triangles[1] = triangle2;
             }
 
-            public Edge(LocalPoint point1, LocalPoint point2) : this(point1, point2, -1, -1) { }
-            public Edge(LocalPoint point1, LocalPoint point2, int triangle1, int triangle2)
+            public void Set(LocalPoint point1, LocalPoint point2, int triangle1 = -1, int triangle2 = -1)
             {
-                points[0] = new LocalPoint(point1);
-                points[1] = new LocalPoint(point2);
+                points[0] = point1;
+                points[1] = point2;
                 triangles[0] = triangle1;
                 triangles[1] = triangle2;
             }
+
+            public override void Reset()
+            {
+                points[0].Reset();
+                points[1].Reset();
+                triangles[0] = -1;
+                triangles[1] = -1;
+            }
         }
 
-        class Triangle
+        class Triangle : ObjectPoolItem
         {
             public LocalPoint[] points = new LocalPoint[3];
             public int[] edges = new int[3];
@@ -120,6 +143,13 @@ namespace NDelaunay
             public Triangle(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3)
                 : this(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3, -1, -1, -1) { }
             public Triangle(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3, int edge1, int edge2, int edge3)
+            { Set(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3, edge1, edge2, edge3); }
+
+            public Triangle(LocalPoint point1, LocalPoint point2, LocalPoint point3) : this(point1, point2, point3, -1, -1, -1) { }
+            public Triangle(LocalPoint point1, LocalPoint point2, LocalPoint point3, int edge1, int edge2, int edge3)
+            { Set(point1, point2, point3, edge1, edge2, edge3); }
+
+            public void Set(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2, int point3, int chunkX3, int chunkY3, int edge1 = -1, int edge2 = -1, int edge3 = -1)
             {
                 points[0] = new LocalPoint(point1, chunkX1, chunkY1);
                 points[1] = new LocalPoint(point2, chunkX2, chunkY2);
@@ -129,15 +159,24 @@ namespace NDelaunay
                 edges[2] = edge3;
             }
 
-            public Triangle(LocalPoint point1, LocalPoint point2, LocalPoint point3) : this(point1, point2, point3, -1, -1, -1) { }
-            public Triangle(LocalPoint point1, LocalPoint point2, LocalPoint point3, int edge1, int edge2, int edge3)
+            public void Set(LocalPoint point1, LocalPoint point2, LocalPoint point3, int edge1 = -1, int edge2 = -1, int edge3 = -1)
             {
-                points[0] = new LocalPoint(point1);
-                points[1] = new LocalPoint(point2);
-                points[2] = new LocalPoint(point3);
+                points[0] = point1;
+                points[1] = point2;
+                points[2] = point3;
                 edges[0] = edge1;
                 edges[1] = edge2;
                 edges[2] = edge3;
+            }
+
+            public override void Reset()
+            {
+                points[0].Reset();
+                points[1].Reset();
+                points[2].Reset();
+                edges[0] = -1;
+                edges[1] = -1;
+                edges[2] = -1;
             }
         }
 
@@ -248,7 +287,7 @@ namespace NDelaunay
                     }
                 }
 
-                LocalPoint pivot = null;
+                LocalPoint pivot = LocalPoint.Null();
                 for (int i = 0; i < triangle.points.Length; i++)
                 {
                     if (triangle.points[i].point == point)
@@ -548,11 +587,19 @@ namespace NDelaunay
         List<Edge> m_edges = new List<Edge>();
         List<Triangle> m_triangles = new List<Triangle>();
 
-        public UnstructuredPeriodicGrid(float size)
+        ObjectPool<Point> m_pointsPool = new ObjectPool<Point>();
+        ObjectPool<Edge> m_edgesPool = new ObjectPool<Edge>();
+        ObjectPool<Triangle> m_trianglePool = new ObjectPool<Triangle>();
+
+        public UnstructuredPeriodicGrid(float size, int pointCount = 0)
         {
             m_size = size;
             if (m_size < 0)
                 m_size = 1;
+
+            m_pointsPool.Resize(pointCount);
+            m_edgesPool.Resize(pointCount * 3);
+            m_trianglePool.Resize(pointCount * 2);
         }
 
         public float GetSize()
@@ -571,7 +618,9 @@ namespace NDelaunay
         {
             pos = ClampPosOnSize(pos);
 
-            m_points.Add(new Point(pos));
+            Point p = m_pointsPool.Get();
+            p.SetPos(pos);
+            m_points.Add(p);
 
             return new PointView(this, m_points.Count - 1, 0, 0);
         }
@@ -624,6 +673,7 @@ namespace NDelaunay
                                 e.triangles[j]--;
                     }
 
+                    m_trianglePool.Add(m_triangles[i]);
                     m_triangles.RemoveAt(i);
                     i--;
                 }
@@ -638,11 +688,13 @@ namespace NDelaunay
                     foreach (var p in e.points)
                         m_points[p.point].edges.Remove(i);
 
+                    m_edgesPool.Add(m_edges[i]);
                     m_edges.RemoveAt(i);
                     i--;
                 }
             }
 
+            m_pointsPool.Add(m_points[index]);
             m_points.RemoveAt(index);
         }
 
@@ -774,7 +826,8 @@ namespace NDelaunay
             chunkY1 = 0;
 
             int triangleIndex = m_triangles.Count();
-            Triangle triangle = new Triangle(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3);
+            Triangle triangle = m_trianglePool.Get();
+            triangle.Set(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3);
 
             m_triangles.Add(triangle);
 
@@ -789,7 +842,8 @@ namespace NDelaunay
                     e = m_edges[triangle.edges[i]];
                 else
                 {
-                    e = new Edge(triangle.points[i], triangle.points[i2]);
+                    e = m_edgesPool.Get();
+                    e.Set(triangle.points[i], triangle.points[i2]);
                     triangle.edges[i] = m_edges.Count;
                     foreach (var point in e.points)
                         m_points[point.point].edges.Add(triangle.edges[i]);
@@ -860,6 +914,7 @@ namespace NDelaunay
                         }
                     }
 
+                    m_edgesPool.Add(m_edges[e]);
                     m_edges.RemoveAt(e);
                 }
             }
@@ -883,6 +938,7 @@ namespace NDelaunay
                 }
             }
 
+            m_trianglePool.Add(m_triangles[index]);
             m_triangles.RemoveAt(index);
         }
 

@@ -236,9 +236,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridSize: 100
-  nbCell: 10
+  nbCell: 18
   seed: 3
-  breakCount: 300
+  breakCount: 100000
 --- !u!4 &237100204
 Transform:
   m_ObjectHideFlags: 0
