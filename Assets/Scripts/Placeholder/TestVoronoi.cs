@@ -19,7 +19,7 @@ class TestVoronoi : MonoBehaviour
 
     private void Start()
     {
-        m_delaunay = new PeriodicDelaunay(gridSize);
+        m_delaunay = new PeriodicDelaunay(gridSize, nbCell * nbCell);
 
         float cellSize = gridSize / (float)(nbCell);
 
@@ -42,12 +42,16 @@ class TestVoronoi : MonoBehaviour
                 var pos = d.Next(rand);
 
                 m_delaunay.Add(pos);
+
+                Logs.ImportantAdd("Point " + count + " T " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
             }
         }
 
         stopWatch.Stop();
         TimeSpan ts = stopWatch.Elapsed;
-        UnityEngine.Debug.Log("Time " + ts.TotalSeconds + "s");
+        Logs.ImportantAdd("Time " + ts.TotalSeconds + " s");
+
+        Logs.Dump();
     }
 
     private void Update()

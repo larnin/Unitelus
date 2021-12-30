@@ -10,6 +10,8 @@ namespace NDelaunay
 {
     class PeriodicDelaunay
     {
+        const int m_9gridSize = 1000;
+
         System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
 
         /* Point order in the 9 grid
@@ -20,19 +22,30 @@ namespace NDelaunay
          */
 
         UnstructuredPeriodicGrid m_grid;
+        int m_nbPoint;
         float m_size;
         bool m_9Grid;
 
-        public PeriodicDelaunay(float size)
+        class PointInfo
+        {
+            public UnstructuredPeriodicGrid.PointView[] points = new UnstructuredPeriodicGrid.PointView[9];
+            public int pointNb = 0;
+        }
+        List<PointInfo> m_9GridPoints;
+
+        public PeriodicDelaunay(float size, int nbPoint = 0)
         {
             m_size = size;
+            m_nbPoint = nbPoint;
             m_9Grid = true;
-            m_grid = new UnstructuredPeriodicGrid(size * 3);
+            m_grid = new UnstructuredPeriodicGrid(size * 3, m_9gridSize);
+            m_9GridPoints = new List<PointInfo>(m_nbPoint * 9);
         }
 
         public void Clear()
         {
-            m_grid = new UnstructuredPeriodicGrid(m_size * 3);
+            m_grid = new UnstructuredPeriodicGrid(m_size * 3, m_9gridSize);
+            m_9GridPoints.Clear();
             m_9Grid = true;
         }
 
@@ -46,26 +59,40 @@ namespace NDelaunay
         public void Add(Vector2 point)
         {
             stopWatch.Start();
-            Debug.Log("Start Point " + m_grid.GetPointCount());
+            Logs.Add("Start Point");
 
             point = ClampPosOnSize(point);
 
-            if (m_grid.GetPointCount() == 0)
-                AddFirstPoint(point);
-            else if (m_9Grid)
-                AddPoint9Grid(point);
+            if (m_9Grid)
+            {
+                if (m_9GridPoints.Count == 0)
+                    AddFirstPoint(point);
+                else AddPoint9Grid(point);
+            }
             else AddPoint(point);
 
-            Debug.Log("End Point " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("End Point " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
             stopWatch.Reset();
         }
 
         void AddFirstPoint(Vector2 point)
         {
+            m_9GridPoints.Add(new PointInfo());
+
             //add initial 9 points
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
+            {
                 for (int j = 0; j < 3; j++)
-                    m_grid.AddPoint(point + new Vector2(i * m_size, j * m_size));
+                {
+                    var newPoint = m_grid.AddPoint(point + new Vector2(i * m_size, j * m_size));
+
+                    var pointInfo = m_9GridPoints[m_9GridPoints.Count - 1];
+                    pointInfo.points[pointInfo.pointNb] = newPoint;
+                    pointInfo.pointNb++;
+                }
+            }
+
+            Logs.Add("Step 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //make initial 18 triangles (9quads)
             for (int i = 0; i < 3; i++)
@@ -86,11 +113,14 @@ namespace NDelaunay
                     m_grid.AddTriangleNoCheck(p2, offsetX, 0, p3, 0, offsetY, p4, offsetX, offsetY);
                 }
             }
+
+            Logs.Add("Step 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
         }
 
         void AddPoint9Grid(Vector2 point)
         {
             point = ClampPosOnSize(point);
+            m_9GridPoints.Add(new PointInfo());
 
             for (int i = 0; i < 3; i++)
                 for (int j = 0; j < 3; j++)
@@ -121,14 +151,14 @@ namespace NDelaunay
 
             InitBuffers();
 
-            Debug.Log("Step 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //find the first triangle
             var t = m_grid.GetTriangleAt(vertex);
             if (t.triangle < 0)
                 return false;
 
-            Debug.Log("Step 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //add it to the buffer lists
             m_registeredTriangles[t.triangle] = true;
@@ -137,7 +167,7 @@ namespace NDelaunay
             m_borderEdges.Add(t.GetEdge(1));
             m_borderEdges.Add(t.GetEdge(2));
 
-            Debug.Log("Step 3 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 3 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //create the border and register all triangles that include the new vertex on their circumscribed circle
             do
@@ -190,7 +220,7 @@ namespace NDelaunay
 
             } while (true);
 
-            Debug.Log("Step 4 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 4 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //copy edge points, removing triangle are going to fuckup edge views
             while (m_borderEdgePoints.Count < m_borderEdges.Count)
@@ -200,27 +230,29 @@ namespace NDelaunay
             for (int i = 0; i < m_borderEdges.Count; i++)
                 m_borderEdgePoints[i].Set(m_borderEdges[i]);
 
-            Debug.Log("Step 5 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 5 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //delete triangles
-            m_toRemoveTriangles.Sort((a, b) => { return b.triangle.CompareTo(a.triangle); }); //descending order to not fuck up indexs
-
-            Debug.Log("Step 5bis " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
-
             for (int i = 0; i < m_toRemoveTriangles.Count; i++)
                 m_grid.RemoveTriangle(m_toRemoveTriangles[i].triangle);
 
-            Debug.Log("Step 6 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 6 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //add new point and recreate triangles with border edges
             var newPoint = m_grid.AddPoint(vertex);
+            if(m_9Grid)
+            {
+                var pointInfo = m_9GridPoints[m_9GridPoints.Count - 1];
+                pointInfo.points[pointInfo.pointNb] = newPoint;
+                pointInfo.pointNb++;
+            }
 
-            Debug.Log("Step 7 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 7 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             for (int i = 0; i < m_borderEdgePoints.Count; i++)
                 m_grid.AddTriangleNoCheck(m_borderEdgePoints[i].points[0], m_borderEdgePoints[i].points[1], newPoint);
 
-            Debug.Log("Step 8 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            Logs.Add("Step 8 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             return true;
         }
@@ -287,6 +319,9 @@ namespace NDelaunay
             for(int i = 0; i < nbPoint; i++)
             {
                 UnstructuredPeriodicGrid.PointView p = m_grid.GetPoint(i * 9);
+                if (p.IsNull())
+                    continue;
+
                 int nbEdge = p.GetEdgeCount();
                 for(int j = 0; j < nbEdge; j++)
                 {
@@ -300,6 +335,8 @@ namespace NDelaunay
                 }
             }
 
+            Logs.Add("Test reduce " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+
             return true;
         }
 
@@ -308,19 +345,27 @@ namespace NDelaunay
             if (!m_9Grid)
                 return;
 
-            UnstructuredPeriodicGrid grid = new UnstructuredPeriodicGrid(m_size);
+            UnstructuredPeriodicGrid grid = new UnstructuredPeriodicGrid(m_size, m_nbPoint);
 
             int nbPoint = m_grid.GetPointCount() / 9;
             for (int i = 0; i < nbPoint; i++)
             {
                 UnstructuredPeriodicGrid.PointView p = m_grid.GetPoint(i * 9);
+                if (p.IsNull())
+                    continue;
                 grid.AddPoint(m_grid.GetPointPos(p));
             }
+
+            Logs.Add("Reduce 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+
+            HashSet<ulong> addedTriangles = new HashSet<ulong>();
 
             int nbTriangle = m_grid.GetTriangleCount();
             for(int i = 0; i < nbTriangle; i++)
             {
                 UnstructuredPeriodicGrid.TriangleView t = m_grid.GetTriangle(i);
+                if (t.IsNull())
+                    continue;
 
                 UnstructuredPeriodicGrid.PointView[] points = new UnstructuredPeriodicGrid.PointView[3];
                 for(int j = 0; j < 3; j++)
@@ -337,14 +382,21 @@ namespace NDelaunay
                     points[j].chunkY += offsetY;
                 }
 
+                ulong id = TriangleToID(points[0], points[1], points[2]);
+                if (addedTriangles.Contains(id))
+                    continue;
+                addedTriangles.Add(id);
+
                 //we need to check triangle, the order is not certain
-                grid.AddTriangle(points[0].point, points[0].chunkX, points[0].chunkY
+                grid.AddTriangleNoCheck(points[0].point, points[0].chunkX, points[0].chunkY
                                , points[1].point, points[1].chunkX, points[1].chunkY
                                , points[2].point, points[2].chunkX, points[2].chunkY);
             }
 
             m_9Grid = false;
             m_grid = grid;
+
+            Logs.Add("Reduce 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
         }
 
         Vector2 ClampPosOnSize(Vector2 pos)
@@ -367,6 +419,8 @@ namespace NDelaunay
             for (int i = 0; i < nbTriangle; i++)
             {
                 var t = m_grid.GetTriangle(i);
+                if (t.IsNull())
+                    continue;
                 var p1 = t.GetPoint(0);
                 var p2 = t.GetPoint(1);
                 var p3 = t.GetPoint(2);
@@ -377,6 +431,44 @@ namespace NDelaunay
 
                 DebugDraw.Triangle(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), Color.red);
             }
+        }
+
+        ulong TriangleToID(UnstructuredPeriodicGrid.PointView p1, UnstructuredPeriodicGrid.PointView p2, UnstructuredPeriodicGrid.PointView p3)
+        {
+            UnstructuredPeriodicGrid.PointView[] sortedPoints = new UnstructuredPeriodicGrid.PointView[] { p1, p2, p3 };
+            Array.Sort(sortedPoints, (a, b) => 
+            {
+                if(a.point == b.point)
+                {
+                    if (a.chunkX == b.chunkX)
+                        return a.chunkY.CompareTo(b.chunkY);
+                    return a.chunkX.CompareTo(b.chunkY);
+                }
+                return a.point.CompareTo(b.point);
+            });
+
+            ulong index1 = (ulong)(sortedPoints[0].point & 0xFFFF); // 16 bits max
+            ulong index2 = (ulong)(sortedPoints[1].point & 0xFFFF); 
+            ulong index3 = (ulong)(sortedPoints[2].point & 0xFFFF);
+            ulong offsetX1 = (ulong)((sortedPoints[1].chunkX - sortedPoints[0].chunkX + 8) & 0xF); // 4 bits sur [-8;7]
+            ulong offsetY1 = (ulong)((sortedPoints[1].chunkY - sortedPoints[0].chunkY + 8) & 0xF);
+            ulong offsetX2 = (ulong)((sortedPoints[2].chunkX - sortedPoints[1].chunkX + 8) & 0xF);
+            ulong offsetY2 = (ulong)((sortedPoints[2].chunkY - sortedPoints[1].chunkY + 8) & 0xF);
+
+            ulong value = offsetX1 << 4;
+            value += offsetY1;
+            value <<= 4;
+            value += offsetX2;
+            value <<= 4;
+            value += offsetY2;
+            value <<= 16;
+            value += index1;
+            value <<= 16;
+            value += index2;
+            value <<= 16;
+            value += index3;
+
+            return value;
         }
     }
 }
