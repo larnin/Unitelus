@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class QuadTree<T>
+public class QuadTreeInt<T>
 {
     class Element
     {
@@ -22,18 +22,18 @@ public class QuadTree<T>
     }
 
     List<Element> m_elements;
-    QuadTree<T>[] m_regions;
+    QuadTreeInt<T>[] m_regions;
     int m_maxElemInCell;
     int m_sizeX;
     int m_sizeY;
     int m_x;
     int m_y;
 
-    public QuadTree(int size, int maxElemInCell) : this(0, 0, size, size, maxElemInCell) { }
+    public QuadTreeInt(int size, int maxElemInCell) : this(0, 0, size, size, maxElemInCell) { }
 
-    public QuadTree(int sizeX, int sizeY, int maxElemInCell) : this(0, 0, sizeX, sizeY, maxElemInCell) { }
+    public QuadTreeInt(int sizeX, int sizeY, int maxElemInCell) : this(0, 0, sizeX, sizeY, maxElemInCell) { }
 
-    public QuadTree(int x, int y, int sizeX, int sizeY, int maxElemInCell)
+    public QuadTreeInt(int x, int y, int sizeX, int sizeY, int maxElemInCell)
     {
         m_sizeX = sizeX;
         m_sizeY = sizeY;
@@ -204,7 +204,7 @@ public class QuadTree<T>
         return true;
     }
 
-    public QuadTree<T> GetRegionAt(int x, int y)
+    public QuadTreeInt<T> GetRegionAt(int x, int y)
     {
         if (m_elements != null)
             return this;
@@ -216,20 +216,20 @@ public class QuadTree<T>
         return null;
     }
 
-    public List<QuadTree<T>> GetRegionsInCircle(float x, float y, float radius)
+    public List<QuadTreeInt<T>> GetRegionsInCircle(float x, float y, float radius)
     {
-        List<QuadTree<T>> result = new List<QuadTree<T>>();
+        List<QuadTreeInt<T>> result = new List<QuadTreeInt<T>>();
         GetRegionsInCircleNoAlloc(x, y, radius, result);
         return result;
     }
 
-    public void GetRegionsInCircleNoAlloc(float x, float y, float radius, List<QuadTree<T>> result)
+    public void GetRegionsInCircleNoAlloc(float x, float y, float radius, List<QuadTreeInt<T>> result)
     {
         result.Clear();
         GetRegionsInCircleNoAllocImpl(x, y, radius, result);
     }
 
-    void GetRegionsInCircleNoAllocImpl(float x, float y, float radius, List<QuadTree<T>> result)
+    void GetRegionsInCircleNoAllocImpl(float x, float y, float radius, List<QuadTreeInt<T>> result)
     {
         float distX = x - m_x;
         float distY = y - m_y;
@@ -255,20 +255,20 @@ public class QuadTree<T>
         }
     }
 
-    public List<QuadTree<T>> GetRegionsInRect(float x, float y, float sizeX, float sizeY)
+    public List<QuadTreeInt<T>> GetRegionsInRect(float x, float y, float sizeX, float sizeY)
     {
-        List<QuadTree<T>> result = new List<QuadTree<T>>();
+        List<QuadTreeInt<T>> result = new List<QuadTreeInt<T>>();
         GetRegionsInRectNoAlloc(x, y, sizeX, sizeY, result);
         return result;
     }
 
-    public void GetRegionsInRectNoAlloc(float x, float y, float sizeX, float sizeY, List<QuadTree<T>> result)
+    public void GetRegionsInRectNoAlloc(float x, float y, float sizeX, float sizeY, List<QuadTreeInt<T>> result)
     {
         result.Clear();
         GetRegionsInRectNoAllocImpl(x, y, sizeX, sizeY, result);
     }
 
-    void GetRegionsInRectNoAllocImpl(float x, float y, float sizeX, float sizeY, List<QuadTree<T>> result)
+    void GetRegionsInRectNoAllocImpl(float x, float y, float sizeX, float sizeY, List<QuadTreeInt<T>> result)
     {
         if (x + sizeX < m_x || m_x + m_sizeX < x || y + sizeY < m_y || m_y + m_sizeY < y)
             return;
@@ -317,10 +317,10 @@ public class QuadTree<T>
         int firstPartSizeY = m_sizeY / 2;
         int secondPartSizeY = m_sizeY - firstPartSizeY;
 
-        m_regions = new QuadTree<T>[] {new QuadTree<T>(m_x, m_y, firstPartSizeX, firstPartSizeY, m_maxElemInCell),
-                                       new QuadTree<T>(m_x + firstPartSizeX, m_y, secondPartSizeX, firstPartSizeY, m_maxElemInCell),
-                                       new QuadTree<T>(m_x, m_y + firstPartSizeY, firstPartSizeX, secondPartSizeY, m_maxElemInCell),
-                                       new QuadTree<T>(m_x + firstPartSizeX, m_y + firstPartSizeY, secondPartSizeX, secondPartSizeY, m_maxElemInCell)};
+        m_regions = new QuadTreeInt<T>[] {new QuadTreeInt<T>(m_x, m_y, firstPartSizeX, firstPartSizeY, m_maxElemInCell),
+                                       new QuadTreeInt<T>(m_x + firstPartSizeX, m_y, secondPartSizeX, firstPartSizeY, m_maxElemInCell),
+                                       new QuadTreeInt<T>(m_x, m_y + firstPartSizeY, firstPartSizeX, secondPartSizeY, m_maxElemInCell),
+                                       new QuadTreeInt<T>(m_x + firstPartSizeX, m_y + firstPartSizeY, secondPartSizeX, secondPartSizeY, m_maxElemInCell)};
 
         foreach(var e in m_elements)
         {

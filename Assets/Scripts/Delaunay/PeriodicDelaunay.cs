@@ -10,9 +10,7 @@ namespace NDelaunay
 {
     class PeriodicDelaunay
     {
-        const int m_9gridSize = 1000;
-
-        System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+        const int m_9gridSize = 300;
 
         /* Point order in the 9 grid
          * 
@@ -58,9 +56,6 @@ namespace NDelaunay
 
         public void Add(Vector2 point)
         {
-            stopWatch.Start();
-            Logs.Add("Start Point");
-
             point = ClampPosOnSize(point);
 
             if (m_9Grid)
@@ -70,9 +65,6 @@ namespace NDelaunay
                 else AddPoint9Grid(point);
             }
             else AddPoint(point);
-
-            Logs.Add("End Point " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
-            stopWatch.Reset();
         }
 
         void AddFirstPoint(Vector2 point)
@@ -91,8 +83,6 @@ namespace NDelaunay
                     pointInfo.pointNb++;
                 }
             }
-
-            Logs.Add("Step 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //make initial 18 triangles (9quads)
             for (int i = 0; i < 3; i++)
@@ -113,8 +103,6 @@ namespace NDelaunay
                     m_grid.AddTriangleNoCheck(p2, offsetX, 0, p3, 0, offsetY, p4, offsetX, offsetY);
                 }
             }
-
-            Logs.Add("Step 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
         }
 
         void AddPoint9Grid(Vector2 point)
@@ -129,11 +117,14 @@ namespace NDelaunay
                 ReduceGrid();
         }
 
-        List<bool> m_registeredTriangles = new List<bool>();
-        List<bool> m_testedEdges = new List<bool>();
+        HashSet<int> m_registeredTriangles = new HashSet<int>();
+        HashSet<int> m_testedEdges = new HashSet<int>();
         List<UnstructuredPeriodicGrid.TriangleView> m_toRemoveTriangles = new List<UnstructuredPeriodicGrid.TriangleView>();
         List<UnstructuredPeriodicGrid.EdgeView> m_borderEdges = new List<UnstructuredPeriodicGrid.EdgeView>();
         List<Edge> m_borderEdgePoints = new List<Edge>();
+
+        HashSet<int> m_workingTriangles = new HashSet<int>();
+        HashSet<int> m_workingEdges = new HashSet<int>();
 
         class Edge
         {
@@ -149,43 +140,63 @@ namespace NDelaunay
         {
             // https://fr.wikipedia.org/wiki/Algorithme_de_Bowyer-Watson
 
-            InitBuffers();
-
-            Logs.Add("Step 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
-
             //find the first triangle
             var t = m_grid.GetTriangleAt(vertex);
+            Debug.Log(t.triangle);
             if (t.triangle < 0)
                 return false;
 
-            Logs.Add("Step 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
+            m_workingTriangles.Clear();
+            m_workingEdges.Clear();
+            for(int i = 0; i < 3; i++)
+            {
+                var p = t.GetPoint(i);
+                for (int j = 0; j < p.GetTriangleCount(); j++)
+                {
+                    var triangle = p.GetTriangle(j);
+                    if (m_workingTriangles.Contains(triangle.triangle))
+                        continue;
+                    m_workingTriangles.Add(triangle.triangle);
+                    for(int k = 0; k < 3; k++)
+                    {
+                        var edge = triangle.GetEdge(k);
+                        if (m_workingEdges.Contains(edge.edge))
+                            continue;
+                        m_workingEdges.Add(edge.edge);
+                    }
+                }
+            }
+
+            InitBuffers();
 
             //add it to the buffer lists
-            m_registeredTriangles[t.triangle] = true;
+            m_registeredTriangles.Add(t.triangle);
             m_toRemoveTriangles.Add(t);
             m_borderEdges.Add(t.GetEdge(0));
             m_borderEdges.Add(t.GetEdge(1));
             m_borderEdges.Add(t.GetEdge(2));
 
-            Logs.Add("Step 3 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
-
             //create the border and register all triangles that include the new vertex on their circumscribed circle
+            int nbLoop = 0;
             do
             {
+                nbLoop++;
                 int borderEdgeIndex = GetNearestBorderEdge(vertex);
                 if (borderEdgeIndex < 0)
                     break;
 
                 var edge = m_borderEdges[borderEdgeIndex];
-                m_testedEdges[edge.edge] = true;
+                m_testedEdges.Add(edge.edge);
 
                 var t1 = edge.GetTriangle(0);
                 var t2 = edge.GetTriangle(1);
 
                 if (t1.triangle < 0 || t2.triangle < 0)
                     continue;
-                var workTriangle = m_registeredTriangles[t1.triangle] ? t2 : t1;
-                if (m_registeredTriangles[workTriangle.triangle])
+                var workTriangle = m_registeredTriangles.Contains(t1.triangle) ? t2 : t1;
+                if (m_registeredTriangles.Contains(workTriangle.triangle))
+                    continue;
+                if (!m_workingTriangles.Contains(workTriangle.triangle))
                     continue;
 
                 Vector2[] pointsPos = new Vector2[3];
@@ -213,14 +224,14 @@ namespace NDelaunay
                     if (i == edgeIndex)
                         continue;
                     var e = workTriangle.GetEdge(i);
+                    if (!m_workingEdges.Contains(e.edge))
+                        continue;
                     m_borderEdges.Add(e);
                 }
-                m_registeredTriangles[workTriangle.triangle] = true;
+                m_registeredTriangles.Add(workTriangle.triangle);
                 m_toRemoveTriangles.Add(workTriangle);
 
             } while (true);
-
-            Logs.Add("Step 4 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //copy edge points, removing triangle are going to fuckup edge views
             while (m_borderEdgePoints.Count < m_borderEdges.Count)
@@ -230,13 +241,9 @@ namespace NDelaunay
             for (int i = 0; i < m_borderEdges.Count; i++)
                 m_borderEdgePoints[i].Set(m_borderEdges[i]);
 
-            Logs.Add("Step 5 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
-
             //delete triangles
             for (int i = 0; i < m_toRemoveTriangles.Count; i++)
                 m_grid.RemoveTriangle(m_toRemoveTriangles[i].triangle);
-
-            Logs.Add("Step 6 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             //add new point and recreate triangles with border edges
             var newPoint = m_grid.AddPoint(vertex);
@@ -247,31 +254,16 @@ namespace NDelaunay
                 pointInfo.pointNb++;
             }
 
-            Logs.Add("Step 7 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
-
             for (int i = 0; i < m_borderEdgePoints.Count; i++)
                 m_grid.AddTriangleNoCheck(m_borderEdgePoints[i].points[0], m_borderEdgePoints[i].points[1], newPoint);
-
-            Logs.Add("Step 8 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             return true;
         }
 
         void InitBuffers()
         {
-            while (m_registeredTriangles.Count < m_grid.GetTriangleCount())
-                m_registeredTriangles.Add(false);
-            if (m_registeredTriangles.Count > m_grid.GetTriangleCount())
-                m_registeredTriangles.RemoveRange(m_grid.GetTriangleCount(), m_registeredTriangles.Count - m_grid.GetTriangleCount());
-            for (int i = 0; i < m_registeredTriangles.Count; i++)
-                m_registeredTriangles[i] = false;
-
-            while (m_testedEdges.Count < m_grid.GetEdgeCount())
-                m_testedEdges.Add(false);
-            if (m_testedEdges.Count > m_grid.GetEdgeCount())
-                m_testedEdges.RemoveRange(m_grid.GetEdgeCount(), m_testedEdges.Count - m_grid.GetEdgeCount());
-            for (int i = 0; i < m_testedEdges.Count; i++)
-                m_testedEdges[i] = false;
+            m_registeredTriangles.Clear();
+            m_testedEdges.Clear();
 
             m_toRemoveTriangles.Clear();
             m_borderEdges.Clear();
@@ -279,30 +271,17 @@ namespace NDelaunay
 
         int GetNearestBorderEdge(Vector2 pos)
         {
-            int bestIndex = -1;
-            float bestDist = float.MaxValue;
-
             for (int i = 0; i < m_borderEdges.Count; i++)
             {
                 if (m_borderEdges[i].edge < 0)
                     continue;
-                if (m_testedEdges[m_borderEdges[i].edge])
+                if (m_testedEdges.Contains(m_borderEdges[i].edge))
                     continue;
 
-                var p1 = m_grid.GetPointPos(m_borderEdges[i].GetPoint(0));
-                var p2 = m_grid.GetPointPos(m_borderEdges[i].GetPoint(1));
-
-                var center = (p1 + p2) / 2;
-                float sqrDist = (center - pos).sqrMagnitude;
-
-                if (sqrDist < bestDist)
-                {
-                    bestDist = sqrDist;
-                    bestIndex = i;
-                }
+                return i;
             }
 
-            return bestIndex;
+            return -1;
         }
 
 
@@ -335,8 +314,6 @@ namespace NDelaunay
                 }
             }
 
-            Logs.Add("Test reduce " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
-
             return true;
         }
 
@@ -352,11 +329,9 @@ namespace NDelaunay
             {
                 UnstructuredPeriodicGrid.PointView p = m_grid.GetPoint(i * 9);
                 if (p.IsNull())
-                    continue;
+                    break;
                 grid.AddPoint(m_grid.GetPointPos(p));
             }
-
-            Logs.Add("Reduce 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
 
             HashSet<ulong> addedTriangles = new HashSet<ulong>();
 
@@ -395,8 +370,6 @@ namespace NDelaunay
 
             m_9Grid = false;
             m_grid = grid;
-
-            Logs.Add("Reduce 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + "ms");
         }
 
         Vector2 ClampPosOnSize(Vector2 pos)

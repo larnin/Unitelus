@@ -490,6 +490,11 @@ namespace NDelaunay
             }
         }
 
+        class Chunk
+        {
+            public List<int> triangles;
+        }
+
         float m_size;
         List<Point> m_points;
         List<Edge> m_edges;
@@ -500,6 +505,9 @@ namespace NDelaunay
         List<int> m_freeTriangle;
 
         Dictionary<ulong, int> m_edgeMap;
+
+        int m_nbTriangleChunk;
+        List<Chunk> m_triangleChunk;
 
         public UnstructuredPeriodicGrid(float size, int pointCount = 0)
         {
@@ -532,6 +540,15 @@ namespace NDelaunay
             {
                 m_freeTriangle.Add(pointCount * 2 - i - 1);
                 m_triangles.Add(new Triangle());
+            }
+
+            const int unitPerChunk = 5;
+            m_nbTriangleChunk = (int)(Mathf.Sqrt(pointCount) / unitPerChunk) + 1;
+            m_triangleChunk = new List<Chunk>(m_nbTriangleChunk * m_nbTriangleChunk);
+            for(int i = 0; i < m_nbTriangleChunk * m_nbTriangleChunk; i++)
+            {
+                m_triangleChunk.Add(new Chunk());
+                m_triangleChunk[i].triangles = new List<int>(unitPerChunk * unitPerChunk);
             }
         }
 
@@ -614,6 +631,7 @@ namespace NDelaunay
                         //destroy the edges later
                     }
 
+                    RemoveTriangleChunk(i);
                     FreeTriangle(i);
                     i--;
                 }
@@ -865,7 +883,7 @@ namespace NDelaunay
             Triangle triangle = m_triangles[triangleIndex];
             triangle.Set(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2, point3, chunkX3, chunkY3);
 
-            m_triangles.Add(triangle);
+            AddTriangleChunk(triangleIndex); 
 
             for (int i = 0; i < triangle.edges.Length; i++)
             {
@@ -881,7 +899,7 @@ namespace NDelaunay
                     triangle.edges[i] = GetFreeEdgeIndex();
                     e = m_edges[triangle.edges[i]];
                     e.Set(triangle.points[i], triangle.points[i2]);
-
+                     
                     foreach (var point in e.points)
                         m_points[point.point].edges.Add(triangle.edges[i]);
 
@@ -890,7 +908,7 @@ namespace NDelaunay
                     e.points[1].chunkY -= e.points[0].chunkY;
                     e.points[0].chunkY = 0;
 
-                    m_edges.Add(e);
+                    m_edges.Add(e); 
 
                     ulong edgeID = UnstructuredPeriodicGrid.EdgeToID(e.points[0], e.points[1]);
                     m_edgeMap.Add(edgeID, triangle.edges[i]);
@@ -942,6 +960,7 @@ namespace NDelaunay
                 }
             }
 
+            RemoveTriangleChunk(index);
             FreeTriangle(index);
         }
 
@@ -976,9 +995,17 @@ namespace NDelaunay
             Matrix<bool> testPos = new Matrix<bool>(3, 3);
 
             pos = ClampPosOnSize(pos);
-            for (int i = 0; i < m_triangles.Count; i++)
+
+            var chunk = GetPosChunk(pos);
+            chunk = ClampPosChunk(chunk);
+            Chunk c = m_triangleChunk[PosToChunkIndex(chunk)];
+
+            for (int i = 0; i < c.triangles.Count; i++)
+            //for (int i = 0; i < m_triangles.Count; i++)
             {
-                var t = m_triangles[i];
+                int index = c.triangles[i];
+                var t = m_triangles[index];
+                //var t = m_triangles[i];
 
                 if (t.free)
                     continue;
@@ -1004,7 +1031,7 @@ namespace NDelaunay
                     Vector2 pos3 = m_points[t.points[2].point].pos;
 
                     if (Utility.IsOnTriangle(pos, pos1, pos2, pos3))
-                        return new TriangleView(this, i, 0, 0);
+                        return new TriangleView(this, index, 0, 0);
 
                     continue;
                 }
@@ -1026,7 +1053,7 @@ namespace NDelaunay
                         Vector2 pos3 = GetPointPos(t.points[2].point, t.points[2].chunkX - j, t.points[2].chunkY - k);
 
                         if (Utility.IsOnTriangle(pos, pos1, pos2, pos3))
-                            return new TriangleView(this, i, -j, -k);
+                            return new TriangleView(this, index, -j, -k);
                     }
                 }
 
@@ -1077,34 +1104,97 @@ namespace NDelaunay
             m_triangles[index].Reset();
         }
 
+        void AddTriangleChunk(int index)
+        {
+            var rect = GetTriangleRect(index);
+
+            var minChunk = GetPosChunk(rect.position);
+            var maxChunk = GetPosChunk(rect.position + rect.size);
+
+            for(int i = minChunk.x; i <= maxChunk.x; i++)
+            {
+                for(int j = minChunk.y; j <= maxChunk.y; j++)
+                {
+                    Vector2Int pos = ClampPosChunk(new Vector2Int(i, j));
+                    m_triangleChunk[PosToChunkIndex(pos)].triangles.Add(index);
+                }
+            }
+        }
+
+        void RemoveTriangleChunk(int index)
+        {
+            var rect = GetTriangleRect(index);
+
+            var minChunk = GetPosChunk(rect.position);
+            var maxChunk = GetPosChunk(rect.position + rect.size);
+
+            for (int i = minChunk.x; i <= maxChunk.x; i++)
+            {
+                for (int j = minChunk.y; j <= maxChunk.y; j++)
+                {
+                    Vector2Int pos = ClampPosChunk(new Vector2Int(i, j));
+                    bool found = m_triangleChunk[PosToChunkIndex(pos)].triangles.Contains(index);
+                    m_triangleChunk[PosToChunkIndex(pos)].triangles.Remove(index);
+                }
+            }
+        }
+
+        Rect GetTriangleRect(int index)
+        {
+            Triangle t = m_triangles[index];
+
+            float minX = float.MaxValue;
+            float minY = float.MaxValue;
+            float maxX = float.MinValue;
+            float maxY = float.MinValue;
+
+            for (int i = 0; i < t.points.Length; i++)
+            {
+                Vector2 pos = GetPointPos(t.points[i]);
+                if (pos.x < minX) minX = pos.x;
+                if (pos.y < minY) minY = pos.y;
+                if (pos.x > maxX) maxX = pos.x;
+                if (pos.y > maxY) maxY = pos.y;
+            }
+
+            return new Rect(minX, minY, maxX - minX, maxY - minY);
+        }
+
         Vector2 ClampPosOnSize(Vector2 pos)
         {
             if (pos.x < 0)
                 pos.x = (pos.x % m_size + m_size) % m_size;
             else pos.x = pos.x % m_size;
 
+            if (pos.y < 0)
+                pos.y = (pos.y % m_size + m_size) % m_size;
+            else pos.y = pos.y % m_size;
+
             return pos;
         }
 
-        Vector2Int GetPointsChunk(params LocalPoint[] points)
+        Vector2Int ClampPosChunk(Vector2Int pos)
         {
-            Vector2 pos = Vector2.zero;
-            int nb = 0;
-            foreach (var p in points)
-            {
-                if (p.point >= 0)
-                {
-                    pos += GetPointPos(p.point, p.chunkX, p.chunkY);
-                    nb++;
-                }
-            }
-            pos /= nb;
-            return GetPosChunk(pos);
+            if (pos.x < 0)
+                pos.x = (pos.x % m_nbTriangleChunk + m_nbTriangleChunk) % m_nbTriangleChunk;
+            else pos.x = pos.x % m_nbTriangleChunk;
+            if (pos.y < 0)
+                pos.y = (pos.y % m_nbTriangleChunk + m_nbTriangleChunk) % m_nbTriangleChunk;
+            else pos.y = pos.y % m_nbTriangleChunk;
+
+            return pos;
         }
 
         Vector2Int GetPosChunk(Vector2 pos)
         {
-            return new Vector2Int(Mathf.FloorToInt(pos.x / m_size), Mathf.FloorToInt(pos.y / m_size));
+            float chunkSize = m_size / m_nbTriangleChunk;
+
+            return new Vector2Int(Mathf.FloorToInt(pos.x / chunkSize), Mathf.FloorToInt(pos.y / chunkSize));
+        }
+
+        int PosToChunkIndex(Vector2Int pos)
+        {
+            return pos.x + pos.y * m_nbTriangleChunk;
         }
     }
 }

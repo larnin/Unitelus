@@ -40,7 +40,7 @@ public class BiomeGenerator
     MT19937 m_rand;
 
     Matrix<BiomeType> m_grid;
-    QuadTree<BorderData> m_borders;
+    QuadTreeInt<BorderData> m_borders;
 
     public int GetSize() { return 1 << m_size; }
 
@@ -324,7 +324,7 @@ public class BiomeGenerator
 
     void DetectBiomesBorders(Matrix<BiomeType> grid)
     {
-        QuadTree<BorderData> borders = new QuadTree<BorderData>(grid.width, grid.depth, 16);
+        QuadTreeInt<BorderData> borders = new QuadTreeInt<BorderData>(grid.width, grid.depth, 16);
         for(int i = 0; i < grid.width; i++)
         {
             int nextI = i + 1;
@@ -394,7 +394,7 @@ public class BiomeGenerator
         return biomes;
     }
 
-    static List<QuadTree<BorderData>> m_regionsTemp = new List<QuadTree<BorderData>>();
+    static List<QuadTreeInt<BorderData>> m_regionsTemp = new List<QuadTreeInt<BorderData>>();
     static float[] m_biomesDistance = new float[Enum.GetValues(typeof(BiomeType)).Length];
 
     public void GetBiomesDistanceNoAlloc(int x, int y, float radius, List<BiomeDistance> biomes)

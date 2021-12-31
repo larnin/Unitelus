@@ -29,6 +29,9 @@ class TestVoronoi : MonoBehaviour
         Stopwatch stopWatch = new Stopwatch();
         stopWatch.Start();
 
+        int nbPoint = nbCell * nbCell;
+        List<Vector2> points = new List<Vector2>(nbPoint);
+
         int count = 0;
         for(int i = 0; i < nbCell; i++)
         {
@@ -41,10 +44,19 @@ class TestVoronoi : MonoBehaviour
                 d.SetParams(i * cellSize, (i + 1) * cellSize, j * cellSize, (j + 1) * cellSize);
                 var pos = d.Next(rand);
 
-                m_delaunay.Add(pos);
-
-                Logs.ImportantAdd("Point " + count + " T " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
+                points.Add(pos);
             }
+        }
+
+        Logs.ImportantAdd("Generated points " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
+        points.Shuffle(rand);
+        Logs.ImportantAdd("Shuffled points " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
+
+        for (int i = 0; i < points.Count; i++)
+        {
+            m_delaunay.Add(points[i]);
+
+            Logs.ImportantAdd("Point " + i + " T " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
         }
 
         stopWatch.Stop();
