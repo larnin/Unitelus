@@ -142,7 +142,6 @@ namespace NDelaunay
 
             //find the first triangle
             var t = m_grid.GetTriangleAt(vertex);
-            Debug.Log(t.triangle);
             if (t.triangle < 0)
                 return false;
 

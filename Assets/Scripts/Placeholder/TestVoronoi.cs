@@ -48,20 +48,15 @@ class TestVoronoi : MonoBehaviour
             }
         }
 
-        Logs.ImportantAdd("Generated points " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
+        Logs.ImportantAdd("Generated points " + stopWatch.Elapsed.TotalSeconds + " s");
         points.Shuffle(rand);
-        Logs.ImportantAdd("Shuffled points " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
+        Logs.ImportantAdd("Shuffled points " + stopWatch.Elapsed.TotalSeconds + " s");
 
         for (int i = 0; i < points.Count; i++)
-        {
             m_delaunay.Add(points[i]);
 
-            Logs.ImportantAdd("Point " + i + " T " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
-        }
-
+        Logs.ImportantAdd("Delaunay " + stopWatch.Elapsed.TotalSeconds + " s");
         stopWatch.Stop();
-        TimeSpan ts = stopWatch.Elapsed;
-        Logs.ImportantAdd("Time " + ts.TotalSeconds + " s");
 
         Logs.Dump();
     }
