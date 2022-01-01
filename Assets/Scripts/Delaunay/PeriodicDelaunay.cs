@@ -321,6 +321,15 @@ namespace NDelaunay
             if (!m_9Grid)
                 return;
 
+            m_grid = GetReducedGrid();
+            m_9Grid = false;
+        }
+
+        UnstructuredPeriodicGrid GetReducedGrid()
+        {
+            if (!m_9Grid)
+                return m_grid;
+
             UnstructuredPeriodicGrid grid = new UnstructuredPeriodicGrid(m_size, m_nbPoint);
 
             int nbPoint = m_grid.GetPointCount() / 9;
@@ -335,14 +344,14 @@ namespace NDelaunay
             HashSet<ulong> addedTriangles = new HashSet<ulong>();
 
             int nbTriangle = m_grid.GetTriangleCount();
-            for(int i = 0; i < nbTriangle; i++)
+            for (int i = 0; i < nbTriangle; i++)
             {
                 UnstructuredPeriodicGrid.TriangleView t = m_grid.GetTriangle(i);
                 if (t.IsNull())
                     continue;
 
                 UnstructuredPeriodicGrid.PointView[] points = new UnstructuredPeriodicGrid.PointView[3];
-                for(int j = 0; j < 3; j++)
+                for (int j = 0; j < 3; j++)
                 {
                     points[j] = t.GetPoint(j);
 
@@ -367,8 +376,7 @@ namespace NDelaunay
                                , points[2].point, points[2].chunkX, points[2].chunkY);
             }
 
-            m_9Grid = false;
-            m_grid = grid;
+            return grid;
         }
 
         Vector2 ClampPosOnSize(Vector2 pos)
@@ -378,6 +386,13 @@ namespace NDelaunay
             else pos.x = pos.x % m_size;
 
             return pos;
+        }
+
+        public UnstructuredPeriodicGrid GetGrid()
+        {
+            if (m_9Grid)
+                return GetReducedGrid();
+            return m_grid;
         }
 
         public void Draw()

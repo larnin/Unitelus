@@ -387,7 +387,7 @@ namespace NDelaunay
 
             public TriangleView GetOppositeTriangle(int triangle)
             {
-                if (edge < 0 || edge > m_grid.GetEdgeCount())
+                if(IsNull())
                     return TriangleView.Null();
 
                 Edge e = m_grid.m_edges[edge];
@@ -398,6 +398,17 @@ namespace NDelaunay
                     return TriangleView.Null();
 
                 return GetTriangle(triangleIndex);
+            }
+
+            public float GetLength()
+            {
+                if (IsNull())
+                    return 0;
+
+                var p1 = GetPoint(0);
+                var p2 = GetPoint(1);
+
+                return (m_grid.GetPointPos(p1) - m_grid.GetPointPos(p2)).magnitude;
             }
         }
 
@@ -722,6 +733,131 @@ namespace NDelaunay
             m_points[index].Reset();
         }
 
+        public EdgeView AddEdge(int point1, int point2)
+        {
+            return AddEdge(point1, 0, 0, point2, 0, 0);
+        }
+
+        public EdgeView AddEdge(PointView p1, PointView p2)
+        {
+            return AddEdge(p1.point, p1.chunkX, p1.chunkY, p2.point, p2.chunkX, p2.chunkY);
+        }
+
+        public EdgeView AddEdge(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2)
+        {
+            LocalPoint p1 = new LocalPoint(point1, chunkX1, chunkY1);
+            LocalPoint p2 = new LocalPoint(point2, chunkX2, chunkY2);
+
+            for (int i = 0; i < m_edges.Count; i++)
+            {
+                var e = m_edges[i];
+                if (e.free)
+                    continue;
+                if (AreSameEdge(e.points[0], e.points[1], p1, p2))
+                    return GetEdge(i);
+            }
+
+            return AddEdgeNoCheck(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2);
+        }
+
+        public EdgeView AddEdgeNoCheck(int point1, int point2)
+        {
+            return AddEdgeNoCheck(point1, 0, 0, point2, 0, 0);
+        }
+
+        public EdgeView AddEdgeNoCheck(PointView p1, PointView p2)
+        {
+            return AddEdgeNoCheck(p1.point, p1.chunkX, p1.chunkY, p2.point, p2.chunkX, p2.chunkY);
+        }
+
+        public EdgeView AddEdgeNoCheck(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2)
+        {
+            chunkX2 -= chunkX1;
+            chunkY2 -= chunkY1;
+            chunkX1 = 0;
+            chunkY1 = 0;
+
+            int edgeIndex = GetFreeEdgeIndex();
+            Edge e = m_edges[edgeIndex];
+            e.Set(point1, chunkX1, chunkY1, point2, chunkX2, chunkY2);
+
+            foreach(var p in e.points)
+            {
+                if (p.point < 0 || p.point >= m_points.Count)
+                    continue;
+
+                Point point = m_points[p.point];
+                if (point.free)
+                    continue;
+
+                point.edges.Add(edgeIndex);
+            }
+
+            return GetEdge(edgeIndex);
+        }
+
+        public void RemoveEdge(int index)
+        {
+            if (index < 0 || index >= m_edges.Count)
+                return;
+
+            //remove connected triangles
+            for (int i = 0; i < m_triangles.Count; i++)
+            {
+                if (m_triangles[i].free)
+                    continue;
+
+                bool needToRemove = false;
+                foreach (var e in m_triangles[i].edges)
+                {
+                    if (e == index)
+                    {
+                        needToRemove = true;
+                        break;
+                    }
+                }
+
+                if (needToRemove)
+                {
+                    foreach (var p in m_triangles[i].points)
+                        m_points[p.point].triangles.Remove(i);
+
+                    foreach (var e in m_triangles[i].edges)
+                    {
+                        Edge edge = m_edges[e];
+                        if (edge.triangles[0] == i)
+                            edge.triangles[0] = -1;
+                        else if (edge.triangles[1] == i)
+                            edge.triangles[1] = -1;
+                        //destroy the edges later
+                    }
+
+                    RemoveTriangleChunk(i);
+                    FreeTriangle(i);
+                    i--;
+                }
+            }
+
+            //remove invalid edges
+            for (int i = 0; i < m_edges.Count; i++)
+            {
+                Edge e = m_edges[i];
+                if (e.free)
+                    continue;
+                if (e.triangles[0] < 0 && e.triangles[1] < 0)
+                {
+                    foreach (var p in e.points)
+                        m_points[p.point].edges.Remove(i);
+
+                    ulong edgeID = UnstructuredPeriodicGrid.EdgeToID(e.points[0], e.points[1]);
+                    m_edgeMap.Remove(edgeID);
+
+                    FreeEdge(i);
+                    i--;
+                }
+            }
+        }
+
         public int GetEdgeCount()
         {
             return m_edges.Count;
@@ -907,8 +1043,6 @@ namespace NDelaunay
                     e.points[0].chunkX = 0;
                     e.points[1].chunkY -= e.points[0].chunkY;
                     e.points[0].chunkY = 0;
-
-                    m_edges.Add(e); 
 
                     ulong edgeID = UnstructuredPeriodicGrid.EdgeToID(e.points[0], e.points[1]);
                     m_edgeMap.Add(edgeID, triangle.edges[i]);

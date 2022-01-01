@@ -236,7 +236,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridSize: 100
-  nbCell: 50
+  nbCell: 32
   seed: 3
   breakCount: 100000
 --- !u!4 &237100204

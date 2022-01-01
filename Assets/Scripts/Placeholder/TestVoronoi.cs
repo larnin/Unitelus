@@ -16,6 +16,7 @@ class TestVoronoi : MonoBehaviour
     public int breakCount;
 
     PeriodicDelaunay m_delaunay;
+    PeriodicGraph m_graph;
 
     private void Start()
     {
@@ -56,6 +57,11 @@ class TestVoronoi : MonoBehaviour
             m_delaunay.Add(points[i]);
 
         Logs.ImportantAdd("Delaunay " + stopWatch.Elapsed.TotalSeconds + " s");
+
+        m_graph = new PeriodicGraph(m_delaunay.GetGrid());
+
+        Logs.ImportantAdd("Graph " + stopWatch.Elapsed.TotalSeconds + " s");
+
         stopWatch.Stop();
 
         Logs.Dump();
@@ -63,7 +69,8 @@ class TestVoronoi : MonoBehaviour
 
     private void Update()
     {
-        m_delaunay.Draw();
+        //m_delaunay.Draw();
+        m_graph.Draw();
     }
 
 }
