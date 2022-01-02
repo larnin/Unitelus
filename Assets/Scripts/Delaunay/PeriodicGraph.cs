@@ -10,7 +10,6 @@ namespace NDelaunay
     public class PeriodicGraph
     {
         UnstructuredPeriodicGrid m_grid;
-        System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
 
         struct EdgeLength
         {
@@ -24,12 +23,14 @@ namespace NDelaunay
             }
         }
 
+        class Group
+        {
+            public List<int> points = new List<int>();
+        }
+
         public PeriodicGraph(UnstructuredPeriodicGrid grid)
         {
-            stopWatch.Start();
             m_grid = new UnstructuredPeriodicGrid(grid.GetSize(), grid.GetPointCount());
-
-            Logs.ImportantAdd("Step 1 " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
 
             for (int i = 0; i < grid.GetPointCount(); i++)
             {
@@ -38,8 +39,6 @@ namespace NDelaunay
                     continue;
                 m_grid.AddPoint(grid.GetPointPos(p));
             }
-
-            Logs.ImportantAdd("Step 2 " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
 
             List<EdgeLength> edges = new List<EdgeLength>(grid.GetEdgeCount());
             for(int i = 0; i < grid.GetEdgeCount(); i++)
@@ -50,74 +49,78 @@ namespace NDelaunay
                 edges.Add(new EdgeLength(e.GetLength(), e));
             }
 
-
-            Logs.ImportantAdd("Step 3 " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
             edges.Sort((a, b) => { return a.length.CompareTo(b.length); });
-            Logs.ImportantAdd("Step 4 " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
 
-            foreach (var e in edges)
+            List<int> pointsGroup = new List<int>(grid.GetPointCount());
+            for (int i = 0; i < grid.GetPointCount(); i++)
+                pointsGroup.Add(-1);
+            List<Group> groups = new List<Group>();
+            List<int> emptyGroups = new List<int>();
+
+            Func<int> getEmptyGroup = () =>
             {
-                Logs.ImportantAdd("Point " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
+                if (emptyGroups.Count == 0)
+                {
+                    groups.Add(new Group());
+                    return groups.Count - 1;
+                }
+                int index = emptyGroups[0];
+                emptyGroups.RemoveAt(0);
+                return index;
+            };
 
+            foreach(var e in edges)
+            {
                 var p1 = e.edge.GetPoint(0);
                 var p2 = e.edge.GetPoint(1);
 
-                if (IsConnected(p1.point, p2.point))
+                if (pointsGroup[p1.point] == -1 && pointsGroup[p2.point] == -1)
+                {
+                    int nGroup = getEmptyGroup();
+                    pointsGroup[p1.point] = nGroup;
+                    pointsGroup[p2.point] = nGroup;
+                    groups[nGroup].points.Add(p1.point);
+                    groups[nGroup].points.Add(p2.point);
+                }
+                else if (pointsGroup[p1.point] == pointsGroup[p2.point])
                     continue;
+                else if(pointsGroup[p1.point] == -1)
+                {
+                    int nGroup = pointsGroup[p2.point];
+                    pointsGroup[p1.point] = nGroup;
+                    groups[nGroup].points.Add(p1.point);
+                }
+                else if(pointsGroup[p2.point] == -1)
+                {
+                    int nGroup = pointsGroup[p1.point];
+                    pointsGroup[p2.point] = nGroup;
+                    groups[nGroup].points.Add(p2.point);
+                }
+                else //p1 != p2 && p1 != -1 &&& p2 != -1
+                {
+                    int nGroup1 = pointsGroup[p1.point];
+                    int nGroup2 = pointsGroup[p2.point];
+                    int nMin, nMax;
+                    if(groups[nGroup1].points.Count < groups[nGroup2].points.Count)
+                    { nMin = nGroup1; nMax = nGroup2; }
+                    else { nMin = nGroup2; nMax = nGroup1; }
+
+                    Group gMin = groups[nMin];
+                    Group gMax = groups[nMax];
+                    int capacity = gMin.points.Count + gMax.points.Count;
+                    if (gMax.points.Capacity < capacity)
+                        gMax.points.Capacity = capacity;
+                    foreach (var p in gMin.points)
+                    {
+                        gMax.points.Add(p);
+                        pointsGroup[p] = nMax;
+                    }
+                    gMin.points.Clear();
+                    emptyGroups.Add(nMin);
+                }
 
                 m_grid.AddEdge(p1, p2);
             }
-
-            Logs.ImportantAdd("End " + (stopWatch.Elapsed.TotalSeconds * 1000) + " ms");
-        }
-
-        struct NextPoint
-        {
-            public int previous;
-            public int current;
-
-            public NextPoint(int _previous, int _current) { previous = _previous; current = _current; }
-        }
-        List<NextPoint> nextPoints = new List<NextPoint>();
-
-        bool IsConnected(int point1, int point2)
-        {
-            if (point1 == point2)
-                return true;
-
-            nextPoints.Clear();
-
-            var p1 = m_grid.GetPoint(point1);
-            var p2 = m_grid.GetPoint(point2);
-
-            if (p1.IsNull() || p2.IsNull())
-                return false;
-
-            if (p1.GetEdgeCount() == 0 || p2.GetEdgeCount() == 0)
-                return false;
-
-            nextPoints.Add(new NextPoint(-1, point1));
-
-            while(nextPoints.Count != 0)
-            {
-                var point = nextPoints[0];
-                nextPoints.RemoveAt(0);
-
-                var p = m_grid.GetPoint(point.current);
-                for(int i = 0; i < p.GetEdgeCount(); i++)
-                {
-                    var nextPoint = p.GetPoint(i);
-                    if (nextPoint.point == point2)
-                        return true;
-
-                    if (nextPoint.point == point.previous)
-                        continue;
-
-                    nextPoints.Add(new NextPoint(point.current, nextPoint.point));
-                }
-            }
-
-            return false;
         }
 
         public void Draw()
