@@ -14,9 +14,11 @@ class TestVoronoi : MonoBehaviour
     public int nbCell;
     public int seed;
     public int breakCount;
+    public int maxGroupSize;
 
     PeriodicDelaunay m_delaunay;
-    PeriodicGraph m_graph;
+
+    UnstructuredPeriodicGrid m_grid;
 
     private void Start()
     {
@@ -58,7 +60,7 @@ class TestVoronoi : MonoBehaviour
 
         Logs.ImportantAdd("Delaunay " + stopWatch.Elapsed.TotalSeconds + " s");
 
-        m_graph = new PeriodicGraph(m_delaunay.GetGrid());
+        m_grid = PeriodicGraph.MakeGraph(m_delaunay.GetGrid(), maxGroupSize);
 
         Logs.ImportantAdd("Graph " + stopWatch.Elapsed.TotalSeconds + " s");
 
@@ -70,7 +72,9 @@ class TestVoronoi : MonoBehaviour
     private void Update()
     {
         //m_delaunay.Draw();
-        m_graph.Draw();
+        //m_graph.Draw();
+        m_delaunay.GetGrid().Draw(true, false);
+        m_grid.Draw(false, true);
     }
 
 }

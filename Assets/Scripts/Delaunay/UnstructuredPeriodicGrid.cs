@@ -884,6 +884,22 @@ namespace NDelaunay
             return new EdgeView(this, index, chunkX, chunkY);
         }
 
+        public EdgeView GetEdge(PointView p1, PointView p2)
+        {
+            if (p1.IsNull() || p2.IsNull())
+                return EdgeView.Null();
+
+            return GetEdge(p1.point, p1.chunkX, p1.chunkY, p2.point, p2.chunkX, p2.chunkY);
+        }
+
+        public EdgeView GetEdge(int point1, int chunkX1, int chunkY1, int point2, int chunkX2, int chunkY2)
+        {
+            int index = FindEdgeIndex(new LocalPoint(point1, chunkX1, chunkY1), new LocalPoint(point2, chunkX2, chunkY2));
+            if (index < 0)
+                return EdgeView.Null();
+            return GetEdge(index);
+        }
+
         bool AreSameEdge(LocalPoint a1, LocalPoint a2, LocalPoint b1, LocalPoint b2)
         {
             var aMin = a1 < a2 ? a1 : a2;
@@ -906,15 +922,6 @@ namespace NDelaunay
             int edgeIndex = 0;
             if (m_edgeMap.TryGetValue(edgeID, out edgeIndex))
                 return edgeIndex;
-
-            //for (int i = 0; i < m_edges.Count; i++)
-            //{
-            //    Edge e = m_edges[i];
-            //    if (e.free)
-            //        continue;
-            //    if (AreSameEdge(e.points[0], e.points[1], a, b))
-            //        return i;
-            //}
 
             return -1;
         }
@@ -940,6 +947,16 @@ namespace NDelaunay
 
             m_freeEdge.Add(index);
             m_edges[index].Reset();
+        }
+
+        public static ulong EdgeToID(EdgeView edge)
+        {
+            Debug.Assert(!edge.IsNull());
+
+            var p1 = edge.GetPoint(0);
+            var p2 = edge.GetPoint(1);
+
+            return EdgeToID(new LocalPoint(p1), new LocalPoint(p2));
         }
 
         static ulong EdgeToID(LocalPoint p1, LocalPoint p2)
@@ -1329,6 +1346,53 @@ namespace NDelaunay
         int PosToChunkIndex(Vector2Int pos)
         {
             return pos.x + pos.y * m_nbTriangleChunk;
+        }
+
+        public void Draw(bool triangles, bool edges)
+        {
+            float y = 3.1f;
+
+            DebugDraw.Rectangle(new Vector3(0, y, 0), new Vector2(GetSize(), GetSize()), Color.green);
+
+            if (triangles)
+            {
+                int nbTriangle = GetTriangleCount();
+
+                for (int i = 0; i < nbTriangle; i++)
+                {
+                    var t = GetTriangle(i);
+                    if (t.IsNull())
+                        continue;
+                    var p1 = t.GetPoint(0);
+                    var p2 = t.GetPoint(1);
+                    var p3 = t.GetPoint(2);
+
+                    var pos1 = GetPointPos(p1);
+                    var pos2 = GetPointPos(p2);
+                    var pos3 = GetPointPos(p3);
+
+                    DebugDraw.Triangle(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), Color.red);
+                }
+            }
+
+            if(edges)
+            {
+                int nbEdge = GetEdgeCount();
+
+                for (int i = 0; i < nbEdge; i++)
+                {
+                    var e = GetEdge(i);
+                    if (e.IsNull())
+                        continue;
+                    var p1 = e.GetPoint(0);
+                    var p2 = e.GetPoint(1);
+
+                    var pos1 = GetPointPos(p1);
+                    var pos2 = GetPointPos(p2);
+
+                    DebugDraw.Line(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), Color.blue);
+                }
+            }
         }
     }
 }

@@ -7,10 +7,8 @@ using UnityEngine;
 
 namespace NDelaunay
 {
-    public class PeriodicGraph
+    public static class PeriodicGraph
     {
-        UnstructuredPeriodicGrid m_grid;
-
         struct EdgeLength
         {
             public float length;
@@ -28,16 +26,28 @@ namespace NDelaunay
             public List<int> points = new List<int>();
         }
 
-        public PeriodicGraph(UnstructuredPeriodicGrid grid)
+        class PointInfo
         {
-            m_grid = new UnstructuredPeriodicGrid(grid.GetSize(), grid.GetPointCount());
+            public int group;
+            public bool tail;
+
+            public PointInfo()
+            {
+                group = -1;
+                tail = true;
+            }
+        }
+
+        public static UnstructuredPeriodicGrid MakeGraph(UnstructuredPeriodicGrid grid, int maxGroupSize)
+        {
+            UnstructuredPeriodicGrid newGrid = new UnstructuredPeriodicGrid(grid.GetSize(), grid.GetPointCount());
 
             for (int i = 0; i < grid.GetPointCount(); i++)
             {
                 var p = grid.GetPoint(i);
                 if (p.IsNull())
                     continue;
-                m_grid.AddPoint(grid.GetPointPos(p));
+                newGrid.AddPoint(grid.GetPointPos(p));
             }
 
             List<EdgeLength> edges = new List<EdgeLength>(grid.GetEdgeCount());
@@ -51,9 +61,9 @@ namespace NDelaunay
 
             edges.Sort((a, b) => { return a.length.CompareTo(b.length); });
 
-            List<int> pointsGroup = new List<int>(grid.GetPointCount());
+            List<PointInfo> pointsGroup = new List<PointInfo>(grid.GetPointCount());
             for (int i = 0; i < grid.GetPointCount(); i++)
-                pointsGroup.Add(-1);
+                pointsGroup.Add(new PointInfo());
             List<Group> groups = new List<Group>();
             List<int> emptyGroups = new List<int>();
 
@@ -74,32 +84,48 @@ namespace NDelaunay
                 var p1 = e.edge.GetPoint(0);
                 var p2 = e.edge.GetPoint(1);
 
-                if (pointsGroup[p1.point] == -1 && pointsGroup[p2.point] == -1)
+                if (pointsGroup[p1.point].group == -1 && pointsGroup[p2.point].group == -1)
                 {
                     int nGroup = getEmptyGroup();
-                    pointsGroup[p1.point] = nGroup;
-                    pointsGroup[p2.point] = nGroup;
+                    pointsGroup[p1.point].group = nGroup;
+                    pointsGroup[p2.point].group = nGroup;
                     groups[nGroup].points.Add(p1.point);
                     groups[nGroup].points.Add(p2.point);
                 }
-                else if (pointsGroup[p1.point] == pointsGroup[p2.point])
+                else if (pointsGroup[p1.point].group == pointsGroup[p2.point].group)
                     continue;
-                else if(pointsGroup[p1.point] == -1)
+                else if(pointsGroup[p1.point].group == -1)
                 {
-                    int nGroup = pointsGroup[p2.point];
-                    pointsGroup[p1.point] = nGroup;
+                    if (!pointsGroup[p2.point].tail)
+                        continue;
+                    int nGroup = pointsGroup[p2.point].group;
+                    if (groups[nGroup].points.Count >= maxGroupSize)
+                        continue;
+                    pointsGroup[p1.point].group = nGroup;
+                    pointsGroup[p2.point].tail = false;
                     groups[nGroup].points.Add(p1.point);
                 }
-                else if(pointsGroup[p2.point] == -1)
+                else if(pointsGroup[p2.point].group == -1)
                 {
-                    int nGroup = pointsGroup[p1.point];
-                    pointsGroup[p2.point] = nGroup;
+                    if (!pointsGroup[p1.point].tail)
+                        continue;
+                    int nGroup = pointsGroup[p1.point].group;
+                    if (groups[nGroup].points.Count >= maxGroupSize)
+                        continue;
+                    pointsGroup[p2.point].group = nGroup;
+                    pointsGroup[p1.point].tail = false;
                     groups[nGroup].points.Add(p2.point);
                 }
                 else //p1 != p2 && p1 != -1 &&& p2 != -1
                 {
-                    int nGroup1 = pointsGroup[p1.point];
-                    int nGroup2 = pointsGroup[p2.point];
+                    if (!pointsGroup[p1.point].tail || !pointsGroup[p2.point].tail)
+                        continue;
+                    int nGroup1 = pointsGroup[p1.point].group;
+                    int nGroup2 = pointsGroup[p2.point].group;
+                    if (groups[nGroup1].points.Count + groups[nGroup2].points.Count >= maxGroupSize)
+                        continue;
+                    pointsGroup[p1.point].tail = false;
+                    pointsGroup[p2.point].tail = false;
                     int nMin, nMax;
                     if(groups[nGroup1].points.Count < groups[nGroup2].points.Count)
                     { nMin = nGroup1; nMax = nGroup2; }
@@ -113,37 +139,16 @@ namespace NDelaunay
                     foreach (var p in gMin.points)
                     {
                         gMax.points.Add(p);
-                        pointsGroup[p] = nMax;
+                        pointsGroup[p].group = nMax;
                     }
                     gMin.points.Clear();
                     emptyGroups.Add(nMin);
                 }
 
-                m_grid.AddEdge(p1, p2);
+                newGrid.AddEdge(p1, p2);
             }
-        }
 
-        public void Draw()
-        {
-            float y = 3.2f;
-
-            DebugDraw.Rectangle(new Vector3(0, y, 0), new Vector2(m_grid.GetSize(), m_grid.GetSize()), Color.green);
-
-            int nbEdge = m_grid.GetEdgeCount();
-
-            for (int i = 0; i < nbEdge; i++)
-            {
-                var e = m_grid.GetEdge(i);
-                if (e.IsNull())
-                    continue;
-                var p1 = e.GetPoint(0);
-                var p2 = e.GetPoint(1);
-
-                var pos1 = m_grid.GetPointPos(p1);
-                var pos2 = m_grid.GetPointPos(p2);
-
-                DebugDraw.Line(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), Color.blue);
-            }
+            return newGrid;
         }
     }
 }

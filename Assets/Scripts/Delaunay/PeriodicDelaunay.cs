@@ -395,31 +395,6 @@ namespace NDelaunay
             return m_grid;
         }
 
-        public void Draw()
-        {
-            float y = 3.1f;
-
-            DebugDraw.Rectangle(new Vector3(0, y, 0), new Vector2(m_grid.GetSize(), m_grid.GetSize()), Color.green);
-
-            int nbTriangle = m_grid.GetTriangleCount();
-
-            for (int i = 0; i < nbTriangle; i++)
-            {
-                var t = m_grid.GetTriangle(i);
-                if (t.IsNull())
-                    continue;
-                var p1 = t.GetPoint(0);
-                var p2 = t.GetPoint(1);
-                var p3 = t.GetPoint(2);
-
-                var pos1 = m_grid.GetPointPos(p1);
-                var pos2 = m_grid.GetPointPos(p2);
-                var pos3 = m_grid.GetPointPos(p3);
-
-                DebugDraw.Triangle(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), Color.red);
-            }
-        }
-
         ulong TriangleToID(UnstructuredPeriodicGrid.PointView p1, UnstructuredPeriodicGrid.PointView p2, UnstructuredPeriodicGrid.PointView p3)
         {
             UnstructuredPeriodicGrid.PointView[] sortedPoints = new UnstructuredPeriodicGrid.PointView[] { p1, p2, p3 };
