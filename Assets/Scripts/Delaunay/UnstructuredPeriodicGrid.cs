@@ -1141,6 +1141,18 @@ namespace NDelaunay
             return new TriangleView(this, index, chunkX, chunkY);
         }
 
+        public Vector2 GetTriangleCenter(TriangleView triangle)
+        {
+            if (triangle.IsNull())
+                return Vector2.zero;
+
+            var p1 = GetPointPos(triangle.GetPoint(0));
+            var p2 = GetPointPos(triangle.GetPoint(1));
+            var p3 = GetPointPos(triangle.GetPoint(2));
+
+            return (p1 + p2 + p3) / 3;
+        }
+
         public TriangleView GetTriangleAt(Vector2 pos)
         {
             Matrix<bool> testPos = new Matrix<bool>(3, 3);
@@ -1311,7 +1323,7 @@ namespace NDelaunay
             return new Rect(minX, minY, maxX - minX, maxY - minY);
         }
 
-        Vector2 ClampPosOnSize(Vector2 pos)
+        public Vector2 ClampPosOnSize(Vector2 pos)
         {
             if (pos.x < 0)
                 pos.x = (pos.x % m_size + m_size) % m_size;

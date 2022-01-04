@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace NDelaunay
 {
-    public static class PeriodicGraph
+    public class PeriodicGraph
     {
         struct EdgeLength
         {
@@ -38,17 +38,14 @@ namespace NDelaunay
             }
         }
 
-        public static UnstructuredPeriodicGrid MakeGraph(UnstructuredPeriodicGrid grid, int maxGroupSize)
-        {
-            UnstructuredPeriodicGrid newGrid = new UnstructuredPeriodicGrid(grid.GetSize(), grid.GetPointCount());
+        UnstructuredPeriodicGrid m_grid;
+        HashSet<int> m_edgeIndexs = new HashSet<int>();
+        List<PointInfo> m_pointsGroup;
+        List<Group> m_groups; 
 
-            for (int i = 0; i < grid.GetPointCount(); i++)
-            {
-                var p = grid.GetPoint(i);
-                if (p.IsNull())
-                    continue;
-                newGrid.AddPoint(grid.GetPointPos(p));
-            }
+        public PeriodicGraph(UnstructuredPeriodicGrid grid, int maxGroupSize)
+        {
+            m_grid = grid;
 
             List<EdgeLength> edges = new List<EdgeLength>(grid.GetEdgeCount());
             for(int i = 0; i < grid.GetEdgeCount(); i++)
@@ -61,18 +58,18 @@ namespace NDelaunay
 
             edges.Sort((a, b) => { return a.length.CompareTo(b.length); });
 
-            List<PointInfo> pointsGroup = new List<PointInfo>(grid.GetPointCount());
+            m_pointsGroup = new List<PointInfo>(grid.GetPointCount());
             for (int i = 0; i < grid.GetPointCount(); i++)
-                pointsGroup.Add(new PointInfo());
-            List<Group> groups = new List<Group>();
+                m_pointsGroup.Add(new PointInfo());
+            m_groups = new List<Group>();
             List<int> emptyGroups = new List<int>();
 
             Func<int> getEmptyGroup = () =>
             {
                 if (emptyGroups.Count == 0)
                 {
-                    groups.Add(new Group());
-                    return groups.Count - 1;
+                    m_groups.Add(new Group());
+                    return m_groups.Count - 1;
                 }
                 int index = emptyGroups[0];
                 emptyGroups.RemoveAt(0);
@@ -84,71 +81,134 @@ namespace NDelaunay
                 var p1 = e.edge.GetPoint(0);
                 var p2 = e.edge.GetPoint(1);
 
-                if (pointsGroup[p1.point].group == -1 && pointsGroup[p2.point].group == -1)
+                if (m_pointsGroup[p1.point].group == -1 && m_pointsGroup[p2.point].group == -1)
                 {
                     int nGroup = getEmptyGroup();
-                    pointsGroup[p1.point].group = nGroup;
-                    pointsGroup[p2.point].group = nGroup;
-                    groups[nGroup].points.Add(p1.point);
-                    groups[nGroup].points.Add(p2.point);
+                    m_pointsGroup[p1.point].group = nGroup;
+                    m_pointsGroup[p2.point].group = nGroup;
+                    m_groups[nGroup].points.Add(p1.point);
+                    m_groups[nGroup].points.Add(p2.point);
                 }
-                else if (pointsGroup[p1.point].group == pointsGroup[p2.point].group)
+                else if (m_pointsGroup[p1.point].group == m_pointsGroup[p2.point].group)
                     continue;
-                else if(pointsGroup[p1.point].group == -1)
+                else if(m_pointsGroup[p1.point].group == -1)
                 {
-                    if (!pointsGroup[p2.point].tail)
+                    if (!m_pointsGroup[p2.point].tail)
                         continue;
-                    int nGroup = pointsGroup[p2.point].group;
-                    if (groups[nGroup].points.Count >= maxGroupSize)
+                    int nGroup = m_pointsGroup[p2.point].group;
+                    if (m_groups[nGroup].points.Count >= maxGroupSize)
                         continue;
-                    pointsGroup[p1.point].group = nGroup;
-                    pointsGroup[p2.point].tail = false;
-                    groups[nGroup].points.Add(p1.point);
+                    m_pointsGroup[p1.point].group = nGroup;
+                    m_pointsGroup[p2.point].tail = false;
+                    m_groups[nGroup].points.Add(p1.point);
                 }
-                else if(pointsGroup[p2.point].group == -1)
+                else if(m_pointsGroup[p2.point].group == -1)
                 {
-                    if (!pointsGroup[p1.point].tail)
+                    if (!m_pointsGroup[p1.point].tail)
                         continue;
-                    int nGroup = pointsGroup[p1.point].group;
-                    if (groups[nGroup].points.Count >= maxGroupSize)
+                    int nGroup = m_pointsGroup[p1.point].group;
+                    if (m_groups[nGroup].points.Count >= maxGroupSize)
                         continue;
-                    pointsGroup[p2.point].group = nGroup;
-                    pointsGroup[p1.point].tail = false;
-                    groups[nGroup].points.Add(p2.point);
+                    m_pointsGroup[p2.point].group = nGroup;
+                    m_pointsGroup[p1.point].tail = false;
+                    m_groups[nGroup].points.Add(p2.point);
                 }
                 else //p1 != p2 && p1 != -1 &&& p2 != -1
                 {
-                    if (!pointsGroup[p1.point].tail || !pointsGroup[p2.point].tail)
+                    if (!m_pointsGroup[p1.point].tail || !m_pointsGroup[p2.point].tail)
                         continue;
-                    int nGroup1 = pointsGroup[p1.point].group;
-                    int nGroup2 = pointsGroup[p2.point].group;
-                    if (groups[nGroup1].points.Count + groups[nGroup2].points.Count >= maxGroupSize)
+                    int nGroup1 = m_pointsGroup[p1.point].group;
+                    int nGroup2 = m_pointsGroup[p2.point].group;
+                    if (m_groups[nGroup1].points.Count + m_groups[nGroup2].points.Count >= maxGroupSize)
                         continue;
-                    pointsGroup[p1.point].tail = false;
-                    pointsGroup[p2.point].tail = false;
+                    m_pointsGroup[p1.point].tail = false;
+                    m_pointsGroup[p2.point].tail = false;
                     int nMin, nMax;
-                    if(groups[nGroup1].points.Count < groups[nGroup2].points.Count)
+                    if(m_groups[nGroup1].points.Count < m_groups[nGroup2].points.Count)
                     { nMin = nGroup1; nMax = nGroup2; }
                     else { nMin = nGroup2; nMax = nGroup1; }
 
-                    Group gMin = groups[nMin];
-                    Group gMax = groups[nMax];
+                    Group gMin = m_groups[nMin];
+                    Group gMax = m_groups[nMax];
                     int capacity = gMin.points.Count + gMax.points.Count;
                     if (gMax.points.Capacity < capacity)
                         gMax.points.Capacity = capacity;
                     foreach (var p in gMin.points)
                     {
                         gMax.points.Add(p);
-                        pointsGroup[p].group = nMax;
+                        m_pointsGroup[p].group = nMax;
                     }
                     gMin.points.Clear();
                     emptyGroups.Add(nMin);
                 }
 
-                newGrid.AddEdge(p1, p2);
+                m_edgeIndexs.Add(e.edge.edge);
             }
 
-            return newGrid;
+            //clean empty groups
+            for(int i = 0; i < emptyGroups.Count(); i++)
+            {
+                foreach(var p in m_pointsGroup)
+                {
+                    if (p.group > emptyGroups[i])
+                        p.group--;
+                }
+                m_groups.RemoveAt(i);
+            }
+        }
+
+        public bool EdgeOnGroup(int index)
+        {
+            return m_edgeIndexs.Contains(index);
+        }
+
+        public int GetEdgeGroup(int index)
+        {
+            if (!EdgeOnGroup(index))
+                return -1;
+
+            var e = m_grid.GetEdge(index);
+            if (e.IsNull())
+                return -1;
+
+            var p1 = e.GetPoint(0);
+            var p2 = e.GetPoint(1);
+
+            if (m_pointsGroup[p1.point].group != m_pointsGroup[p2.point].group)
+                return -1;
+
+            return m_pointsGroup[p1.point].group;
+        }
+
+        public int GetNbGroup()
+        {
+            return m_groups.Count();
+        }
+
+        public int GetGroupNbPoint(int index)
+        {
+            if (index < 0 || index >= m_groups.Count)
+                return 0;
+
+            return m_groups[index].points.Count;
+        }
+
+        public int GetGroupPointIndex(int group, int point)
+        {
+            if (group < 0 || group >= m_groups.Count)
+                return -1;
+
+            Group g = m_groups[group];
+
+            if (point < 0 || point >= g.points.Count)
+                return -1;
+
+            return g.points[point];
+        }
+
+        public UnstructuredPeriodicGrid GetGrid()
+        {
+            return m_grid;
         }
     }
 }

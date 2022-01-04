@@ -60,7 +60,7 @@ class TestVoronoi : MonoBehaviour
 
         Logs.ImportantAdd("Delaunay " + stopWatch.Elapsed.TotalSeconds + " s");
 
-        m_grid = PeriodicGraph.MakeGraph(m_delaunay.GetGrid(), maxGroupSize);
+        //m_grid = PeriodicGraph.MakeGraph(m_delaunay.GetGrid(), maxGroupSize);
 
         Logs.ImportantAdd("Graph " + stopWatch.Elapsed.TotalSeconds + " s");
 
