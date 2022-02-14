@@ -183,7 +183,9 @@ public class Chunk
         bool found = false;
         for (layerIndex = topLayerIndex; layerIndex >= bottomLayerIndex; layerIndex--)
         {
-            var layer = m_layers[layerIndex];
+            ChunkLayer layer = null;
+            if (!m_layers.TryGetValue(layerIndex, out layer))
+                continue;
 
             height = 0;
             for (height = chunkSize - 1; height >= 0; height--)

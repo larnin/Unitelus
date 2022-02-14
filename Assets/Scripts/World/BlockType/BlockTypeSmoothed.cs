@@ -420,14 +420,16 @@ public class BlockTypeSmoothed : BlockTypeBase
     void GetBlockType(MatrixView<BlockData> neighbors, out ShapeType shape, out Rotation rotation)
     {
         BlockID id = neighbors.GetCenter().id;
+        var type = BlockTypeList.instance.Get(id);
 
         for (int i = -1; i <= 1; i++)
             for (int j = -1; j <= 1; j++)
                 for (int k = -1; k <= 1; k++)
                 {
                     var b = neighbors.Get(i, j, k);
+                    var testType = BlockTypeList.instance.Get(b.id);
 
-                    tempBlocks.Set(i + 1, j + 1, k + 1, b.id == id || BlockTypeList.instance.Get(b.id).IsFull());
+                    tempBlocks.Set(i + 1, j + 1, k + 1, b.id == id || testType.type == type.type || testType.IsFull());
                 }
 
         int nbShape = m_shapes.Count();

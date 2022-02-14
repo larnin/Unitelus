@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Noise;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -129,35 +130,64 @@ public class WorldGenerator
         
         int minHeight = 2;
 
+        int worldSize = m_settings.main.GetWorldSize();
+
+        Cliff cliff = new Cliff(worldSize, 25, 10, 1, m_settings.main.seed + 2);
+
         BlockData b;
         b.id = BlockID.INVALID;
         b.data = 0;
 
-        int worldSize = m_settings.main.GetWorldSize();
-
         for (int x = 0; x < worldSize; x++)
         {
-            for (int z = 0; z < worldSize; z++)
+            for(int z = 0; z < worldSize; z++)
             {
-                var biome = m_biomes.GetBiome(x, z);
-                if (biome == BiomeType.Invalid)
-                    b.id = BlockID.INVALID;
-                else if (biome == BiomeType.Desert)
-                    b.id = BlockID.SAND;
-                else if (biome == BiomeType.Mountain)
-                    b.id = BlockID.STONE;
-                else if (biome == BiomeType.Ocean)
-                    b.id = BlockID.WATER;
-                else if (biome == BiomeType.Plain)
-                    b.id = BlockID.GRASS;
-                else if (biome == BiomeType.Snow)
-                    b.id = BlockID.SNOW;
-                else b.id = BlockID.INVALID;
+                int height = Mathf.FloorToInt(cliff.GetHeight(new Vector2(x, z)) * 50);
 
-                world.SetBlock(x, minHeight, z, b, false);
+                if (height < minHeight)
+                    minHeight = height;
+
+                b.id = BlockID.GRASS;
+                world.SetBlock(x, height, z, b, false);
+
+                b.id = BlockID.DIRT;
+                for (int i = 1; i <= 2; i++)
+                    world.SetBlock(x, height - i, z, b, false);
             }
         }
-        minHeight--;
+
+        minHeight-= 4;
+        b.id = BlockID.STONE;
+
+        //BlockData b;
+        //b.id = BlockID.INVALID;
+        //b.data = 0;
+
+        //int worldSize = m_settings.main.GetWorldSize();
+
+        //for (int x = 0; x < worldSize; x++)
+        //{
+        //    for (int z = 0; z < worldSize; z++)
+        //    {
+        //        var biome = m_biomes.GetBiome(x, z);
+        //        if (biome == BiomeType.Invalid)
+        //            b.id = BlockID.INVALID;
+        //        else if (biome == BiomeType.Desert)
+        //            b.id = BlockID.SAND;
+        //        else if (biome == BiomeType.Mountain)
+        //            b.id = BlockID.STONE;
+        //        else if (biome == BiomeType.Ocean)
+        //            b.id = BlockID.WATER;
+        //        else if (biome == BiomeType.Plain)
+        //            b.id = BlockID.GRASS;
+        //        else if (biome == BiomeType.Snow)
+        //            b.id = BlockID.SNOW;
+        //        else b.id = BlockID.INVALID;
+
+        //        world.SetBlock(x, minHeight, z, b, false);
+        //    }
+        //}
+        //minHeight--;
 
 
         /*List<Perlin> perlins = new List<Perlin>();
@@ -208,12 +238,12 @@ public class WorldGenerator
         {
             for (int z = 0; z < worldSize; z++)
             {
-                int height = world.GetTopBlockHeight(x, z);
+                int height = world.GetBottomBlockHeight(x, z) - 1;
 
                 if (height <= minHeight)
                     continue;
-                b.id = world.GetBlock(x, height, z).id;
-                for (int y = height - 1; y >= minHeight; y--)
+
+                for (int y = height; y >= minHeight; y--)
                     world.SetBlock(x, y, z, b, false);
             }
         }
