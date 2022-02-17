@@ -17,6 +17,9 @@ public class BlockTypeWater : BlockTypeBase
     public BlockTypeWater() : base()
     {
         type = BlockType.Water;
+        canWalkOn = false;
+        canWalkThrough = true;
+        canFloatTurough = true;
     }
 
     public override bool IsFaceFull(BlockFace face, byte data = 0)

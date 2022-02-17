@@ -14,6 +14,7 @@ public class Matrix<T>
     public int width { get { return m_width; } }
     public int depth { get { return m_depth; } }
     public int height { get { return m_height; } }
+    public Vector3Int size { get { return new Vector3Int(m_width, m_height, m_depth); } }
 
     T[] m_data;
 

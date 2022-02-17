@@ -10,6 +10,9 @@ public class BlockTypeEmpty : BlockTypeBase
     public BlockTypeEmpty() : base()
     {
         type = BlockType.Empty;
+        canWalkOn = false;
+        canWalkThrough = true;
+        canFloatTurough = false;
     }
 
     public override bool IsFaceFull(BlockFace face, byte data = 0)

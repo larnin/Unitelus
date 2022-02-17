@@ -314,6 +314,59 @@ public class World
         return mat;
     }
 
+    public ChunkView GetChunkView(BoundsInt bounds)
+    {
+        return GetChunkView(bounds.min, bounds.size);
+    }
+
+    public ChunkView GetChunkView(Vector3Int pos, Vector3Int size)
+    {
+        return GetChunkView(pos.x, pos.y, pos.z, size.x, size.y, size.z);
+    }
+
+    public ChunkView GetChunkView(int x, int y, int z, int sizeX, int sizeY, int sizeZ)
+    {
+        if(sizeX < 0)
+        {
+            x += sizeX;
+            sizeX *= -1;
+        }
+        if (sizeY < 0)
+        {
+            y += sizeY;
+            sizeY *= -1;
+        }
+        if (sizeZ < 0)
+        {
+            z += sizeZ;
+            sizeZ *= -1;
+        }
+
+        int chunkSize = Chunk.chunkSize;
+
+        int minX, minY, minZ;
+        int maxX, maxY, maxZ;
+        PosToUnclampedChunkPos(x, y, z, out minX, out minY, out minZ);
+        PosToUnclampedChunkPos(x + sizeX, y + sizeY, z + sizeZ, out maxX, out maxY, out maxZ);
+
+        ChunkView view = new ChunkView(new Vector3Int(minX * chunkSize, minY * chunkSize, minZ * chunkSize), new Vector3Int(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1));
+
+        for(int i = minX; i <= maxX; i++)
+        {
+            for (int k = minZ; k <= maxZ; k++)
+            {
+                int cI, ck;
+                ClampChunkPos(i, k, out cI, out ck);
+                Chunk c = GetChunk(cI, ck);
+
+                for (int j = minY; j <= maxY; j++)
+                    view.SetChunkLayer(i - minX, j - minY, j - minZ, c.GetLayer(j));
+            }
+        }
+
+        return view;
+    }
+
     void ClampChunkPos(int x, int z, out int outX, out int outZ)
     {
         if(!m_worldLoop)
@@ -357,6 +410,15 @@ public class World
         if (z < 0)
             outZ = (z + 1) / Chunk.chunkSize - 1;
         else outZ = z / Chunk.chunkSize;
+    }
+
+    public void PosToUnclampedChunkPos(int x, int y, int z, out int outX, out int outY, out int outZ)
+    {
+        PosToUnclampedChunkPos(x, z, out outX, out outZ);
+
+        if (y < 0)
+            outY = (y + 1) / Chunk.chunkSize - 1;
+        else outY = y / Chunk.chunkSize;
     }
 
     public void PosToChunkPos(int x, int z, out int outX, out int outZ)

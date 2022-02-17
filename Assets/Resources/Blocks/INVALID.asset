@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_id: 0
   m_type: 1
+  m_pathWeight: 100000000
+  m_canWalkThrough: 0
+  m_canWalkOn: 1
+  m_canFloatThrough: 0
   m_material: {fileID: 2100000, guid: e92fbeddba7e4e84692345bfbc72f3bf, type: 2}
   m_UV:
     uvType: 0

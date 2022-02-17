@@ -24,6 +24,13 @@ public class WorldCreatedEvent
     }
 }
 
+public class GetWorldEvent
+{
+    public World world;
+
+    public GetWorldEvent() { }
+}
+
 public class GameLoaderStateEvent
 {
     public GameLoadingState oldState;

@@ -25,6 +25,7 @@ public class PlaceholderWorld : MonoBehaviour
         instance = this;
 
         m_subscriberList.Add(new Event<WorldCreatedEvent>.Subscriber(OnWorldCreated));
+        m_subscriberList.Add(new Event<GetWorldEvent>.Subscriber(GetWorld));
         m_subscriberList.Subscribe();
     }
 
@@ -36,5 +37,10 @@ public class PlaceholderWorld : MonoBehaviour
     void OnWorldCreated(WorldCreatedEvent e)
     {
         m_world = e.world;
+    }
+
+    void GetWorld(GetWorldEvent e)
+    {
+        e.world = m_world;
     }
 }

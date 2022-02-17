@@ -102,6 +102,9 @@ public class BlockTypeSmoothed : BlockTypeBase
     public BlockTypeSmoothed() : base()
     {
         type = BlockType.Smoothed;
+        canWalkOn = true;
+        canWalkThrough = false;
+        canFloatTurough = false;
     }
 
     public override bool IsFaceFull(BlockFace face, byte data = 0)

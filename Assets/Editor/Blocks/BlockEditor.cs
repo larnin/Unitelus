@@ -175,15 +175,24 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
         return isDestroyed;
     }
 
+    void DrawBlockGeneric()
+    {
+        var value = ValueEntry.SmartValue;
+        var block = value.block;
+        block.pathWeight = EditorGUILayout.FloatField("Path weight", block.pathWeight);
+    }
+
     void DrawBlockTypeEmpty()
     {
         EditorGUILayout.LabelField("Empty block");
+        DrawBlockGeneric();
         EditorGUILayout.HelpBox("Nothing to edit here, this block type is invisible and have no effect", MessageType.Info, true);
     }
 
     void DrawBlockTypeCube()
     {
         EditorGUILayout.LabelField("Cubic block");
+        DrawBlockGeneric();
         var value = ValueEntry.SmartValue;
         var block = value.block as BlockTypeCube;
         DrawBlockUV(block.m_UV, ref value.m_editUVIndex);
@@ -194,6 +203,7 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
     void DrawBlockTypeSmoothed()
     {
         EditorGUILayout.LabelField("Smoothed block");
+        DrawBlockGeneric();
         var value = ValueEntry.SmartValue;
         var block = value.block as BlockTypeSmoothed;
         DrawBlockUV(block.m_UV, ref value.m_editUVIndex);
@@ -204,6 +214,7 @@ public class OneBlockEditorDrawer : OdinValueDrawer<OneBlockEditor>
     void DrawBlockTypeWater()
     {
         EditorGUILayout.LabelField("Water block");
+        DrawBlockGeneric();
         var value = ValueEntry.SmartValue;
         var block = value.block as BlockTypeWater;
 

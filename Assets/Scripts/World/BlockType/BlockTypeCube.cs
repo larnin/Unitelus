@@ -18,6 +18,9 @@ public class BlockTypeCube : BlockTypeBase
     public BlockTypeCube()
     {
         type = BlockType.Cube;
+        canWalkOn = true;
+        canWalkThrough = false;
+        canFloatTurough = false;
     }
 
     public override bool IsFaceFull(BlockFace face, byte data = 0)
