@@ -32,7 +32,7 @@ public class Path
     Vector3Int m_end;
 
     List<Vector3Int> m_points = new List<Vector3Int>();
-    Vector3Int m_target;
+    Vector3 m_target;
     int m_currentPoint;
     Status m_status = Status.Invalid;
 
@@ -111,6 +111,7 @@ public class Path
         if (m_start == m_end)
         {
             m_points.Add(m_start);
+            m_target = m_start + new Vector3(0.5f, 0.5f, 0.5f);
             m_status = Status.Valid;
             return true;
         }
@@ -157,6 +158,7 @@ public class Path
 
         Clean();
         m_status = Status.Valid;
+        m_target = m_start + new Vector3(0.5f, 0.5f, 0.5f);
         return true;
     }
 
@@ -188,7 +190,7 @@ public class Path
             if (IsVisited(pos))
                 continue;
 
-            float weight = CanWalkOn(pos);
+            float weight = CanWalkOn(pos, node.current);
             if(weight < 0)
                 continue;
 
@@ -239,7 +241,7 @@ public class Path
     }
 
     // return the walk weight of the block or -1 if not walkable
-    float CanWalkOn(Vector3Int pos)
+    float CanWalkOn(Vector3Int pos, Vector3Int previousPos)
     {
         //first, test ground
         //the bloc must be canFloatTurough or canWalkThrough + canWalkOn for the block below
@@ -275,23 +277,63 @@ public class Path
             }
         }
 
+        //if the agent need to go down or up, we check blocks with vertical offset
+        int vertical = pos.y - previousPos.y;
+        if (vertical < 0) //go down
+        {
+            for (int i = -radius; i <= radius; i++)
+            {
+                for (int k = -radius; k <= radius; k++)
+                {
+                    for(int j = 0; j < -vertical; j++)
+                    {
+                        var b = m_view.GetBlock(pos + new Vector3Int(i, j + m_settings.agentHeight, k));
+                        var type = BlockTypeList.instance.Get(b.id);
+                        if (!type.canWalkThrough)
+                            return -1;
+                    }
+                }
+            }
+        }
+        else if (vertical > 0) // go up
+        {
+            for (int i = -radius; i <= radius; i++)
+            {
+                for (int k = -radius; k <= radius; k++)
+                {
+                    for (int j = 0; j < vertical; j++)
+                    {
+                        var b = m_view.GetBlock(previousPos + new Vector3Int(i, j + m_settings.agentHeight, k));
+                        var type = BlockTypeList.instance.Get(b.id);
+                        if (!type.canWalkThrough)
+                            return -1;
+                    }
+                }
+            }
+        }
+
         return typeCenter.pathWeight;
     }
 
     Vector3Int[] GetNextsPos(Vector3Int current)
     {
-        var pos = new Vector3Int[m_settings.agentStepUp + m_settings.agentStepDown + 4];
+        var pos = new Vector3Int[(m_settings.agentStepUp + m_settings.agentStepDown + 1) * 3 * 3 - 1];
 
-        pos[0] = current + new Vector3Int(1, 0, 0);
-        pos[1] = current + new Vector3Int(-1, 0, 0);
-        pos[2] = current + new Vector3Int(0, 0, 1);
-        pos[3] = current + new Vector3Int(0, 0, -1);
+        int index = 0;
 
-        for (int i = 1; i <= m_settings.agentStepDown; i++)
-            pos[3 + i] = current + new Vector3Int(0, -i, 0);
+        for(int i = -1; i <= 1; i++)
+        {
+            for (int j = -m_settings.agentStepDown; j <= m_settings.agentStepUp; j++)
+            {
+                for(int k = -1; k <= 1; k++)
+                {
+                    if (i == 0 && j == 0 && k == 0)
+                        continue;
 
-        for (int i = 1; i <= m_settings.agentStepUp; i++)
-            pos[3 + m_settings.agentStepDown + i] = current + new Vector3Int(0, i, 0);
+                    pos[index++] = current + new Vector3Int(i, j, k);
+                }
+            }
+        }
 
         return pos;
     }
@@ -369,10 +411,8 @@ public class Path
 
         for(int i = 0; i < m_points.Count - 1; i++)
         {
-            Vector3 pos1 = m_points[i];
-            pos1 += new Vector3(0.5f, 0.5f, 0.5f);
-            Vector3 pos2 = m_points[i + 1];
-            pos2 += new Vector3(0.5f, 0.5f, 0.5f);
+            Vector3 pos1 = m_points[i] + new Vector3(0.5f, 0.5f, 0.5f);
+            Vector3 pos2 = m_points[i + 1] + new Vector3(0.5f, 0.5f, 0.5f);
             DebugDraw.Line(pos1, pos2, Color.red);
         }
 

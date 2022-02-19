@@ -12,7 +12,7 @@ public class ChunkView
 
     public ChunkView(Vector3Int position, Vector3Int size)
     {
-        m_layers = new Matrix<ChunkLayer>(size.x, size.y, size.y);
+        m_layers = new Matrix<ChunkLayer>(size.x, size.y, size.z);
         m_position = position;
     }
 
