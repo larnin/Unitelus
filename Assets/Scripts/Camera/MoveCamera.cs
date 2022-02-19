@@ -10,9 +10,9 @@ public class MoveCamera : MonoBehaviour
     [SerializeField] float m_distanceSpeed = 5;
     [SerializeField] float m_angleSpeed = 1;
 
-    float m_rotation = 0;
-    float m_distance = 15;
-    float m_angle = 0;
+    [SerializeField] float m_rotation = 0;
+    [SerializeField] float m_distance = 15;
+    [SerializeField] float m_angle = 0;
 
     void Update()
     {

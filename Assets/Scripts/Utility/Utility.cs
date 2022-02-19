@@ -192,6 +192,24 @@ public static class Utility
         return - Mathf.Min(dX, dY, dZ);
     }
 
+    public static float DistanceBetweenCubes(Bounds bounds1, Bounds bounds2)
+    {
+        if (bounds1.Intersects(bounds2))
+            return 0;
+
+        Vector3 halfSize1 = bounds1.extents;
+        Vector3 halfSize2 = bounds2.extents;
+
+        Vector3 center1 = bounds1.center;
+        Vector3 center2 = bounds2.center;
+
+        float dX = Mathf.Max(Mathf.Abs(center1.x - center2.x) - halfSize1.x - halfSize2.x, 0);
+        float dy = Mathf.Max(Mathf.Abs(center1.y - center2.y) - halfSize1.y - halfSize2.y, 0);
+        float dz = Mathf.Max(Mathf.Abs(center1.z - center2.z) - halfSize1.z - halfSize2.z, 0);
+
+        return Mathf.Sqrt(dX * dX + dy * dy + dz * dz);
+    }
+
     static float DistanceToPoint(Vector3 pos, Vector3 point)
     {
         return (point - pos).magnitude;

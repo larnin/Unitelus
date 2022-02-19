@@ -47,7 +47,7 @@ public class Path
         return m_points.Count > 0;
     }
 
-    public Status status()
+    public Status GetStatus()
     {
         return m_status;
     }
@@ -82,6 +82,11 @@ public class Path
     List<Node> m_nextNodes = new List<Node>(); //sorted
     ChunkView m_view = null;
 
+    public bool Generate(Vector3 start, Vector3 end)
+    {
+        return Generate(Vector3Int.FloorToInt(start), Vector3Int.FloorToInt(end));
+    }
+
     public bool Generate(Vector3Int start, Vector3Int end)
     {
         m_status = Status.Generating;
@@ -112,6 +117,8 @@ public class Path
 
         m_view = GetView();
 
+        PlaceStartAndEndOnValidPosition();
+
         m_visitedNodes.Clear();
         m_nextNodes.Clear();
 
@@ -125,6 +132,11 @@ public class Path
                 foundPath = true;
                 break;
             }
+        }
+
+        for(int i = 0; i < m_visitedNodes.Count; i++)
+        {
+            DebugDraw.Cube(m_visitedNodes[i].current, new Vector3(1, 1, 1), Color.blue, 1);
         }
 
         if(!foundPath || m_visitedNodes.Count == 0)
@@ -146,6 +158,19 @@ public class Path
         Clean();
         m_status = Status.Valid;
         return true;
+    }
+
+    void PlaceStartAndEndOnValidPosition()
+    {
+        var bStart = m_view.GetBlock(m_start);
+        var typeStart = BlockTypeList.instance.Get(bStart.id);
+        if (!typeStart.canWalkThrough)
+            m_start[1]++;
+
+        var bEnd = m_view.GetBlock(m_end);
+        var typeEnd = BlockTypeList.instance.Get(bEnd.id);
+        if (!typeEnd.canWalkThrough)
+            m_end[1]++;
     }
 
     // return true if the current case is the end
@@ -253,7 +278,7 @@ public class Path
         return typeCenter.pathWeight;
     }
 
-    public Vector3Int[] GetNextsPos(Vector3Int current)
+    Vector3Int[] GetNextsPos(Vector3Int current)
     {
         var pos = new Vector3Int[m_settings.agentStepUp + m_settings.agentStepDown + 4];
 
@@ -262,11 +287,11 @@ public class Path
         pos[2] = current + new Vector3Int(0, 0, 1);
         pos[3] = current + new Vector3Int(0, 0, -1);
 
-        for (int i = 0; i < m_settings.agentStepDown; i++)
-            pos[3 + i] = current + new Vector3Int(0, -i - 1, 0);
+        for (int i = 1; i <= m_settings.agentStepDown; i++)
+            pos[3 + i] = current + new Vector3Int(0, -i, 0);
 
-        for (int i = 0; i < m_settings.agentStepUp; i++)
-            pos[3 + m_settings.agentStepDown + i] = current + new Vector3Int(0, i + 1, 0);
+        for (int i = 1; i <= m_settings.agentStepUp; i++)
+            pos[3 + m_settings.agentStepDown + i] = current + new Vector3Int(0, i, 0);
 
         return pos;
     }
@@ -335,5 +360,23 @@ public class Path
     public Vector3 GetPos()
     {
         return m_target;
+    }
+
+    public void Draw()
+    {
+        if (m_status != Status.Valid)
+            return;
+
+        for(int i = 0; i < m_points.Count - 1; i++)
+        {
+            Vector3 pos1 = m_points[i];
+            pos1 += new Vector3(0.5f, 0.5f, 0.5f);
+            Vector3 pos2 = m_points[i + 1];
+            pos2 += new Vector3(0.5f, 0.5f, 0.5f);
+            DebugDraw.Line(pos1, pos2, Color.red);
+        }
+
+        DebugDraw.Cube(m_start, new Vector3(1, 1, 1), Color.red);
+        DebugDraw.Cube(m_end, new Vector3(1, 1, 1), Color.red);
     }
 }

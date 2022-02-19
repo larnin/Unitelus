@@ -13,6 +13,7 @@ public class ChunkView
     public ChunkView(Vector3Int position, Vector3Int size)
     {
         m_layers = new Matrix<ChunkLayer>(size.x, size.y, size.y);
+        m_position = position;
     }
 
     public void SetChunkLayer(Vector3Int pos, ChunkLayer chunk)

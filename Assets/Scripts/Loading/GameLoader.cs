@@ -17,6 +17,7 @@ public enum GameLoadingState
 public class GameLoader : MonoBehaviour
 {
     [SerializeField] GameObject m_playerPrefab = null;
+    [SerializeField] GameObject m_testFollowerPrefab = null;
 
     WorldGeneratorSettings m_settings = null;
     WorldGenerator m_generator = null;
@@ -146,8 +147,10 @@ public class GameLoader : MonoBehaviour
         var pos = SearchSpawnLocation();
 
         var player = Instantiate(m_playerPrefab);
-
         player.transform.position = pos;
+
+        var testFollower = Instantiate(m_testFollowerPrefab);
+        testFollower.transform.position = pos;
 
         m_stateText = "Prerender world";
         ChangeState(GameLoadingState.prerender);

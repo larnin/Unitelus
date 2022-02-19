@@ -360,7 +360,7 @@ public class World
                 Chunk c = GetChunk(cI, ck);
 
                 for (int j = minY; j <= maxY; j++)
-                    view.SetChunkLayer(i - minX, j - minY, j - minZ, c.GetLayer(j));
+                    view.SetChunkLayer(i - minX, j - minY, k - minZ, c.GetLayer(j));
             }
         }
 

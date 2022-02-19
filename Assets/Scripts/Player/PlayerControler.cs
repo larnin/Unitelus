@@ -55,7 +55,7 @@ public class PlayerControler : MonoBehaviour
         Event<CenterUpdatedEventInstant>.Broadcast(new CenterUpdatedEventInstant(transform.position));
         m_oldPosition = transform.position;
     }
-    
+
     void FixedUpdate()
     {
         GetDirectionEvent direction = new GetDirectionEvent();
