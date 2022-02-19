@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Noise
 {
@@ -212,7 +213,7 @@ namespace Noise
         public void GetOrderedTrianglesAndEdges(UnstructuredPeriodicGrid.PointView point, int initialTriangle, List<UnstructuredPeriodicGrid.TriangleView> triangles, List<UnstructuredPeriodicGrid.EdgeView> edges)
         {
             int nbTriangle = point.GetTriangleCount();
-            Debug.Assert(nbTriangle == point.GetEdgeCount());
+            Assert.IsTrue(nbTriangle == point.GetEdgeCount());
 
             m_tempTriangles.Clear();
             m_tempEdges.Clear();
@@ -226,7 +227,7 @@ namespace Noise
             for(int i = 0; i < nbTriangle; i++)
             {
                 int index = m_tempTriangles.FindIndex(x => { return x.triangle == initialTriangle; });
-                Debug.Assert(index >= 0);
+                Assert.IsTrue(index >= 0);
                 triangles.Add(m_tempTriangles[index]);
                 m_tempTriangles.RemoveAt(index);
                 index = -1;
@@ -247,7 +248,7 @@ namespace Noise
                         break;
                     }
                 }
-                Debug.Assert(index >= 0);
+                Assert.IsTrue(index >= 0);
                 edges.Add(m_tempEdges[index]);
                 m_tempEdges.RemoveAt(index);
             }

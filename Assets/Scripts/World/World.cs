@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class World
 {
@@ -117,7 +118,7 @@ public class World
             PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
 
             var chunk = GetChunk(chunkX, chunkZ);
-            Debug.Assert(chunk != null);
+            Assert.IsTrue(chunk != null);
 
             lock (dataLock)
             {
@@ -133,13 +134,13 @@ public class World
 
     public void SetBlocks(int x, int y, int z, Matrix<BlockData> blocks, int blocksX, int blocksY, int blocksZ, int blocksSizeX, int blocksSizeY, int blocksSizeZ, bool updateData = true)
     {
-        Debug.Assert(blocksX + blocksSizeX <= blocks.width);
-        Debug.Assert(blocksY + blocksSizeY <= blocks.height);
-        Debug.Assert(blocksZ + blocksSizeZ <= blocks.depth);
+        Assert.IsTrue(blocksX + blocksSizeX <= blocks.width);
+        Assert.IsTrue(blocksY + blocksSizeY <= blocks.height);
+        Assert.IsTrue(blocksZ + blocksSizeZ <= blocks.depth);
 
         if (updateData)
         {
-            Debug.Assert(false);
+            Assert.IsTrue(false);
             //todo i'm too lasy to do that shit now
         }
         else
@@ -210,7 +211,7 @@ public class World
         PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
 
         var chunk = GetChunk(chunkX, chunkZ);
-        Debug.Assert(chunk != null);
+        Assert.IsTrue(chunk != null);
         return chunk.GetTopBlockHeight(blockX, blockZ);
     }
 
@@ -223,7 +224,7 @@ public class World
         PosToBlockPosAndChunkPos(x, z, out blockX, out blockZ, out chunkX, out chunkZ);
 
         var chunk = GetChunk(chunkX, chunkZ);
-        Debug.Assert(chunk != null);
+        Assert.IsTrue(chunk != null);
         return chunk.GetBottomBlockHeight(blockX, blockZ);
     }
 
@@ -397,7 +398,7 @@ public class World
             else z = z % m_chunkNb;
 
         }
-        Debug.Assert(x >= 0 && x < m_chunkNb && z >= 0 && z < m_chunkNb);
+        Assert.IsTrue(x >= 0 && x < m_chunkNb && z >= 0 && z < m_chunkNb);
 
         return x * m_chunkNb + z;
     }
@@ -433,12 +434,12 @@ public class World
                 z = (z % worldSize + worldSize) % worldSize;
             else z = z % worldSize;
         }
-        Debug.Assert(x >= 0 && z >= 0);
+        Assert.IsTrue(x >= 0 && z >= 0);
 
         x = x / Chunk.chunkSize;
         z = z / Chunk.chunkSize;
 
-        Debug.Assert(x < m_chunkNb && z < m_chunkNb);
+        Assert.IsTrue(x < m_chunkNb && z < m_chunkNb);
 
         outX = x;
         outZ = z;
@@ -457,7 +458,7 @@ public class World
                 z = (z % worldSize + worldSize) % worldSize;
             else z = z % worldSize;
         }
-        Debug.Assert(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
+        Assert.IsTrue(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
 
         outX = x % Chunk.chunkSize;
         outZ = z % Chunk.chunkSize;
@@ -476,12 +477,12 @@ public class World
                 z = (z % worldSize + worldSize) % worldSize;
             else z = z % worldSize;
         }
-        Debug.Assert(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
+        Assert.IsTrue(x >= 0 && z >= 0 && x < worldSize && z < worldSize);
 
         outChunkX = x / Chunk.chunkSize;
         outChunkZ = z / Chunk.chunkSize;
 
-        Debug.Assert(outChunkX < m_chunkNb && outChunkZ < m_chunkNb);
+        Assert.IsTrue(outChunkX < m_chunkNb && outChunkZ < m_chunkNb);
 
         outBlockX = x % Chunk.chunkSize;
         outBlockZ = z % Chunk.chunkSize;
@@ -489,8 +490,8 @@ public class World
 
     public void BlockPosInChunkToPos(int x, int z, int chunkX, int chunkZ, out int outX, out int outZ)
     {
-        Debug.Assert(x >= 0 && x < Chunk.chunkSize && z >= 0 && z < Chunk.chunkSize);
-        Debug.Assert(m_worldLoop || (chunkX >= 0 && chunkX < m_chunkNb && chunkZ >= 0 && chunkZ < m_chunkNb));
+        Assert.IsTrue(x >= 0 && x < Chunk.chunkSize && z >= 0 && z < Chunk.chunkSize);
+        Assert.IsTrue(m_worldLoop || (chunkX >= 0 && chunkX < m_chunkNb && chunkZ >= 0 && chunkZ < m_chunkNb));
 
         outX = x + chunkX * Chunk.chunkSize;
         outZ = z + chunkZ * Chunk.chunkSize;
@@ -571,7 +572,7 @@ public class World
             }
         }
 
-        Debug.Assert(bestIndex >= 0);
+        Assert.IsTrue(bestIndex >= 0);
 
         return possibleBPos[bestIndex] - posA;
     }

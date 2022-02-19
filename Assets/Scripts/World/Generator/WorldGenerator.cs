@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class WorldGenerator
 {
@@ -81,7 +82,7 @@ public class WorldGenerator
         {
             if(m_state == State.generating)
             {
-                Debug.Assert(false);
+                Assert.IsTrue(false);
                 return;
             }
 
@@ -90,7 +91,7 @@ public class WorldGenerator
 
         statusText = "Generating ...";
 
-        Debug.Assert(m_thread == null);
+        Assert.IsTrue(m_thread == null);
 
         m_settings = settings;
 
@@ -308,7 +309,7 @@ public class WorldGenerator
 
     static void SetWorldBiome(World world, BiomeGenerator biomes)
     {
-        Debug.Assert(world.size == biomes.GetSize());
+        Assert.IsTrue(world.size == biomes.GetSize());
         int size = world.size;
         for(int i = 0; i < size; i++)
         {

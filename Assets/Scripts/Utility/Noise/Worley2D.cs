@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Noise
 {
@@ -107,7 +108,7 @@ namespace Noise
             int iX = Mathf.FloorToInt(x / m_size * m_frequency);
             int iY = Mathf.FloorToInt(y / m_size * m_frequency);
 
-            Debug.Assert(iX >= 0 && iX < m_frequency && iY >= 0 && iY < m_frequency);
+            Assert.IsTrue(iX >= 0 && iX < m_frequency && iY >= 0 && iY < m_frequency);
 
             return new Vector2Int(iX, iY);
         }

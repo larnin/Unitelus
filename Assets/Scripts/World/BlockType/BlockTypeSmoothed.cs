@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 /* Data : 8bits
  * [0-1] - Rotation
@@ -175,7 +176,7 @@ public class BlockTypeSmoothed : BlockTypeBase
                 BlockRenderer.DrawThetrahedral(pos, meshParams, m_data);
                 break;
             default:
-                Debug.Assert(false);
+                Assert.IsTrue(false);
                 break;
         }
     }
@@ -464,7 +465,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             }
         }
 
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         shape = ShapeType.Cubic;
         rotation = Rotation.Rot0;
     }

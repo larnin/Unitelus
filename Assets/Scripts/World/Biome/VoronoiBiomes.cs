@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NDelaunay;
 using NRand;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class VoronoiBiomes
 {
@@ -288,9 +289,9 @@ public class VoronoiBiomes
         int vertex1, vertex2, vertex3;
         m_grid.GetTriangleVerticesInfosAt(pos, out pos1, out vertex1, out pos2, out vertex2, out pos3, out vertex3);
 
-        Debug.Assert(vertex1 >= 0 && vertex1 < m_vertices.Count);
-        Debug.Assert(vertex2 >= 0 && vertex2 < m_vertices.Count);
-        Debug.Assert(vertex3 >= 0 && vertex3 < m_vertices.Count);
+        Assert.IsTrue(vertex1 >= 0 && vertex1 < m_vertices.Count);
+        Assert.IsTrue(vertex2 >= 0 && vertex2 < m_vertices.Count);
+        Assert.IsTrue(vertex3 >= 0 && vertex3 < m_vertices.Count);
 
         type1 = m_vertices[vertex1].biome;
         type2 = m_vertices[vertex2].biome;

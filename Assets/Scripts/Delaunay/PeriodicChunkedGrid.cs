@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace NDelaunay
 {
@@ -55,7 +56,7 @@ namespace NDelaunay
 
         public PeriodicChunkedGrid(int totalSize, int chunkSize)
         {
-            Debug.Assert(totalSize % chunkSize == 0);
+            Assert.IsTrue(totalSize % chunkSize == 0);
 
             m_chunkNb = totalSize / chunkSize;
             m_chunkSize = chunkSize;
@@ -147,7 +148,7 @@ namespace NDelaunay
             int triangle = chunk.GetTriangle(pos);
             if (triangle == -1)
             {
-                Debug.Assert(false);
+                Assert.IsTrue(false);
                 vertex1 = -1;
                 vertex2 = -1;
                 vertex3 = -1;
@@ -170,7 +171,7 @@ namespace NDelaunay
             int triangle = chunk.GetTriangle(pos);
             if(triangle == -1)
             {
-                Debug.Assert(false);
+                Assert.IsTrue(false);
                 pos1 = Vector2.zero;
                 pos2 = Vector2.zero;
                 pos3 = Vector2.zero;
@@ -193,7 +194,7 @@ namespace NDelaunay
             int triangle = chunk.GetTriangle(pos);
             if (triangle == -1)
             {
-                Debug.Assert(false);
+                Assert.IsTrue(false);
                 vertex1 = -1;
                 vertex2 = -1;
                 vertex3 = -1;

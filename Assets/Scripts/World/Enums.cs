@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public enum Rotation
 {
@@ -31,7 +32,7 @@ public static class RotationEx
                 break;
         }
 
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         return new Vector2Int(0, 0);
     }
 
@@ -132,7 +133,7 @@ public static class BlockFaceEx
             case BlockFace.Back:
                 return new Vector3(0, 0, -1);
         }
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         return new Vector3(0, 0, 0);
     }
 
@@ -153,7 +154,7 @@ public static class BlockFaceEx
             case BlockFace.Back:
                 return new Vector3Int(0, 0, -1);
         }
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         return new Vector3Int(0, 0, 0);
     }
 
@@ -181,7 +182,7 @@ public static class BlockFaceEx
         if (!xpz && xmz && !zpy && !zmy)
             return BlockFace.Back;
 
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         return BlockFace.Front;
     }
 
@@ -206,7 +207,7 @@ public static class BlockFaceEx
                     face = BlockFace.Back;
                     break;
                 default:
-                    Debug.Assert(false);
+                    Assert.IsTrue(false);
                     break;
             }
 
@@ -238,7 +239,7 @@ public static class BlockFaceEx
                     face = BlockFace.Front;
                     break;
                 default:
-                    Debug.Assert(false);
+                    Assert.IsTrue(false);
                     break;
             }
 

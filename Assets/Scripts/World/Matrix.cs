@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class Matrix<T>
 {
@@ -64,7 +65,7 @@ public class Matrix<T>
 
     int PosToIndex(int x, int y, int z)
     {
-        Debug.Assert(x >= 0 && x < m_width && y >= 0 && y < m_height && z >= 0 && z < m_depth);
+        Assert.IsTrue(x >= 0 && x < m_width && y >= 0 && y < m_height && z >= 0 && z < m_depth);
 
         return (x * m_height + y) * m_depth + z; 
     }

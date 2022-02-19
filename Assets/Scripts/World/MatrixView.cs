@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class MatrixView<T>
 {
@@ -89,12 +90,12 @@ public class MatrixView<T>
 
     public T Get(int x, int y, int z)
     {
-        Debug.Assert(m_mat != null);
+        Assert.IsTrue(m_mat != null);
         x += m_x;
         y += m_y;
         z += m_z;
 
-        Debug.Assert(x >= 0 && y >= 0 && z >= 0 && x < m_mat.width && y < m_mat.height && z < m_mat.depth);
+        Assert.IsTrue(x >= 0 && y >= 0 && z >= 0 && x < m_mat.width && y < m_mat.height && z < m_mat.depth);
 
         return m_mat.Get(x, y, z);
     }
@@ -111,12 +112,12 @@ public class MatrixView<T>
 
     public void Set(int x, int y, int z, T value)
     {
-        Debug.Assert(m_mat != null);
+        Assert.IsTrue(m_mat != null);
         x += m_x;
         y += m_y;
         z += m_z;
 
-        Debug.Assert(x >= 0 && y >= 0 && z >= 0 && x < m_mat.width && y < m_mat.height && z < m_mat.depth);
+        Assert.IsTrue(x >= 0 && y >= 0 && z >= 0 && x < m_mat.width && y < m_mat.height && z < m_mat.depth);
 
         m_mat.Set(x, y, z, value);
     }

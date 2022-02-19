@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public static class Lerp
 {
@@ -28,7 +29,7 @@ public static class Lerp
             case Operator.Cos:
                 return Cos(a, b, x);
         }
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         return 0;
     }
 
@@ -47,7 +48,7 @@ public static class Lerp
             case Operator.Cos:
                 return Cos2D(a, b, c, d, x, y);
         }
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         return 0;
     }
 
@@ -67,7 +68,7 @@ public static class Lerp
             case Operator.Cos:
                 return Cos3D(a, b, c, d, e, f, g, h, x, y, z);
         }
-        Debug.Assert(false);
+        Assert.IsTrue(false);
         return 0;
     }
 

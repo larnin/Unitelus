@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class BiomeGenerator
 {
@@ -159,7 +160,7 @@ public class BiomeGenerator
 
     Matrix<BiomeType> IncreaseGridSize(Matrix<BiomeType> grid, int gridSize)
     {
-        Debug.Assert(grid.width * 2 == (1 << gridSize));
+        Assert.IsTrue(grid.width * 2 == (1 << gridSize));
 
         Matrix<BiomeType> newGrid = new Matrix<BiomeType>(grid.width * 2, grid.depth * 2);
 
@@ -281,7 +282,7 @@ public class BiomeGenerator
 
     Matrix<BiomeType> GenerateFinalGrid(Matrix<BiomeType> grid, int currentSize)
     {
-        Debug.Assert(grid.width == (1 << currentSize));
+        Assert.IsTrue(grid.width == (1 << currentSize));
 
         int multiplier = 1 << (m_size - currentSize);
         if (multiplier <= 1)
@@ -445,8 +446,8 @@ public class BiomeGenerator
 
     public BiomeType GetBiome(int x, int y)
     {
-        Debug.Assert(x >= 0 && x < m_grid.width);
-        Debug.Assert(y >= 0 && y < m_grid.depth);
+        Assert.IsTrue(x >= 0 && x < m_grid.width);
+        Assert.IsTrue(y >= 0 && y < m_grid.depth);
 
         return m_grid.Get(x, y);
     }

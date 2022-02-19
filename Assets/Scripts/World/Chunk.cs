@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class ChunkLayer
 {
@@ -28,14 +29,14 @@ public class ChunkLayer
 
     public BlockData GetBlock(int x, int y, int z)
     {
-        Debug.Assert(x >= 0 && x < Chunk.chunkSize && y >= 0 && y < Chunk.chunkSize && z >= 0 && z < Chunk.chunkSize);
+        Assert.IsTrue(x >= 0 && x < Chunk.chunkSize && y >= 0 && y < Chunk.chunkSize && z >= 0 && z < Chunk.chunkSize);
 
         return m_blocks[PosToIndex(x, y, z)];
     }
 
     public void SetBlock(int x, int y, int z, BlockData bloc)
     {
-        Debug.Assert(x >= 0 && x < Chunk.chunkSize && y >= 0 && y < Chunk.chunkSize && z >= 0 && z < Chunk.chunkSize);
+        Assert.IsTrue(x >= 0 && x < Chunk.chunkSize && y >= 0 && y < Chunk.chunkSize && z >= 0 && z < Chunk.chunkSize);
 
         BlockData empty = BlockData.GetDefault();
         int index = PosToIndex(x, y, z);
@@ -159,7 +160,7 @@ public class Chunk
 
     public int GetTopLayerIndex()
     {
-        Debug.Assert(HaveLayer());
+        Assert.IsTrue(HaveLayer());
 
         int height = int.MinValue;
 
@@ -171,7 +172,7 @@ public class Chunk
 
     public int GetTopBlockHeight(int x, int z)
     {
-        Debug.Assert(HaveLayer());
+        Assert.IsTrue(HaveLayer());
 
         if (!HaveLayer())
             return int.MinValue;
@@ -200,14 +201,14 @@ public class Chunk
                 break;
         }
 
-        Debug.Assert(height >= 0);
+        Assert.IsTrue(height >= 0);
 
         return LayerToHeight(layerIndex, height);
     }
 
     public int GetBottomLayerIndex()
     {
-        Debug.Assert(HaveLayer());
+        Assert.IsTrue(HaveLayer());
 
         int height = int.MaxValue;
 
@@ -219,7 +220,7 @@ public class Chunk
 
     public int GetBottomBlockHeight(int x, int z)
     {
-        Debug.Assert(HaveLayer());
+        Assert.IsTrue(HaveLayer());
 
         if (!HaveLayer())
             return int.MaxValue;
@@ -246,7 +247,7 @@ public class Chunk
                 break;
         }
 
-        Debug.Assert(height >= 0);
+        Assert.IsTrue(height >= 0);
 
         return LayerToHeight(layerIndex, height);
     }
@@ -294,7 +295,7 @@ public class Chunk
 
     public int LayerToHeight(int layer, int block = 0)
     {
-        Debug.Assert(block >= 0 && block < chunkSize);
+        Assert.IsTrue(block >= 0 && block < chunkSize);
 
         return layer * chunkSize + block;
     }
@@ -311,7 +312,7 @@ public class Chunk
 
     int PosToBiomeIndex(int x, int z)
     {
-        Debug.Assert(x >= 0 && z >= 0 && x < chunkSize && z < chunkSize);
+        Assert.IsTrue(x >= 0 && z >= 0 && x < chunkSize && z < chunkSize);
 
         return x * chunkSize + z;
     }

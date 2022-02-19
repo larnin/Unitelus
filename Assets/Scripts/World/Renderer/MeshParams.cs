@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class MeshParamData<T> where T : struct
 {
@@ -30,7 +31,7 @@ public class MeshParams<T> where T : struct
 
     public MeshParamData<T> Allocate(int vertexSize, int indexSize, Material material)
     {
-        Debug.Assert(vertexSize <= MeshParamData<T>.maxVertexSize);
+        Assert.IsTrue(vertexSize <= MeshParamData<T>.maxVertexSize);
 
         List<MeshParamData<T>> data = null;
         m_data.TryGetValue(material, out data);
@@ -65,7 +66,7 @@ public class MeshParams<T> where T : struct
 
     public MeshParamData<ColliderVertexDefinition> AllocateCollider(int vertexSize, int indexSize)
     {
-        Debug.Assert(vertexSize <= MeshParamData<T>.maxVertexSize);
+        Assert.IsTrue(vertexSize <= MeshParamData<T>.maxVertexSize);
 
         if(m_colliderData.Count == 0)
         {
@@ -173,14 +174,14 @@ public class MeshParams<T> where T : struct
 
     public MeshParamData<ColliderVertexDefinition> GetColliderMesh(int index)
     {
-        Debug.Assert(index >= 0 && index < GetColliderMeshCount());
+        Assert.IsTrue(index >= 0 && index < GetColliderMeshCount());
 
         return m_colliderData[index];
     }
 
     static void AllocateVerticesArray<U>(MeshParamData<U> data, int addVertices) where U : struct
     {
-        Debug.Assert(data.vertices == null);
+        Assert.IsTrue(data.vertices == null);
         int newSize = addVertices + allocSize;
         if (newSize > MeshParamData<U>.maxVertexSize)
             newSize = MeshParamData<U>.maxVertexSize;
@@ -190,7 +191,7 @@ public class MeshParams<T> where T : struct
 
     static void IncreaseVerticesArray<U>(MeshParamData<U> data, int addVertices) where U : struct
     {
-        Debug.Assert(data.vertices != null);
+        Assert.IsTrue(data.vertices != null);
 
         int newSize = data.vertices.Length + addVertices + allocSize;
         if (newSize > MeshParamData<U>.maxVertexSize)
@@ -205,14 +206,14 @@ public class MeshParams<T> where T : struct
 
     static void AllocateIndexArray<U>(MeshParamData<U> data, int addIndexes) where U : struct
     {
-        Debug.Assert(data.indexes == null);
+        Assert.IsTrue(data.indexes == null);
 
         data.indexes = new ushort[addIndexes + allocSize];
     }
 
     static void IncreaseIndexArray<U>(MeshParamData<U> data, int addIndexes) where U : struct
     {
-        Debug.Assert(data.indexes != null);
+        Assert.IsTrue(data.indexes != null);
 
         int newSize = data.indexes.Length + addIndexes + allocSize;
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class BlockTypeList
 {
@@ -66,15 +67,15 @@ public class BlockTypeList
     {
         int index = (int)id;
 
-        Debug.Assert(m_blocks[0] != null);
+        Assert.IsTrue(m_blocks[0] != null);
         if (index >= m_blocks.Count)
         {
-            Debug.Assert(false);
+            Assert.IsTrue(false);
             return m_blocks[0];
         }
         if(m_blocks[index] == null)
         {
-            Debug.Assert(false);
+            Assert.IsTrue(false);
             return m_blocks[0];
         }
         return m_blocks[index];

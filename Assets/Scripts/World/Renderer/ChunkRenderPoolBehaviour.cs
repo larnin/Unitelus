@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 public class ChunkRenderPoolBehaviour : MonoBehaviour
 {
@@ -330,7 +331,7 @@ public class ChunkRendererPool
             {
                 lock (m_doingJobLock)
                 {
-                    Debug.Assert(m_doingJob == null);
+                    Assert.IsTrue(m_doingJob == null);
                     m_doingJob = job;
                     m_doingJobStatus.CloneJob(m_doingJob);
                 }
@@ -412,7 +413,7 @@ public class ChunkRendererPool
             }
         }
 
-        Debug.Assert(bestIndex >= 0);
+        Assert.IsTrue(bestIndex >= 0);
         return bestIndex;
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace NDelaunay
 {
@@ -373,7 +374,7 @@ namespace NDelaunay
                         break;
                     }
                 }
-                Debug.Assert(index1 >= 0);
+                Assert.IsTrue(index1 >= 0);
                 int index2 = index1 == t.edges.Length - 1 ? 0 : index1 + 1;
 
                 LocalPoint pMin = t.points[index1] < t.points[index2] ? t.points[index1] : t.points[index2];
@@ -684,7 +685,7 @@ namespace NDelaunay
 
         public PointView GetPoint(int index, int chunkX = 0, int chunkY = 0)
         {
-            Debug.Assert(index >= 0 && index < m_points.Count);
+            Assert.IsTrue(index >= 0 && index < m_points.Count);
 
             return new PointView(this, index, chunkX, chunkY);
         }
@@ -701,7 +702,7 @@ namespace NDelaunay
 
         public Vector2 GetPointPos(int index, int chunkX = 0, int chunkY = 0)
         {
-            Debug.Assert(index >= 0 && index < m_points.Count);
+            Assert.IsTrue(index >= 0 && index < m_points.Count);
 
             Vector2 pos = m_points[index].pos;
             pos.x += chunkX * m_size;
@@ -727,7 +728,7 @@ namespace NDelaunay
 
         void FreePoint(int index)
         {
-            Debug.Assert(index >= 0 && index < m_points.Count);
+            Assert.IsTrue(index >= 0 && index < m_points.Count);
 
             m_freePoints.Add(index);
             m_points[index].Reset();
@@ -872,14 +873,14 @@ namespace NDelaunay
 
         public EdgeView GetEdge(int index)
         {
-            Debug.Assert(index >= 0 && index < m_edges.Count);
+            Assert.IsTrue(index >= 0 && index < m_edges.Count);
 
             return new EdgeView(this, index, 0, 0);
         }
 
         public EdgeView GetEdge(int index, int chunkX, int chunkY)
         {
-            Debug.Assert(index >= 0 && index < m_edges.Count);
+            Assert.IsTrue(index >= 0 && index < m_edges.Count);
 
             return new EdgeView(this, index, chunkX, chunkY);
         }
@@ -943,7 +944,7 @@ namespace NDelaunay
 
         void FreeEdge(int index)
         {
-            Debug.Assert(index >= 0 && index < m_edges.Count);
+            Assert.IsTrue(index >= 0 && index < m_edges.Count);
 
             m_freeEdge.Add(index);
             m_edges[index].Reset();
@@ -951,7 +952,7 @@ namespace NDelaunay
 
         public static ulong EdgeToID(EdgeView edge)
         {
-            Debug.Assert(!edge.IsNull());
+            Assert.IsTrue(!edge.IsNull());
 
             var p1 = edge.GetPoint(0);
             var p2 = edge.GetPoint(1);
@@ -1069,7 +1070,7 @@ namespace NDelaunay
                     e.triangles[0] = triangleIndex;
                 else if (e.triangles[1] < 0)
                     e.triangles[1] = triangleIndex;
-                else Debug.Assert(false);
+                else Assert.IsTrue(false);
             }
 
             foreach (var point in triangle.points)
@@ -1129,14 +1130,14 @@ namespace NDelaunay
 
         public TriangleView GetTriangle(int index)
         {
-            Debug.Assert(index >= 0 && index < m_triangles.Count);
+            Assert.IsTrue(index >= 0 && index < m_triangles.Count);
 
             return new TriangleView(this, index, 0, 0);
         }
 
         public TriangleView GetTriangle(int index, int chunkX, int chunkY)
         {
-            Debug.Assert(index >= 0 && index < m_triangles.Count);
+            Assert.IsTrue(index >= 0 && index < m_triangles.Count);
 
             return new TriangleView(this, index, chunkX, chunkY);
         }
@@ -1261,7 +1262,7 @@ namespace NDelaunay
 
         void FreeTriangle(int index)
         {
-            Debug.Assert(index >= 0 && index < m_triangles.Count);
+            Assert.IsTrue(index >= 0 && index < m_triangles.Count);
 
             m_freeTriangle.Add(index);
             m_triangles[index].Reset();

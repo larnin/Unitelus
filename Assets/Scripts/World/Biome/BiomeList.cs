@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 class BiomeList
 {
@@ -35,15 +36,15 @@ class BiomeList
 
     public BiomeInfo Get(BiomeType type)
     {
-        Debug.Assert(m_biomes[0] != null);
+        Assert.IsTrue(m_biomes[0] != null);
         if ((int)type >= m_biomes.Count)
         {
-            Debug.Assert(false);
+            Assert.IsTrue(false);
             return m_biomes[0];
         }
         if (m_biomes[(int)type] == null)
         {
-            Debug.Assert(false);
+            Assert.IsTrue(false);
             return m_biomes[0];
         }
         return m_biomes[(int)type];
