@@ -70,6 +70,11 @@ public class ChunkView
         return m_position;
     }
 
+    public Vector3Int GetChunkNb()
+    {
+        return m_layers.size;
+    }
+
     public Vector3Int GetSize()
     {
         return m_layers.size * Chunk.chunkSize;
