@@ -14,7 +14,7 @@ public class PathSettings
     public int agentWidth = 1;
     public int agentStepUp = 1;
     public int agentStepDown = 2;
-    public float stepWeightMultiplier = 2;
+    public float stepWeightMultiplier = 1.5f;
 }
 
 public class Path
