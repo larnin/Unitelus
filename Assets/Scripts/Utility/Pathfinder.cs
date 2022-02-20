@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ public class PathSettings
     public int agentWidth = 1;
     public int agentStepUp = 1;
     public int agentStepDown = 2;
+    public float stepWeightMultiplier = 2;
 }
 
 public class Path
@@ -80,6 +82,7 @@ public class Path
     //buffers for path generation
     List<Node> m_visitedNodes = new List<Node>();
     List<Node> m_nextNodes = new List<Node>(); //sorted
+    HashSet<ulong> m_computedPos = new HashSet<ulong>();
     ChunkView m_view = null;
 
     public bool Generate(Vector3 start, Vector3 end)
@@ -89,6 +92,9 @@ public class Path
 
     public bool Generate(Vector3Int start, Vector3Int end)
     {
+        Stopwatch chrono = new Stopwatch();
+        chrono.Start();
+
         m_status = Status.Generating;
 
         Clear();
@@ -135,15 +141,14 @@ public class Path
             }
         }
 
-        for(int i = 0; i < m_visitedNodes.Count; i++)
-        {
-            DebugDraw.Cube(m_visitedNodes[i].current, new Vector3(1, 1, 1), Color.blue, 1);
-        }
-
         if(!foundPath || m_visitedNodes.Count == 0)
         {
             Clean();
             m_status = Status.Invalid;
+
+            var time2 = chrono.Elapsed.TotalSeconds * 1000;
+            UnityEngine.Debug.Log("Path " + time2 + " ms - Not found");
+
             return false;
         }
 
@@ -154,6 +159,14 @@ public class Path
             if (node.previous == null)
                 break;
             node = node.previous;
+        }
+
+        var time = chrono.Elapsed.TotalSeconds * 1000;
+        UnityEngine.Debug.Log("Path " + time + " ms");
+
+        for(int i = 0; i < m_visitedNodes.Count; i++)
+        {
+            DebugDraw.Cube(m_visitedNodes[i].current, new Vector3(1, 1, 1), Color.blue, 1);
         }
 
         Clean();
@@ -190,8 +203,11 @@ public class Path
             if (IsVisited(pos))
                 continue;
 
+            var id = PosToID(pos);
+            m_computedPos.Add(id);
+
             float weight = CanWalkOn(pos, node.current);
-            if(weight < 0)
+            if (weight < 0)
                 continue;
 
             if (pos == m_end)
@@ -225,19 +241,13 @@ public class Path
         m_view = null;
         m_visitedNodes.Clear();
         m_nextNodes.Clear();
+        m_computedPos.Clear();
     }
 
     bool IsVisited(Vector3Int pos)
     {
-        //slow, need to fasten this shit
-        foreach (var n in m_visitedNodes)
-            if (n.current == pos)
-                return true;
-        foreach (var n in m_nextNodes)
-            if (n.current == pos)
-                return true;
-
-        return false;
+        var id = PosToID(pos);
+        return m_computedPos.Contains(id);
     }
 
     // return the walk weight of the block or -1 if not walkable
@@ -312,7 +322,12 @@ public class Path
             }
         }
 
-        return typeCenter.pathWeight;
+        float multiplier = 1;
+        int absVertical = Mathf.Abs(vertical);
+        for (int i = 0; i < absVertical; i++)
+            multiplier *= m_settings.stepWeightMultiplier;
+
+        return typeCenter.pathWeight * multiplier;
     }
 
     Vector3Int[] GetNextsPos(Vector3Int current)
@@ -391,11 +406,11 @@ public class Path
             if(m_currentPoint == m_points.Count - 1)
             {
                 m_status = Status.ended;
-                m_target = m_end;
+                m_target = m_end + new Vector3(0.5f, 0.5f, 0.5f);
                 return;
             }
             m_currentPoint++;
-            m_target = m_points[m_currentPoint];
+            m_target = m_points[m_currentPoint] + new Vector3(0.5f, 0.5f, 0.5f);
         }
     }
 
@@ -418,5 +433,24 @@ public class Path
 
         DebugDraw.Cube(m_start, new Vector3(1, 1, 1), Color.red);
         DebugDraw.Cube(m_end, new Vector3(1, 1, 1), Color.red);
+    }
+
+    public ulong PosToID(Vector3Int pos)
+    {
+        int x, z;
+        m_world.ClampWorldPos(pos.x, pos.z, out x, out z);
+
+        int y = pos.y + (1 << 15);
+
+        ulong uX = (ulong)(x & 0xFFFFFF); // 24 bits max
+        ulong uY = (ulong)(y & 0xFFFF); // 16 bits max
+        ulong uZ = (ulong)(z & 0xFFFFFF); // 24 bits max
+
+        ulong value = uX << 16;
+        value += uY;
+        value <<= 24;
+        value += uZ;
+
+        return value;
     }
 }
