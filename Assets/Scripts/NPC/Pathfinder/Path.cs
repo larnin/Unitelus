@@ -114,6 +114,17 @@ public class Path
             }
         }
 
+        m_view = GetView(start, end);
+
+        bool bCanPlace = PlaceOnValidPosition(start, 5, out m_start);
+        bCanPlace &= PlaceOnValidPosition(end, 5, out m_end);
+
+        if(!bCanPlace)
+        {
+            m_status = Status.Invalid;
+            return false;
+        }
+
         if (m_start == m_end)
         {
             m_points.Add(m_start);
@@ -121,10 +132,6 @@ public class Path
             m_status = Status.Valid;
             return true;
         }
-
-        m_view = GetView();
-
-        PlaceStartAndEndOnValidPosition();
 
         m_visitedNodes.Clear();
         m_nextNodes.Clear();
@@ -175,17 +182,48 @@ public class Path
         return true;
     }
 
-    void PlaceStartAndEndOnValidPosition()
+    // return false if pos is not valid
+    bool PlaceOnValidPosition(Vector3Int pos, int iterations, out Vector3Int result)
     {
-        var bStart = m_view.GetBlock(m_start);
-        var typeStart = BlockTypeList.instance.Get(bStart.id);
-        if (!typeStart.canWalkThrough)
-            m_start[1]++;
+        bool bIsOk = false;
+        for (int i = 0; i < iterations; i++)
+        {
+            var b = m_view.GetBlock(pos);
+            var t = BlockTypeList.instance.Get(b.id);
+            if (t.canWalkThrough)
+            {
+                bIsOk = true;
+                break;
+            }
+            pos[1]++;
+        }
+        if(bIsOk)
+        {
+            bIsOk = false;
+            for(int i = 0; i < iterations; i++)
+            {
+                var b = m_view.GetBlock(pos);
+                var t = BlockTypeList.instance.Get(b.id);
+                if(t.canFloatTurough)
+                {
+                    bIsOk = true;
+                    break;
+                }
 
-        var bEnd = m_view.GetBlock(m_end);
-        var typeEnd = BlockTypeList.instance.Get(bEnd.id);
-        if (!typeEnd.canWalkThrough)
-            m_end[1]++;
+                var b2 = m_view.GetBlock(pos + new Vector3Int(0, -1, 0));
+                var t2 = BlockTypeList.instance.Get(b2.id);
+                if(t2.canWalkOn)
+                {
+                    bIsOk = true;
+                    break;
+                }
+                pos[1]--;
+            }
+        }
+
+        result = pos;
+
+        return bIsOk;
     }
 
     // return true if the current case is the end
@@ -353,10 +391,10 @@ public class Path
         return pos;
     }
 
-    ChunkView GetView()
+    ChunkView GetView(Vector3Int pos1, Vector3Int pos2)
     {
-        Vector3Int min = new Vector3Int(Mathf.Min(m_start.x, m_end.x), Mathf.Min(m_start.y, m_end.y), Mathf.Min(m_start.z, m_end.z));
-        Vector3Int max = new Vector3Int(Mathf.Max(m_start.x, m_end.x), Mathf.Max(m_start.y, m_end.y), Mathf.Max(m_start.z, m_end.z));
+        Vector3Int min = new Vector3Int(Mathf.Min(pos1.x, pos2.x), Mathf.Min(pos1.y, m_end.y), Mathf.Min(pos1.z, pos2.z));
+        Vector3Int max = new Vector3Int(Mathf.Max(pos1.x, pos2.x), Mathf.Max(pos1.y, m_end.y), Mathf.Max(pos1.z, pos2.z));
 
         int offset = (max.x - min.x) - (max.z - min.z);
         int halfOffset = offset / 2;

@@ -327,45 +327,48 @@ public class World
 
     public ChunkView GetChunkView(int x, int y, int z, int sizeX, int sizeY, int sizeZ)
     {
-        if(sizeX < 0)
+        lock (dataLock)
         {
-            x += sizeX;
-            sizeX *= -1;
-        }
-        if (sizeY < 0)
-        {
-            y += sizeY;
-            sizeY *= -1;
-        }
-        if (sizeZ < 0)
-        {
-            z += sizeZ;
-            sizeZ *= -1;
-        }
-
-        int chunkSize = Chunk.chunkSize;
-
-        int minX, minY, minZ;
-        int maxX, maxY, maxZ;
-        PosToUnclampedChunkPos(x, y, z, out minX, out minY, out minZ);
-        PosToUnclampedChunkPos(x + sizeX, y + sizeY, z + sizeZ, out maxX, out maxY, out maxZ);
-
-        ChunkView view = new ChunkView(new Vector3Int(minX * chunkSize, minY * chunkSize, minZ * chunkSize), new Vector3Int(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1));
-
-        for(int i = minX; i <= maxX; i++)
-        {
-            for (int k = minZ; k <= maxZ; k++)
+            if (sizeX < 0)
             {
-                int cI, ck;
-                ClampChunkPos(i, k, out cI, out ck);
-                Chunk c = GetChunk(cI, ck);
-
-                for (int j = minY; j <= maxY; j++)
-                    view.SetChunkLayer(i - minX, j - minY, k - minZ, c.GetLayer(j));
+                x += sizeX;
+                sizeX *= -1;
             }
-        }
+            if (sizeY < 0)
+            {
+                y += sizeY;
+                sizeY *= -1;
+            }
+            if (sizeZ < 0)
+            {
+                z += sizeZ;
+                sizeZ *= -1;
+            }
 
-        return view;
+            int chunkSize = Chunk.chunkSize;
+
+            int minX, minY, minZ;
+            int maxX, maxY, maxZ;
+            PosToUnclampedChunkPos(x, y, z, out minX, out minY, out minZ);
+            PosToUnclampedChunkPos(x + sizeX, y + sizeY, z + sizeZ, out maxX, out maxY, out maxZ);
+
+            ChunkView view = new ChunkView(this, new Vector3Int(minX * chunkSize, minY * chunkSize, minZ * chunkSize), new Vector3Int(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1));
+
+            for (int i = minX; i <= maxX; i++)
+            {
+                for (int k = minZ; k <= maxZ; k++)
+                {
+                    int cI, ck;
+                    ClampChunkPos(i, k, out cI, out ck);
+                    Chunk c = GetChunk(cI, ck);
+
+                    for (int j = minY; j <= maxY; j++)
+                        view.SetChunkLayer(i - minX, j - minY, k - minZ, c.GetLayer(j));
+                }
+            }
+
+            return view;
+        }
     }
 
     void ClampChunkPos(int x, int z, out int outX, out int outZ)

@@ -9,11 +9,13 @@ public class ChunkView
 {
     Matrix<ChunkLayer> m_layers;
     Vector3Int m_position;
+    World m_world;
 
-    public ChunkView(Vector3Int position, Vector3Int size)
+    public ChunkView(World world, Vector3Int position, Vector3Int size)
     {
         m_layers = new Matrix<ChunkLayer>(size.x, size.y, size.z);
         m_position = position;
+        m_world = world;
     }
 
     public void SetChunkLayer(Vector3Int pos, ChunkLayer chunk)
@@ -79,5 +81,10 @@ public class ChunkView
     public Vector3Int GetSize()
     {
         return m_layers.size * Chunk.chunkSize;
+    }
+
+    public World GetWorld()
+    {
+        return m_world;
     }
 }
