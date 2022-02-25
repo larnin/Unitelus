@@ -36,9 +36,9 @@ public class PlaceholderPathFollower : MonoBehaviour
 
         m_path.Process(transform.position);
 
-        if (m_path.GetStatus() == Path.Status.Valid)
+        if (m_path.status == Path.Status.Valid)
         {
-            var target = m_path.GetPos();
+            var target = m_path.target;
             var dir = target - transform.position;
             dir.Normalize();
             dir *= Time.deltaTime * m_speed;

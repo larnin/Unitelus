@@ -17,6 +17,13 @@ public class PathSettings
     public float stepWeightMultiplier = 1.5f;
 }
 
+public class PathData
+{
+    public readonly object dataLock = new object();
+    public List<Vector3Int> points = new List<Vector3Int>();
+    public bool updated = false;
+}
+
 public class Path
 {
     public enum Status
@@ -38,21 +45,23 @@ public class Path
     int m_currentPoint;
     Status m_status = Status.Invalid;
 
+    static int m_nextUID = 0;
+    int m_UID;
+
     public Path(PathSettings settings)
     {
         m_settings = settings;
         m_currentPoint = 0;
+        m_UID = m_nextUID++;
     }
 
-    public bool IsPathValid()
-    {
-        return m_points.Count > 0;
-    }
+    public int UID { get { return m_UID; } }
 
-    public Status GetStatus()
-    {
-        return m_status;
-    }
+    public bool pathValid { get { return m_points.Count > 0; } }
+
+    public Status status { get { return m_status; } }
+
+    public Vector3 target { get { return m_target; } }
 
     public Vector3Int GetCurrentPoint()
     {
@@ -450,11 +459,6 @@ public class Path
             m_currentPoint++;
             m_target = m_points[m_currentPoint] + new Vector3(0.5f, 0.5f, 0.5f);
         }
-    }
-
-    public Vector3 GetPos()
-    {
-        return m_target;
     }
 
     public void Draw()
