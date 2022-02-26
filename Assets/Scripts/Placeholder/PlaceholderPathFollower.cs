@@ -36,7 +36,7 @@ public class PlaceholderPathFollower : MonoBehaviour
 
         m_path.Process(transform.position);
 
-        if (m_path.status == Path.Status.Valid)
+        if (m_path.pathValid)
         {
             var target = m_path.target;
             var dir = target - transform.position;

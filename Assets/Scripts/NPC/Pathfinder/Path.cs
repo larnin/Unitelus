@@ -8,6 +8,8 @@ using UnityEngine;
 
 public class PathSettings
 {
+    public enum Direction { cross, crossAndDiagonal, }
+
     public int maxDistanceFromPath = 5;
 
     public int agentHeight = 2;
@@ -15,321 +17,251 @@ public class PathSettings
     public int agentStepUp = 1;
     public int agentStepDown = 2;
     public float stepWeightMultiplier = 1.5f;
+    public Direction moveDirection = Direction.crossAndDiagonal;
+    public int smoothDistance = 3;
 }
 
 public class PathData
 {
     public readonly object dataLock = new object();
     public List<Vector3Int> points = new List<Vector3Int>();
+    public World world;
     public bool updated = false;
 }
 
 public class Path
 {
-    public enum Status
+    enum Status
     {
-        Invalid, //initial state, impossible to generate
-        Generating, // during generation, usefull if threaded
-        Valid, // path generated successfully
-        ended, // current position on the end
+        Invalid = 0,
+        Generating = 1 << 0,
+        Valid = 1 << 1,
+        Ended = 1 << 2,
     }
 
-    World m_world;
+    PathData m_data = new PathData();
+
     PathSettings m_settings;
 
     Vector3Int m_start;
     Vector3Int m_end;
 
-    List<Vector3Int> m_points = new List<Vector3Int>();
     Vector3 m_target;
+
     int m_currentPoint;
     Status m_status = Status.Invalid;
-
-    static int m_nextUID = 0;
-    int m_UID;
 
     public Path(PathSettings settings)
     {
         m_settings = settings;
         m_currentPoint = 0;
-        m_UID = m_nextUID++;
     }
 
-    public int UID { get { return m_UID; } }
-
-    public bool pathValid { get { return m_points.Count > 0; } }
-
-    public Status status { get { return m_status; } }
+    public bool pathValid { get { return (m_status & Status.Valid) > 0; } }
+    public bool pathGenerated { get { return (m_status & Status.Generating) == 0; } }
+    public bool pathEnded { get { return (m_status & Status.Ended) == 0; } }
 
     public Vector3 target { get { return m_target; } }
 
-    public Vector3Int GetCurrentPoint()
+    public void Generate(Vector3 start, Vector3 end)
     {
-        if (m_currentPoint < 0 || m_currentPoint >= m_points.Count)
-            return Vector3Int.zero;
-
-        return m_points[m_currentPoint];
+        Generate(Vector3Int.FloorToInt(start), Vector3Int.FloorToInt(end));
     }
 
-    class Node
+    public void Generate(Vector3Int start, Vector3Int end)
     {
-        public float weight;
-        public float totalWeight;
-        public Node previous;
-        public Vector3Int current;
-
-        public Node(Vector3Int _current, Node _previous, float _weight, Vector3Int _target)
-        {
-            current = _current;
-            previous = _previous;
-            weight = _weight;
-            float dist = (_target - _current).magnitude;
-            totalWeight = dist + weight;
-        }
-    }
-
-    //buffers for path generation
-    List<Node> m_visitedNodes = new List<Node>();
-    List<Node> m_nextNodes = new List<Node>(); //sorted
-    HashSet<ulong> m_computedPos = new HashSet<ulong>();
-    ChunkView m_view = null;
-
-    public bool Generate(Vector3 start, Vector3 end)
-    {
-        return Generate(Vector3Int.FloorToInt(start), Vector3Int.FloorToInt(end));
-    }
-
-    public bool Generate(Vector3Int start, Vector3Int end)
-    {
-        Stopwatch chrono = new Stopwatch();
-        chrono.Start();
-
-        m_status = Status.Generating;
-
-        Clear();
-
+        PathfinderPool.instance.AddJob(m_data, start, end, m_settings);
         m_start = start;
         m_end = end;
-
-        if(m_world == null)
-        {
-            GetWorldEvent world = new GetWorldEvent();
-            Event<GetWorldEvent>.Broadcast(world);
-            m_world = world.world;
-            if (m_world == null)
-            {
-                m_status = Status.Invalid;
-                return false;
-            }
-        }
-
-        m_view = GetView(start, end);
-
-        bool bCanPlace = PlaceOnValidPosition(start, 5, out m_start);
-        bCanPlace &= PlaceOnValidPosition(end, 5, out m_end);
-
-        if(!bCanPlace)
-        {
-            m_status = Status.Invalid;
-            return false;
-        }
-
-        if (m_start == m_end)
-        {
-            m_points.Add(m_start);
-            m_target = m_start + new Vector3(0.5f, 0.5f, 0.5f);
-            m_status = Status.Valid;
-            return true;
-        }
-
-        m_visitedNodes.Clear();
-        m_nextNodes.Clear();
-
-        m_nextNodes.Add(new Node(m_start, null, 0, m_end));
-
-        bool foundPath = false;
-        while(m_nextNodes.Count > 0)
-        {
-            if(Step())
-            {
-                foundPath = true;
-                break;
-            }
-        }
-
-        if(!foundPath || m_visitedNodes.Count == 0)
-        {
-            Clean();
-            m_status = Status.Invalid;
-
-            var time2 = chrono.Elapsed.TotalSeconds * 1000;
-            UnityEngine.Debug.Log("Path " + time2 + " ms - Not found");
-
-            return false;
-        }
-
-        var node = m_visitedNodes[m_visitedNodes.Count - 1];
-        while(true)
-        {
-            m_points.Insert(0, node.current);
-            if (node.previous == null)
-                break;
-            node = node.previous;
-        }
-
-        var time = chrono.Elapsed.TotalSeconds * 1000;
-        UnityEngine.Debug.Log("Path " + time + " ms");
-
-        for(int i = 0; i < m_visitedNodes.Count; i++)
-        {
-            DebugDraw.Cube(m_visitedNodes[i].current, new Vector3(1, 1, 1), Color.blue, 1);
-        }
-
-        Clean();
-        m_status = Status.Valid;
-        m_target = m_start + new Vector3(0.5f, 0.5f, 0.5f);
-        return true;
+        m_status |= Status.Generating;
     }
 
-    // return false if pos is not valid
-    bool PlaceOnValidPosition(Vector3Int pos, int iterations, out Vector3Int result)
+    public void Process(Vector3 currentPos)
     {
-        bool bIsOk = false;
-        for (int i = 0; i < iterations; i++)
+        lock(m_data.dataLock)
         {
-            var b = m_view.GetBlock(pos);
-            var t = BlockTypeList.instance.Get(b.id);
-            if (t.canWalkThrough)
-            {
-                bIsOk = true;
-                break;
-            }
-            pos[1]++;
+            if(m_data.updated)
+                OnDataUpdate(currentPos);
+            else if(pathValid)
+                ProcessPath(currentPos);
         }
-        if(bIsOk)
-        {
-            bIsOk = false;
-            for(int i = 0; i < iterations; i++)
-            {
-                var b = m_view.GetBlock(pos);
-                var t = BlockTypeList.instance.Get(b.id);
-                if(t.canFloatTurough)
-                {
-                    bIsOk = true;
-                    break;
-                }
-
-                var b2 = m_view.GetBlock(pos + new Vector3Int(0, -1, 0));
-                var t2 = BlockTypeList.instance.Get(b2.id);
-                if(t2.canWalkOn)
-                {
-                    bIsOk = true;
-                    break;
-                }
-                pos[1]--;
-            }
-        }
-
-        result = pos;
-
-        return bIsOk;
     }
 
-    // return true if the current case is the end
-    bool Step()
+    public void Draw()
     {
-        var node = m_nextNodes[0];
-        m_nextNodes.RemoveAt(0);
-        m_visitedNodes.Add(node);
+        if (!pathValid)
+            return;
 
-        var nextsPos = GetNextsPos(node.current);
-        for(int i = 0; i < nextsPos.Length; i++)
+        lock (m_data.dataLock)
         {
-            Vector3Int pos = nextsPos[i];
+            int nb = m_data.points.Count - 1;
 
-            if (IsVisited(pos))
+            for (int i = 0; i < nb; i++)
+            {
+                Vector3 pos1 = m_data.points[i] + new Vector3(0.5f, 0.5f, 0.5f);
+                Vector3 pos2 = m_data.points[i + 1] + new Vector3(0.5f, 0.5f, 0.5f);
+
+                DebugDraw.Line(pos1, pos2, Color.red);
+            }
+
+            DebugDraw.Rectangle(m_start, new Vector3(1, 1, 1), Color.red);
+            DebugDraw.Rectangle(m_end, new Vector3(1, 1, 1), Color.red);
+
+            if (m_currentPoint >= 0 && m_currentPoint < m_data.points.Count)
+                DebugDraw.Rectangle(m_data.points[m_currentPoint], new Vector3(1, 1, 1), Color.blue);
+
+            DebugDraw.Sphere(m_target, 0.5f, Color.green);
+        }
+    }
+
+    void OnDataUpdate(Vector3 currentPos)
+    {
+        m_data.updated = false;
+        m_currentPoint = 0;
+
+        m_status &= ~Status.Generating;
+        if(m_data.points.Count == 0)
+        {
+            m_status &= ~Status.Valid;
+            return;
+        }
+
+        m_status |= Status.Valid;
+
+        //update current point
+        float distance = float.MaxValue;
+        for(int i = 0; i < m_data.points.Count; i++)
+        {
+            Vector3 pos = m_data.points[i] + new Vector3(0.5f, 0.5f, 0.5f);
+            float dist = (pos - currentPos).sqrMagnitude;
+            if (dist < distance)
+            {
+                distance = dist;
+                m_currentPoint = i;
+            }
+        }
+
+        ProcessPath(currentPos, true);
+    }
+
+    void ProcessPath(Vector3 currentPos, bool force = false)
+    {
+        //update current position
+        Vector3Int pos = Vector3Int.FloorToInt(currentPos);
+
+        bool moved = false;
+        for(int i = 1; i < m_settings.smoothDistance; i++)
+        {
+            int index = m_currentPoint + i;
+            if (index >= m_data.points.Count)
+                break;
+
+            if(m_data.points[index] == pos)
+            {
+                moved = true;
+                m_currentPoint = index;
+                break;
+            }
+        }
+
+        if (m_data.points.Count == 0 || m_currentPoint >= m_data.points.Count)
+            m_status |= Status.Ended;
+        else m_status &= ~Status.Ended;
+
+        if (!moved && !force)
+            return;
+
+        //update target and try to smooth path
+        bool haveSetTarget = false;
+        float rayStep = 0.25f;
+        Vector3Int oldPos = Vector3Int.FloorToInt(currentPos);
+        float maxDist = m_settings.smoothDistance * 2 + 1;
+        for(int i = m_settings.smoothDistance; i > 1; i--)
+        {
+            int index = m_currentPoint + i;
+            if (index >= m_data.points.Count)
                 continue;
 
-            var id = PosToID(pos);
-            m_computedPos.Add(id);
+            Vector3 target = m_data.points[index] + new Vector3(0.5f, 0.5f, 0.5f);
+            Vector3 dir = target - currentPos;
+            float dist = dir.magnitude;
+            dir /= dist;
 
-            float weight = CanWalkOn(pos, node.current);
-            if (weight < 0)
+            if (dist >= maxDist)
                 continue;
 
-            if (pos == m_end)
+            bool testOk = true;
+            int nbStep = (int)(dist / rayStep);
+            for(int j = 0; j < nbStep; j++)
             {
-                m_visitedNodes.Add(new Node(pos, node, node.weight, m_end));
-                return true;
-            }
+                Vector3 testPos = currentPos + dir * j * rayStep;
+                Vector3Int testPosI = Vector3Int.FloorToInt(testPos);
+                if (testPosI == oldPos)
+                    continue;
 
-            //insert node in the nextPos, and keep it sorted with totalWeight
-            weight *= (pos - node.current).magnitude;
-            weight += node.weight;
-            var newNode = new Node(pos, node, weight, m_end);
-            int addIndex = m_nextNodes.Count;
-            for(int j = 0; j < m_nextNodes.Count; j++)
-            {
-                if (newNode.totalWeight < m_nextNodes[j].totalWeight)
+                if(!CanWalkOn(testPosI, oldPos, m_settings))
                 {
-                    addIndex = j;
+                    testOk = false;
                     break;
                 }
             }
-            m_nextNodes.Insert(addIndex, newNode);
+
+            if(testOk)
+            {
+                haveSetTarget = true;
+                m_target = target;
+
+                break;
+            }
         }
 
-        return false;
+        if(!haveSetTarget)
+        {
+            if (m_currentPoint >= m_data.points.Count)
+                m_target = m_end + new Vector3(0.5f, 0.5f, 0.5f);
+            else if (m_currentPoint == m_data.points.Count - 1)
+                m_target = m_data.points[m_currentPoint] + new Vector3(0.5f, 0.5f, 0.5f);
+            else m_target = m_data.points[m_currentPoint + 1] + new Vector3(0.5f, 0.5f, 0.5f);
+        }
     }
 
-    //must be called at the end of the generation to clean lists
-    void Clean()
+    // similar to PathfinderPool.CanWalkOn
+    // must update this one too
+    bool CanWalkOn(Vector3Int pos, Vector3Int previousPos, PathSettings settings)
     {
-        m_view = null;
-        m_visitedNodes.Clear();
-        m_nextNodes.Clear();
-        m_computedPos.Clear();
-    }
+        if (m_data.world == null)
+            return false;
 
-    bool IsVisited(Vector3Int pos)
-    {
-        var id = PosToID(pos);
-        return m_computedPos.Contains(id);
-    }
-
-    // return the walk weight of the block or -1 if not walkable
-    float CanWalkOn(Vector3Int pos, Vector3Int previousPos)
-    {
         //first, test ground
         //the bloc must be canFloatTurough or canWalkThrough + canWalkOn for the block below
-        var bCenter = m_view.GetBlock(pos);
+        var bCenter = m_data.world.GetBlock(pos);
 
         var typeCenter = BlockTypeList.instance.Get(bCenter.id);
         if (!typeCenter.canWalkThrough)
-            return -1;
-        if(!typeCenter.canFloatTurough)
+            return false;
+        if (!typeCenter.canFloatTurough)
         {
-            var bDown = m_view.GetBlock(new Vector3Int(pos.x, pos.y - 1, pos.z));
+            var bDown = m_data.world.GetBlock(new Vector3Int(pos.x, pos.y - 1, pos.z));
             var typeDown = BlockTypeList.instance.Get(bDown.id);
             if (!typeDown.canWalkOn && !typeDown.canFloatTurough)
-                return -1;
+                return false;
         }
 
         //the blocks must be canWalkThrough on the agent area
-        int radius = m_settings.agentWidth / 2;
-        for(int i = -radius; i <= radius; i++)
+        int radius = settings.agentWidth / 2;
+        for (int i = -radius; i <= radius; i++)
         {
-            for(int k = -radius; k <= radius; k++)
+            for (int k = -radius; k <= radius; k++)
             {
-                for(int j = 0; j < m_settings.agentHeight; j++)
+                for (int j = 0; j < settings.agentHeight; j++)
                 {
                     if (i == 0 && j == 0 && k == 0)
                         continue; //already tested with the ground test
 
-                    var b = m_view.GetBlock(pos + new Vector3Int(i, j, k));
+                    var b = m_data.world.GetBlock(pos + new Vector3Int(i, j, k));
                     var type = BlockTypeList.instance.Get(b.id);
                     if (!type.canWalkThrough)
-                        return -1;
+                        return false;
                 }
             }
         }
@@ -342,12 +274,12 @@ public class Path
             {
                 for (int k = -radius; k <= radius; k++)
                 {
-                    for(int j = 0; j < -vertical; j++)
+                    for (int j = 0; j < -vertical; j++)
                     {
-                        var b = m_view.GetBlock(pos + new Vector3Int(i, j + m_settings.agentHeight, k));
+                        var b = m_data.world.GetBlock(pos + new Vector3Int(i, j + settings.agentHeight, k));
                         var type = BlockTypeList.instance.Get(b.id);
                         if (!type.canWalkThrough)
-                            return -1;
+                            return false;
                     }
                 }
             }
@@ -360,139 +292,15 @@ public class Path
                 {
                     for (int j = 0; j < vertical; j++)
                     {
-                        var b = m_view.GetBlock(previousPos + new Vector3Int(i, j + m_settings.agentHeight, k));
+                        var b = m_data.world.GetBlock(previousPos + new Vector3Int(i, j + settings.agentHeight, k));
                         var type = BlockTypeList.instance.Get(b.id);
                         if (!type.canWalkThrough)
-                            return -1;
+                            return false;
                     }
                 }
             }
         }
 
-        float multiplier = 1;
-        int absVertical = Mathf.Abs(vertical);
-        for (int i = 0; i < absVertical; i++)
-            multiplier *= m_settings.stepWeightMultiplier;
-
-        return typeCenter.pathWeight * multiplier;
-    }
-
-    Vector3Int[] GetNextsPos(Vector3Int current)
-    {
-        var pos = new Vector3Int[(m_settings.agentStepUp + m_settings.agentStepDown + 1) * 3 * 3 - 1];
-
-        int index = 0;
-
-        for(int i = -1; i <= 1; i++)
-        {
-            for (int j = -m_settings.agentStepDown; j <= m_settings.agentStepUp; j++)
-            {
-                for(int k = -1; k <= 1; k++)
-                {
-                    if (i == 0 && j == 0 && k == 0)
-                        continue;
-
-                    pos[index++] = current + new Vector3Int(i, j, k);
-                }
-            }
-        }
-
-        return pos;
-    }
-
-    ChunkView GetView(Vector3Int pos1, Vector3Int pos2)
-    {
-        Vector3Int min = new Vector3Int(Mathf.Min(pos1.x, pos2.x), Mathf.Min(pos1.y, m_end.y), Mathf.Min(pos1.z, pos2.z));
-        Vector3Int max = new Vector3Int(Mathf.Max(pos1.x, pos2.x), Mathf.Max(pos1.y, m_end.y), Mathf.Max(pos1.z, pos2.z));
-
-        int offset = (max.x - min.x) - (max.z - min.z);
-        int halfOffset = offset / 2;
-        if (offset < 0)
-        {
-            min.x += halfOffset;
-            max.x -= (offset - halfOffset);
-        }
-        else
-        {
-            min.z -= halfOffset;
-            max.z += (offset - halfOffset);
-        }
-
-        min.x -= m_settings.maxDistanceFromPath;
-        min.y -= m_settings.maxDistanceFromPath;
-        min.z -= m_settings.maxDistanceFromPath;
-
-        max.x += m_settings.maxDistanceFromPath;
-        max.y += m_settings.maxDistanceFromPath;
-        max.z += m_settings.maxDistanceFromPath;
-
-        return m_world.GetChunkView(min, max - min);
-    }
-
-    public void Clear()
-    {
-        m_start = Vector3Int.zero;
-        m_end = Vector3Int.zero;
-
-        m_points.Clear();
-        m_target = Vector3Int.zero;
-        m_currentPoint = 0;
-    }
-
-    public void Process(Vector3 currentPos)
-    {
-        if (m_status != Status.Valid)
-            return;
-
-        //todo more complexe process to smooth path
-
-        var pos = Vector3Int.FloorToInt(currentPos);
-
-        if(pos == m_points[m_currentPoint])
-        {
-            if(m_currentPoint == m_points.Count - 1)
-            {
-                m_status = Status.ended;
-                m_target = m_end + new Vector3(0.5f, 0.5f, 0.5f);
-                return;
-            }
-            m_currentPoint++;
-            m_target = m_points[m_currentPoint] + new Vector3(0.5f, 0.5f, 0.5f);
-        }
-    }
-
-    public void Draw()
-    {
-        if (m_status != Status.Valid)
-            return;
-
-        for(int i = 0; i < m_points.Count - 1; i++)
-        {
-            Vector3 pos1 = m_points[i] + new Vector3(0.5f, 0.5f, 0.5f);
-            Vector3 pos2 = m_points[i + 1] + new Vector3(0.5f, 0.5f, 0.5f);
-            DebugDraw.Line(pos1, pos2, Color.red);
-        }
-
-        DebugDraw.Cube(m_start, new Vector3(1, 1, 1), Color.red);
-        DebugDraw.Cube(m_end, new Vector3(1, 1, 1), Color.red);
-    }
-
-    public ulong PosToID(Vector3Int pos)
-    {
-        int x, z;
-        m_world.ClampWorldPos(pos.x, pos.z, out x, out z);
-
-        int y = pos.y + (1 << 15);
-
-        ulong uX = (ulong)(x & 0xFFFFFF); // 24 bits max
-        ulong uY = (ulong)(y & 0xFFFF); // 16 bits max
-        ulong uZ = (ulong)(z & 0xFFFFFF); // 24 bits max
-
-        ulong value = uX << 16;
-        value += uY;
-        value <<= 24;
-        value += uZ;
-
-        return value;
+        return true;
     }
 }

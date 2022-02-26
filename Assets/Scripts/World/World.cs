@@ -44,6 +44,11 @@ public class World
         return GetChunk(chunkX, chunkZ);
     }
 
+    public BlockData GetBlock(Vector3Int pos)
+    {
+        return GetBlock(pos.x, pos.y, pos.z);
+    }
+
     public BlockData GetBlock(int x, int y, int z)
     {
         int chunkX;
@@ -54,6 +59,11 @@ public class World
 
         var chunk = GetChunk(chunkX, chunkZ);
         return chunk.GetBlock(blockX, y, blockZ);
+    }
+
+    public void SetBlock(Vector3Int pos, BlockData block, bool updateData = true)
+    {
+        SetBlock(pos.x, pos.y, pos.z, block, updateData);
     }
 
     public void SetBlock(int x, int y, int z, BlockData block, bool updateData = true)

@@ -82,7 +82,7 @@ public class PathfinderPool
     List<Job> m_waitingJobs = new List<Job>();
     PathData m_currentPath = null;
 
-    HeavyDatas m_datas;
+    HeavyDatas m_datas = new HeavyDatas();
 
     public PathfinderPool()
     {
@@ -129,6 +129,38 @@ public class PathfinderPool
             m_thread.Join();
 
         m_instance = null;
+    }
+
+    public bool HaveJob(PathData path)
+    {
+        lock(m_waitingJobsLock)
+        {
+            foreach (var j in m_waitingJobs)
+            {
+                if (j.path == path)
+                    return true;
+            }
+
+            if (m_currentPath == path)
+                return true;
+        }
+
+        return false;
+    }
+
+    public void StopJob(PathData path)
+    {
+        lock(m_waitingJobs)
+        {
+            for(int i = 0; i < m_waitingJobs.Count; i++)
+            {
+                if(m_waitingJobs[i].path == path)
+                {
+                    m_waitingJobs.RemoveAt(i);
+                    return;
+                }    
+            }
+        }
     }
 
     void Process()
@@ -207,6 +239,7 @@ public class PathfinderPool
             lock (job.path.dataLock)
             {
                 job.path.points.Clear();
+                job.path.world = m_datas.world;
                 job.path.points.Add(start);
                 job.path.updated = true;
             }
@@ -237,6 +270,7 @@ public class PathfinderPool
         var node = m_datas.visitedNodes[m_datas.visitedNodes.Count - 1];
         lock (job.path.dataLock)
         {
+            job.path.world = m_datas.world;
             job.path.points.Clear();
             while (true)
             {
@@ -299,6 +333,7 @@ public class PathfinderPool
     {
         lock(job.path.dataLock)
         {
+            job.path.world = m_datas.world;
             job.path.points.Clear();
             job.path.updated = true;
         }
@@ -378,25 +413,45 @@ public class PathfinderPool
 
     Vector3Int[] GetNextsPos(Vector3Int current, PathSettings settings)
     {
-        var pos = new Vector3Int[(settings.agentStepUp + settings.agentStepDown + 1) * 3 * 3 - 1];
-
-        int index = 0;
-
-        for (int i = -1; i <= 1; i++)
+        if (settings.moveDirection == PathSettings.Direction.crossAndDiagonal)
         {
-            for (int j = -settings.agentStepDown; j <= settings.agentStepUp; j++)
-            {
-                for (int k = -1; k <= 1; k++)
-                {
-                    if (i == 0 && j == 0 && k == 0)
-                        continue;
+            var pos = new Vector3Int[(settings.agentStepUp + settings.agentStepDown + 1) * 3 * 3 - 1];
 
-                    pos[index++] = current + new Vector3Int(i, j, k);
+            int index = 0;
+
+            for (int i = -1; i <= 1; i++)
+            {
+                for (int j = -settings.agentStepDown; j <= settings.agentStepUp; j++)
+                {
+                    for (int k = -1; k <= 1; k++)
+                    {
+                        if (i == 0 && j == 0 && k == 0)
+                            continue;
+
+                        pos[index++] = current + new Vector3Int(i, j, k);
+                    }
                 }
             }
-        }
 
-        return pos;
+            return pos;
+        }
+        else
+        {
+            var pos = new Vector3Int[(settings.agentStepUp + settings.agentStepDown + 1) * 4];
+            var offsets = new Vector3Int[] { new Vector3Int(1, 0, 0), new Vector3Int(-1, 0, 0), new Vector3Int(0, 0, 1), new Vector3Int(0, 0, -1) };
+
+            int index = 0;
+
+            for(int i = -settings.agentStepDown; i <= settings.agentStepUp; i++)
+            {
+                for(int j = 0; j < offsets.Length; j++)
+                {
+                    pos[index++] = current + offsets[j] + new Vector3Int(0, i, 0);
+                }
+            }
+
+            return pos;
+        }
     }
 
     // return the walk weight of the block or -1 if not walkable
