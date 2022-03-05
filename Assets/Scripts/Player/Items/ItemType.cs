@@ -14,6 +14,9 @@ public class ItemType : ScriptableObject
     [SerializeField] [DisplayAsString] int m_UID = 0;
     public int UID { get { return m_UID; } }
 
+    [SerializeField] [MinValue(1)] int m_maxStack = 1;
+    public int maxStack { get { return m_maxStack; } }
+
     public bool Init(string name, int UID)
     {
         if(m_nameID.Length != 0 || m_UID != 0)
