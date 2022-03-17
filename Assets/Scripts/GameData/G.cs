@@ -25,6 +25,9 @@ public class G
     ItemTypeList m_itemTypeList = new ItemTypeList();
     public ItemTypeList items { get { return m_itemTypeList; } }
 
+    SkillTypeList m_skillTypeList = new SkillTypeList();
+    public SkillTypeList skills { get { return m_skillTypeList; } }
+
     G()
     {
         
@@ -40,5 +43,6 @@ public class G
     {
         m_blockTypeList.Reload();
         m_itemTypeList.Reload();
+        m_skillTypeList.Reload();
     }
 }

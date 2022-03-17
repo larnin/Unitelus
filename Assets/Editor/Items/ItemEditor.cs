@@ -33,16 +33,6 @@ public class ItemEditor : OdinMenuEditorWindow
         return tree;
     }
 
-    ItemType LoadItem(string path)
-    {
-        var file = AssetDatabase.LoadAssetAtPath(path, typeof(ScriptableObject));
-        if (file == null)
-            return null;
-
-        var item = file as ItemType;
-        return item;
-    }
-
     public void ReloadItems()
     {
         G.sys.items.Reload();
