@@ -45,7 +45,7 @@ public class VoronoiBiomes
 
         m_rand = new MT19937((uint)settings.seed);
 
-        DevelopeSettings();
+        DeveloppeSettings();
 
         GenerateVertices();
         MagnetizeVertices();
@@ -53,7 +53,7 @@ public class VoronoiBiomes
         GenerateTriangles();
     }
 
-    void DevelopeSettings()
+    void DeveloppeSettings()
     {
         m_moistureMin = float.MaxValue;
         m_moistureMax = float.MinValue;

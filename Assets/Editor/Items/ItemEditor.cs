@@ -16,23 +16,15 @@ public class ItemEditor : OdinMenuEditorWindow
         GetWindow<ItemEditor>().Show();
     }
 
-    List<ItemType> m_items = new List<ItemType>();
-
     protected override OdinMenuTree BuildMenuTree()
     {
         var tree = new OdinMenuTree();
         tree.Selection.SupportsMultiSelect = false;
 
-        var assets = AssetDatabase.FindAssets("*", new string[] { "Assets/Resources/Items/" });
-
-        m_items.Clear();
-
-        foreach (var guid in assets)
+        int nb = G.sys.items.GetItemCount();
+        for(int i = 0; i < nb; i++)
         {
-            var item = LoadItem(AssetDatabase.GUIDToAssetPath(guid));
-            if (item == null)
-                continue;
-            m_items.Add(item);
+            var item = G.sys.items.GetItemFromIndex(i);
             tree.Add(item.nameID, item);
         }
 
@@ -53,22 +45,9 @@ public class ItemEditor : OdinMenuEditorWindow
 
     public void ReloadItems()
     {
+        G.sys.items.Reload();
+
         ForceMenuTreeRebuild();
-    }
-
-    public int GetFreeUID()
-    {
-        int nextUID = 1;
-        for(int i = 0; i < m_items.Count; i++)
-        {
-            if(m_items[i].UID == nextUID)
-            {
-                nextUID++;
-                i = -1;
-            }
-        }
-
-        return nextUID;
     }
 }
 
@@ -104,7 +83,7 @@ public class NewItemEditor
             return;
         }
 
-        if(!asset.Init(m_name, m_tree.GetFreeUID()))
+        if(!asset.Init(m_name, G.sys.items.GetFreeUID()))
         {
             Debug.LogError("Unable to init the new Item");
             return;

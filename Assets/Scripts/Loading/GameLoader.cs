@@ -101,8 +101,8 @@ public class GameLoader : MonoBehaviour
             return;
         }
 
-        //init list here to not load blocks types in an other thread
-        BlockTypeList.InitInstance();
+        //init datas here if not done before
+        G.Init();
 
         m_stateText = "Generate world";
         m_generator = new WorldGenerator();
@@ -179,7 +179,7 @@ public class GameLoader : MonoBehaviour
                 world.GetLocalMatrix(x - 1, height - 1, z - 1, mat);
 
                 var centerBlock = mat.Get(1, 0, 1);
-                var centerType = BlockTypeList.instance.Get(centerBlock.id);
+                var centerType = G.sys.blocks.Get(centerBlock.id);
                 if (centerType.IsEmpty() || !centerType.IsFaceFull(BlockFace.Up, centerBlock.data))
                 {
                     height--;
@@ -204,9 +204,9 @@ public class GameLoader : MonoBehaviour
                         continue;
 
                     var groundBlock = mat.Get(a, 0, b);
-                    var groundType = BlockTypeList.instance.Get(groundBlock.id);
-                    var wallType = BlockTypeList.instance.Get(mat.Get(a, 1, b).id);
-                    var wall2Type = BlockTypeList.instance.Get(mat.Get(a, 2, b).id);
+                    var groundType = G.sys.blocks.Get(groundBlock.id);
+                    var wallType = G.sys.blocks.Get(mat.Get(a, 1, b).id);
+                    var wall2Type = G.sys.blocks.Get(mat.Get(a, 2, b).id);
 
                     if(!wallType.IsEmpty() || !wall2Type.IsEmpty())
                     {

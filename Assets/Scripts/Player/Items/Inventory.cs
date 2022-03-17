@@ -14,7 +14,7 @@ public class InventoryItem
         get { return m_itemUID; } 
         set
         {
-            var type = ItemTypeList.instance.GetItem(value);
+            var type = G.sys.items.GetItem(value);
             if(type == null)
             {
                 m_itemUID = -1;
@@ -34,7 +34,7 @@ public class InventoryItem
             if (value > 0)
             {
                 m_stack = value;
-                var type = ItemTypeList.instance.GetItem(m_itemUID);
+                var type = G.sys.items.GetItem(m_itemUID);
                 if (type != null)
                 {
                     if (m_stack > type.maxStack)
@@ -55,7 +55,7 @@ public class InventoryItem
         m_itemUID = _itemUID;
         stack = _stack;
 
-        var type = ItemTypeList.instance.GetItem(m_itemUID);
+        var type = G.sys.items.GetItem(m_itemUID);
         if(type == null)
         {
             m_itemUID = -1;
@@ -76,7 +76,7 @@ public class InventoryItem
         if (m_itemUID < 0)
             return false;
 
-        var type = ItemTypeList.instance.GetItem(m_itemUID);
+        var type = G.sys.items.GetItem(m_itemUID);
         return type != null;
 
     }
@@ -85,7 +85,7 @@ public class InventoryItem
     //value can be negative to remove items
     public int AddStack(int value)
     {
-        var type = ItemTypeList.instance.GetItem(m_itemUID);
+        var type = G.sys.items.GetItem(m_itemUID);
         if(type == null)
         {
             m_stack = 0;
@@ -204,7 +204,7 @@ public class Inventory
         if (stack <= 0)
             return 0;
 
-        var type = ItemTypeList.instance.GetItem(itemUID);
+        var type = G.sys.items.GetItem(itemUID);
         if (type == null)
             return 0;
 

@@ -15,8 +15,16 @@ MonoBehaviour:
   main:
     seed: 0
     size: 4
-    base2DPerlin: []
-    base3DPerlin: []
+    perlin2D:
+      baseFrequency: 1
+      baseAmplitude: 1
+      nbLayers: 1
+      layerAmplitudeScale: 0.5
+    perlin3D:
+      baseFrequency: 1
+      baseAmplitude: 1
+      nbLayers: 1
+      layerAmplitudeScale: 0.5
   biomes:
     defaultBiome: 2
     initialBiomes:
@@ -42,5 +50,14 @@ MonoBehaviour:
     biomeSize: 5
     randomizeWeight: 0.4
     packingProbabiity: 1
+  plain:
+    baseLevel: 0
+    amplitude2D: 0
+    amplitude3D: 0
   ocean:
     waterLevel: 0
+    groundLevel: 0
+    groundAmplitude: 0
+  desert:
+    amplitude2D: 0
+    amplitude3D: 0

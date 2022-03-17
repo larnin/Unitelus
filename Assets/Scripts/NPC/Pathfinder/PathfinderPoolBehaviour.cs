@@ -374,7 +374,7 @@ public class PathfinderPool
         for (int i = 0; i < iterations; i++)
         {
             var b = m_datas.view.GetBlock(pos);
-            var t = BlockTypeList.instance.Get(b.id);
+            var t = G.sys.blocks.Get(b.id);
             if (t.canWalkThrough)
             {
                 bIsOk = true;
@@ -388,7 +388,7 @@ public class PathfinderPool
             for (int i = 0; i < iterations; i++)
             {
                 var b = m_datas.view.GetBlock(pos);
-                var t = BlockTypeList.instance.Get(b.id);
+                var t = G.sys.blocks.Get(b.id);
                 if (t.canFloatTurough)
                 {
                     bIsOk = true;
@@ -396,7 +396,7 @@ public class PathfinderPool
                 }
 
                 var b2 = m_datas.view.GetBlock(pos + new Vector3Int(0, -1, 0));
-                var t2 = BlockTypeList.instance.Get(b2.id);
+                var t2 = G.sys.blocks.Get(b2.id);
                 if (t2.canWalkOn)
                 {
                     bIsOk = true;
@@ -461,13 +461,13 @@ public class PathfinderPool
         //the bloc must be canFloatTurough or canWalkThrough + canWalkOn for the block below
         var bCenter = m_datas.view.GetBlock(pos);
 
-        var typeCenter = BlockTypeList.instance.Get(bCenter.id);
+        var typeCenter = G.sys.blocks.Get(bCenter.id);
         if (!typeCenter.canWalkThrough)
             return -1;
         if (!typeCenter.canFloatTurough)
         {
             var bDown = m_datas.view.GetBlock(new Vector3Int(pos.x, pos.y - 1, pos.z));
-            var typeDown = BlockTypeList.instance.Get(bDown.id);
+            var typeDown = G.sys.blocks.Get(bDown.id);
             if (!typeDown.canWalkOn && !typeDown.canFloatTurough)
                 return -1;
         }
@@ -484,7 +484,7 @@ public class PathfinderPool
                         continue; //already tested with the ground test
 
                     var b = m_datas.view.GetBlock(pos + new Vector3Int(i, j, k));
-                    var type = BlockTypeList.instance.Get(b.id);
+                    var type = G.sys.blocks.Get(b.id);
                     if (!type.canWalkThrough)
                         return -1;
                 }
@@ -502,7 +502,7 @@ public class PathfinderPool
                     for (int j = 0; j < -vertical; j++)
                     {
                         var b = m_datas.view.GetBlock(pos + new Vector3Int(i, j + settings.agentHeight, k));
-                        var type = BlockTypeList.instance.Get(b.id);
+                        var type = G.sys.blocks.Get(b.id);
                         if (!type.canWalkThrough)
                             return -1;
                     }
@@ -518,7 +518,7 @@ public class PathfinderPool
                     for (int j = 0; j < vertical; j++)
                     {
                         var b = m_datas.view.GetBlock(previousPos + new Vector3Int(i, j + settings.agentHeight, k));
-                        var type = BlockTypeList.instance.Get(b.id);
+                        var type = G.sys.blocks.Get(b.id);
                         if (!type.canWalkThrough)
                             return -1;
                     }

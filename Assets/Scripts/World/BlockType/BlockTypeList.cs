@@ -8,45 +8,36 @@ using UnityEngine.Assertions;
 
 public class BlockTypeList
 {
-    static BlockTypeList m_instance = null;
-    public static BlockTypeList instance
-    {
-        get
-        {
-            InitInstance();
-            return m_instance;
-        }
-    }
-
-    public static void InitInstance()
-    {
-        if (m_instance == null)
-            m_instance = new BlockTypeList();
-    }
-
     List<BlockTypeBase> m_blocks = new List<BlockTypeBase>();
 
-    BlockTypeList()
+    public BlockTypeList()
     {
+        Reload();
+    }
+
+    public void Reload()
+    {
+        m_blocks.Clear();
+
         var allBlocks = Enum.GetValues(typeof(BlockID));
-        foreach(BlockID b in allBlocks)
+        foreach (BlockID b in allBlocks)
         {
             var name = "Blocks/" + b.ToString();
 
             var file = Resources.Load<ScriptableObject>(name);
-            if(file == null)
+            if (file == null)
             {
                 DebugConsole.Error("Unable to find Block " + name);
                 continue;
             }
 
             var blockType = file as BlockTypeBase;
-            if(blockType == null)
+            if (blockType == null)
             {
                 DebugConsole.Error("Load Block " + name + " have an uncompatible type !");
                 continue;
             }
-            if(blockType.id != b)
+            if (blockType.id != b)
                 DebugConsole.Warning("The block " + name + " have an inconsistent id");
 
             Set(b, blockType);

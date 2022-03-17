@@ -55,12 +55,12 @@ public class BlockTypeCube : BlockTypeBase
         var front = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Front));
         var back = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Back));
 
-        m_data.SetFaceDraw(!BlockTypeList.instance.Get(left.id).IsFaceFull(BlockFace.Right, left.data), BlockFace.Left);
-        m_data.SetFaceDraw(!BlockTypeList.instance.Get(right.id).IsFaceFull(BlockFace.Left, right.data), BlockFace.Right);
-        m_data.SetFaceDraw(!BlockTypeList.instance.Get(up.id).IsFaceFull(BlockFace.Down, up.data), BlockFace.Up);
-        m_data.SetFaceDraw(!BlockTypeList.instance.Get(down.id).IsFaceFull(BlockFace.Up, down.data), BlockFace.Down);
-        m_data.SetFaceDraw(!BlockTypeList.instance.Get(front.id).IsFaceFull(BlockFace.Back, front.data), BlockFace.Front);
-        m_data.SetFaceDraw(!BlockTypeList.instance.Get(back.id).IsFaceFull(BlockFace.Front, back.data), BlockFace.Back);
+        m_data.SetFaceDraw(!G.sys.blocks.Get(left.id).IsFaceFull(BlockFace.Right, left.data), BlockFace.Left);
+        m_data.SetFaceDraw(!G.sys.blocks.Get(right.id).IsFaceFull(BlockFace.Left, right.data), BlockFace.Right);
+        m_data.SetFaceDraw(!G.sys.blocks.Get(up.id).IsFaceFull(BlockFace.Down, up.data), BlockFace.Up);
+        m_data.SetFaceDraw(!G.sys.blocks.Get(down.id).IsFaceFull(BlockFace.Up, down.data), BlockFace.Down);
+        m_data.SetFaceDraw(!G.sys.blocks.Get(front.id).IsFaceFull(BlockFace.Back, front.data), BlockFace.Front);
+        m_data.SetFaceDraw(!G.sys.blocks.Get(back.id).IsFaceFull(BlockFace.Front, back.data), BlockFace.Back);
 
         BlockRenderer.DrawCubic(pos, meshParams, m_data);
     }

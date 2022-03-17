@@ -38,7 +38,7 @@ public class LayerRenderPassBlocks : LayerRendererPassBase
 
                     Vector3 pos = new Vector3(i, j, k);
 
-                    BlockTypeList.instance.Get(centerID).Render(pos, m_view, meshParams);
+                    G.sys.blocks.Get(centerID).Render(pos, m_view, meshParams);
                 }
     }
 }

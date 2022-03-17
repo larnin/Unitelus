@@ -236,13 +236,13 @@ public class Path
         //the bloc must be canFloatTurough or canWalkThrough + canWalkOn for the block below
         var bCenter = m_data.world.GetBlock(pos);
 
-        var typeCenter = BlockTypeList.instance.Get(bCenter.id);
+        var typeCenter = G.sys.blocks.Get(bCenter.id);
         if (!typeCenter.canWalkThrough)
             return false;
         if (!typeCenter.canFloatTurough)
         {
             var bDown = m_data.world.GetBlock(new Vector3Int(pos.x, pos.y - 1, pos.z));
-            var typeDown = BlockTypeList.instance.Get(bDown.id);
+            var typeDown = G.sys.blocks.Get(bDown.id);
             if (!typeDown.canWalkOn && !typeDown.canFloatTurough)
                 return false;
         }
@@ -259,7 +259,7 @@ public class Path
                         continue; //already tested with the ground test
 
                     var b = m_data.world.GetBlock(pos + new Vector3Int(i, j, k));
-                    var type = BlockTypeList.instance.Get(b.id);
+                    var type = G.sys.blocks.Get(b.id);
                     if (!type.canWalkThrough)
                         return false;
                 }
@@ -277,7 +277,7 @@ public class Path
                     for (int j = 0; j < -vertical; j++)
                     {
                         var b = m_data.world.GetBlock(pos + new Vector3Int(i, j + settings.agentHeight, k));
-                        var type = BlockTypeList.instance.Get(b.id);
+                        var type = G.sys.blocks.Get(b.id);
                         if (!type.canWalkThrough)
                             return false;
                     }
@@ -293,7 +293,7 @@ public class Path
                     for (int j = 0; j < vertical; j++)
                     {
                         var b = m_data.world.GetBlock(previousPos + new Vector3Int(i, j + settings.agentHeight, k));
-                        var type = BlockTypeList.instance.Get(b.id);
+                        var type = G.sys.blocks.Get(b.id);
                         if (!type.canWalkThrough)
                             return false;
                     }

@@ -191,12 +191,12 @@ public class BlockTypeSmoothed : BlockTypeBase
         var back = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Back));
         var current = neighbors.GetCenter();
 
-        bool drawLeft = !BlockTypeList.instance.Get(left.id).IsFaceFull(BlockFace.Right, left.data);
-        bool drawRight = !BlockTypeList.instance.Get(right.id).IsFaceFull(BlockFace.Left, right.data);
-        bool drawUp = !BlockTypeList.instance.Get(up.id).IsFaceFull(BlockFace.Down, up.data);
-        bool drawDown = !BlockTypeList.instance.Get(down.id).IsFaceFull(BlockFace.Up, down.data);
-        bool drawFront = !BlockTypeList.instance.Get(front.id).IsFaceFull(BlockFace.Back, front.data);
-        bool drawBack = !BlockTypeList.instance.Get(back.id).IsFaceFull(BlockFace.Front, back.data);
+        bool drawLeft = !G.sys.blocks.Get(left.id).IsFaceFull(BlockFace.Right, left.data);
+        bool drawRight = !G.sys.blocks.Get(right.id).IsFaceFull(BlockFace.Left, right.data);
+        bool drawUp = !G.sys.blocks.Get(up.id).IsFaceFull(BlockFace.Down, up.data);
+        bool drawDown = !G.sys.blocks.Get(down.id).IsFaceFull(BlockFace.Up, down.data);
+        bool drawFront = !G.sys.blocks.Get(front.id).IsFaceFull(BlockFace.Back, front.data);
+        bool drawBack = !G.sys.blocks.Get(back.id).IsFaceFull(BlockFace.Front, back.data);
 
         m_data.SetFaceDraw(drawLeft, BlockFace.Left);
         m_data.SetFaceDraw(drawRight, BlockFace.Right);
@@ -217,7 +217,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var leftBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(leftFace));
 
-                if (BlockTypeList.instance.Get(leftBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(leftBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType leftShape = GetShapeTypeData(leftBlock.data);
                     Rotation leftRotation = GetRotationData(leftBlock.data);
@@ -237,7 +237,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
 
-                if (BlockTypeList.instance.Get(rightBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(rightBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType rightShape = GetShapeTypeData(rightBlock.data);
                     Rotation rightRotation = GetRotationData(rightBlock.data);
@@ -263,7 +263,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var downBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Down));
 
-                if (BlockTypeList.instance.Get(downBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(downBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType downShape = GetShapeTypeData(downBlock.data);
                     Rotation downRotation = GetRotationData(downBlock.data);
@@ -280,7 +280,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var backBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(backFace));
 
-                if (BlockTypeList.instance.Get(backBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(backBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType backShape = GetShapeTypeData(backBlock.data);
                     Rotation backRotation = GetRotationData(backBlock.data);
@@ -300,7 +300,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
 
-                if (BlockTypeList.instance.Get(rightBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(rightBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType rightShape = GetShapeTypeData(rightBlock.data);
                     Rotation rightRotation = GetRotationData(rightBlock.data);
@@ -326,7 +326,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var upBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Up));
 
-                if (BlockTypeList.instance.Get(upBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(upBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType upShape = GetShapeTypeData(upBlock.data);
                     Rotation upRotation = GetRotationData(upBlock.data);
@@ -343,7 +343,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var backBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(backFace));
 
-                if (BlockTypeList.instance.Get(backBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(backBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType backShape = GetShapeTypeData(backBlock.data);
                     Rotation backRotation = GetRotationData(backBlock.data);
@@ -363,7 +363,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var rightBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(rightFace));
 
-                if (BlockTypeList.instance.Get(rightBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(rightBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType rightShape = GetShapeTypeData(rightBlock.data);
                     Rotation rightRotation = GetRotationData(rightBlock.data);
@@ -386,7 +386,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var upBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Up));
 
-                if (BlockTypeList.instance.Get(upBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(upBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType upShape = GetShapeTypeData(upBlock.data);
                     Rotation upRotation = GetRotationData(upBlock.data);
@@ -403,7 +403,7 @@ public class BlockTypeSmoothed : BlockTypeBase
             {
                 var downBlock = neighbors.Get(BlockFaceEx.FaceToDirInt(BlockFace.Down));
 
-                if (BlockTypeList.instance.Get(downBlock.id).type == BlockType.Smoothed)
+                if (G.sys.blocks.Get(downBlock.id).type == BlockType.Smoothed)
                 {
                     ShapeType downShape = GetShapeTypeData(downBlock.data);
                     Rotation downRotation = GetRotationData(downBlock.data);
@@ -424,14 +424,14 @@ public class BlockTypeSmoothed : BlockTypeBase
     void GetBlockType(MatrixView<BlockData> neighbors, out ShapeType shape, out Rotation rotation)
     {
         BlockID id = neighbors.GetCenter().id;
-        var type = BlockTypeList.instance.Get(id);
+        var type = G.sys.blocks.Get(id);
 
         for (int i = -1; i <= 1; i++)
             for (int j = -1; j <= 1; j++)
                 for (int k = -1; k <= 1; k++)
                 {
                     var b = neighbors.Get(i, j, k);
-                    var testType = BlockTypeList.instance.Get(b.id);
+                    var testType = G.sys.blocks.Get(b.id);
 
                     tempBlocks.Set(i + 1, j + 1, k + 1, b.id == id || testType.type == type.type || testType.IsFull());
                 }
