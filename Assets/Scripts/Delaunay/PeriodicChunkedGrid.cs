@@ -38,7 +38,7 @@ namespace NDelaunay
                 int nbTriangle = triangles.Count;
                 for(int i = 0; i < nbTriangle; i++)
                 {
-                    if (Utility.IsOnTriangle(pos, triangles[i].pos1, triangles[i].pos2, triangles[i].pos3))
+                    if (Collision2D.IsOnTriangle(pos, triangles[i].pos1, triangles[i].pos2, triangles[i].pos3))
                         return i;
                 }
 
@@ -125,7 +125,7 @@ namespace NDelaunay
                     Vector2 chunkPos = new Vector2(localChunkX * m_chunkSize, localChunkY * m_chunkSize);
                     Vector2 chunkSize = new Vector2(m_chunkSize, m_chunkSize);
                     
-                    if(Utility.TriangleRectangeCollision(chunkPos, chunkSize, localPos1, localPos2, localPos3))
+                    if(Collision2D.TriangleRectange(chunkPos, chunkSize, localPos1, localPos2, localPos3))
                     {
                         var chunk = m_chunks[ChunkPosToIndex(localChunkX, localChunkY)];
                         chunk.triangles.Add(new LocalTriangle(vertex1, vertex2, vertex3, localPos1, localPos2, localPos3, m_triangleNB));

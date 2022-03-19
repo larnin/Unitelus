@@ -193,7 +193,7 @@ namespace Noise
                 int i1 = i >= 2 ? i - 2 : i + 1;
                 int i2 = i >= 1 ? i - 1 : i + 2;
 
-                Vector2 posEdge = Utility.IntersectLine(points[i], pos, points[i1], points[i2]);
+                Vector2 posEdge = Collision2D.IntersectLine(points[i], pos, points[i1], points[i2]);
 
                 weights[i] = (posEdge - pos).magnitude / (points[i] - posEdge).magnitude;
             }

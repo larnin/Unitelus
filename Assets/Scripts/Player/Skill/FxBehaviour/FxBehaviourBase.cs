@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.VFX;
 
 [Serializable]
 public abstract class FxBehaviourBase
@@ -22,6 +23,8 @@ public abstract class FxBehaviourBase
     [NonSerialized] protected GameObject m_target;
     [NonSerialized] protected Vector3 m_targetPos;
     [NonSerialized] protected Quaternion m_targetRot;
+
+    [NonSerialized] protected VisualEffect m_Fx;
 
     [SerializeField] bool m_stickToEntity;
     [ShowIf("m_stickToEntity")]
@@ -66,10 +69,16 @@ public abstract class FxBehaviourBase
         m_targetRot = Rot;
     }
 
+    public void InitFx(VisualEffect fx)
+    {
+        m_Fx = fx;
+    }
+
     public void Update()
     {
         UpdateCaster();
         UpdateTarget();
+        UpdateFx();
 
         OnUpdate();
     }
@@ -99,9 +108,17 @@ public abstract class FxBehaviourBase
         m_targetRot = m_target.transform.rotation;
     }
 
+    public virtual void UpdateFx()
+    {
+        m_Fx.transform.position = m_casterPos;
+        m_Fx.transform.rotation = m_casterRot;
+    }
+
     //return the AABB around the real collision
     public abstract Bounds GetBounds();
 
     //entity are cylinders (or multy cylinders)
     public abstract bool CanHit(Vector3 pos, Vector3 radius, Vector3 height);
+
+    public abstract void DebugDrawCollision();
 }

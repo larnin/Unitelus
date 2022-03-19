@@ -297,9 +297,9 @@ public class VoronoiBiomes
         type2 = m_vertices[vertex2].biome;
         type3 = m_vertices[vertex3].biome;
 
-        var p1 = Utility.IntersectLine(pos1, pos, pos2, pos3);
-        var p2 = Utility.IntersectLine(pos2, pos, pos1, pos3);
-        var p3 = Utility.IntersectLine(pos3, pos, pos1, pos2);
+        var p1 = Collision2D.IntersectLine(pos1, pos, pos2, pos3);
+        var p2 = Collision2D.IntersectLine(pos2, pos, pos1, pos3);
+        var p3 = Collision2D.IntersectLine(pos3, pos, pos1, pos2);
 
         weight1 = 1 - (pos1 - pos).magnitude / (pos1 - p1).magnitude;
         weight2 = 1 - (pos2 - pos).magnitude / (pos2 - p2).magnitude;

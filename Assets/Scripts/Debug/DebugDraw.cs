@@ -58,6 +58,83 @@ public static class DebugDraw
         }
     }
 
+    public static void Capsule(Vector3 center, float height, float radius, Color color, float duration = -1, int nbRay = 8)
+    {
+        Capsule(new Capsule(center, radius, height), color, duration, nbRay);
+    }
+
+    public static void Capsule(Capsule capsule, Color color, float duration = -1, int nbRay = 8)
+    {
+        Cylinder(capsule.center, capsule.radius, capsule.height, color, duration, nbRay);
+
+        const int sphereNbPart = 16;
+        const float spherePartAngle = Mathf.PI * 2 / sphereNbPart;
+
+        float partAngle = Mathf.PI / nbRay * 2;
+
+        for(int i = 0; i < sphereNbPart / 2; i++)
+        {
+            float stepSphereAngle1 = spherePartAngle * i;
+            float x1 = Mathf.Cos(stepSphereAngle1) * capsule.radius;
+            float y1 = Mathf.Sin(stepSphereAngle1) * capsule.radius;
+
+            float stepSphereAngle2 = spherePartAngle * (i + 1);
+            float x2 = Mathf.Cos(stepSphereAngle2) * capsule.radius;
+            float y2 = Mathf.Sin(stepSphereAngle2) * capsule.radius;
+
+            for (int j = 0; j < nbRay; j++)
+            {
+                float rayAngle = partAngle * j;
+                float x = Mathf.Cos(rayAngle);
+                float z = Mathf.Sin(rayAngle);
+
+                Vector3 pos1 = new Vector3(x1 * x, y1, x1 * z);
+                Vector3 pos2 = new Vector3(x2 * x, y2, x2 * z);
+
+                Vector3 realPos1 = pos1 + capsule.topSphereCenter;
+                Vector3 realPos2 = pos2 + capsule.topSphereCenter;
+
+                Line(realPos1, realPos2, color, duration);
+
+                realPos1 = pos1 + capsule.bottomSphereCenter;
+                realPos1.y -= pos1.y * 2;
+                realPos2 = pos2 + capsule.bottomSphereCenter;
+                realPos2.y -= pos2.y * 2;
+
+                Line(realPos1, realPos2, color, duration);
+            }
+        }
+    }
+
+    public static void Cylinder(Vector3 center, float radius, float height, Color color, float duration = -1, int nbRay = 8)
+    {
+        Cylinder(center, radius, height, Quaternion.identity, color, duration, nbRay);
+    }
+
+    public static void Cylinder(Vector3 center, float radius, float height, Quaternion angle, Color color, float duration = -1, int nbRay = 8)
+    {
+        Vector3 posCircle1 = new Vector3(0, height / 2, 0);
+        posCircle1 = angle * posCircle1;
+        Vector3 posCircle2 = -posCircle1;
+
+        Circle(posCircle1 + center, radius, angle, color, duration);
+        Circle(posCircle2 + center, radius, angle, color, duration);
+
+        float partAngle = Mathf.PI / nbRay * 2;
+
+        for(int i = 0; i < nbRay; i++)
+        {
+            float stepAngle = partAngle * i;
+
+            Vector3 pos1 = new Vector3(Mathf.Cos(stepAngle) * radius, height / 2, Mathf.Sin(stepAngle) * radius);
+            Vector3 pos2 = new Vector3(pos1.x, -pos1.y, pos1.z);
+            pos1 = angle * pos1 + center;
+            pos2 = angle * pos2 + center;
+            Line(pos1, pos2, color, duration);
+        }
+    }
+
+
     public static void Triangle(Vector2 pos1, Vector2 pos2, Vector2 pos3, float y, Color color, float duration)
     {
         Triangle(new Vector3(pos1.x, y, pos1.y), new Vector3(pos2.x, y, pos2.y), new Vector3(pos3.x, y, pos3.y), color, duration);

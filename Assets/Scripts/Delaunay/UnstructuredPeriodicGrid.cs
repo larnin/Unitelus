@@ -1194,7 +1194,7 @@ namespace NDelaunay
                     Vector2 pos2 = m_points[t.points[1].point].pos;
                     Vector2 pos3 = m_points[t.points[2].point].pos;
 
-                    if (Utility.IsOnTriangle(pos, pos1, pos2, pos3))
+                    if (Collision2D.IsOnTriangle(pos, pos1, pos2, pos3))
                         return new TriangleView(this, index, 0, 0);
 
                     continue;
@@ -1216,7 +1216,7 @@ namespace NDelaunay
                         Vector2 pos2 = GetPointPos(t.points[1].point, t.points[1].chunkX - j, t.points[1].chunkY - k);
                         Vector2 pos3 = GetPointPos(t.points[2].point, t.points[2].chunkX - j, t.points[2].chunkY - k);
 
-                        if (Utility.IsOnTriangle(pos, pos1, pos2, pos3))
+                        if (Collision2D.IsOnTriangle(pos, pos1, pos2, pos3))
                             return new TriangleView(this, index, -j, -k);
                     }
                 }
