@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class SkillType : ScriptableObject
+public class SkillType : SerializedScriptableObject
 {
     [SerializeField] string m_nameID = "";
     public string nameID { get { return m_nameID; } }
@@ -26,4 +26,10 @@ public class SkillType : ScriptableObject
 
         return true;
     }
+
+    [SerializeField] SkillBehaviourBase m_skillBehaviour = new SkillBehaviourPassive();
+    public SkillBehaviourBase skillBehaviour { get { return m_skillBehaviour; } }
+
+    [SerializeField] List<SkillTypeStep> m_steps = new List<SkillTypeStep>();
+
 }
