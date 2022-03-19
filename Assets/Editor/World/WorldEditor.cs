@@ -9,7 +9,7 @@ public class WorldEditor : OdinMenuEditorWindow
     WorldGeneratorSettings m_settings = null;
     double m_lastSaveTime;
 
-    [MenuItem("My Game/World Editor")]
+    [MenuItem("Game/World Editor")]
     public static void OpenWindow()
     {
         GetWindow<WorldEditor>().Show();

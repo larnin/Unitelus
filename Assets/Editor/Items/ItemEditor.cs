@@ -10,7 +10,7 @@ using UnityEngine;
 
 public class ItemEditor : OdinMenuEditorWindow
 {
-    [MenuItem("My Game/Item Editor")]
+    [MenuItem("Game/Item Editor")]
     public static void OpenWindow()
     {
         GetWindow<ItemEditor>().Show();

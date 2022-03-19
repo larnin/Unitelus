@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class BlockEditor : OdinMenuEditorWindow
 {
-    [MenuItem("My Game/Block Editor")]
+    [MenuItem("Game/Block Editor")]
     public static void OpenWindow()
     {
         GetWindow<BlockEditor>().Show();

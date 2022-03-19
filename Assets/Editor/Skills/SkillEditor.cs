@@ -10,7 +10,7 @@ using UnityEngine;
 
 public class SkillEditor : OdinMenuEditorWindow
 {
-    [MenuItem("My Game/Skill Editor")]
+    [MenuItem("Game/Skill Editor")]
     public static void OpenWindow()
     {
         GetWindow<SkillEditor>().Show();
