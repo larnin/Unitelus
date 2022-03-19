@@ -12,5 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88866a86b6d8e594da7b3a7044b5e0b7, type: 3}
   m_Name: Test
   m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: m_skillBehaviour
+      Entry: 7
+      Data: 0|SkillBehaviourPassive, Assembly-CSharp
+    - Name: 
+      Entry: 8
+      Data: 
   m_nameID: Test
   m_UID: 1
+  m_steps: []
