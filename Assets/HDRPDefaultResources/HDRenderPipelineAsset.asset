@@ -18,7 +18,8 @@ MonoBehaviour:
   m_DefaultVolumeProfile: {fileID: 11400000, guid: 560e7eccaf214de41b3faffde77b20ff,
     type: 2}
   m_LensAttenuation: 0
-  m_DefaultLookDevProfile: {fileID: 0}
+  m_DefaultLookDevProfile: {fileID: 11400000, guid: 311113292d9ab694d997239519a3ccfa,
+    type: 2}
   m_RenderingPathDefaultCameraFrameSettings:
     bitDatas:
       data1: 72198262773251917
