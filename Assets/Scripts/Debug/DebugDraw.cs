@@ -147,12 +147,12 @@ public static class DebugDraw
         Line(pos3, pos1, color, duration);
     }
 
-    public static void Cube(Vector3 pos, Vector3 size, Color color, float duration = -1)
+    public static void Box(Vector3 pos, Vector3 size, Color color, float duration = -1)
     {
-        CentredCube(pos + size / 2, size, color, duration);
+        CentredBox(pos + size / 2, size, color, duration);
     }
 
-    public static void CentredCube(Vector3 pos, Vector3 size, Color color, float duration = -1)
+    public static void CentredBox(Vector3 pos, Vector3 size, Color color, float duration = -1)
     {
         Vector3 min = pos - size / 2;
         Vector3 max = pos + size / 2;
@@ -171,6 +171,38 @@ public static class DebugDraw
         Line(new Vector3(max.x, min.y, min.z), new Vector3(max.x, max.y, min.z), color, duration);
         Line(new Vector3(max.x, min.y, max.z), new Vector3(max.x, max.y, max.z), color, duration);
         Line(new Vector3(min.x, min.y, max.z), new Vector3(min.x, max.y, max.z), color, duration);
+    }
+
+    public static void CenteredOrientedBox(Vector3 pos, Vector3 size, Quaternion orientation, Color color, float duration = -1)
+    {
+        Vector3 half = size / 2;
+
+        Vector3[] points = new Vector3[]
+        {
+            (orientation * new Vector3(half.x, half.y, half.z)) + pos,
+            (orientation * new Vector3(half.x, half.y, -half.z)) + pos,
+            (orientation * new Vector3(-half.x, half.y, half.z)) + pos,
+            (orientation * new Vector3(-half.x, half.y, -half.z)) + pos,
+            (orientation * new Vector3(half.x, -half.y, half.z)) + pos,
+            (orientation * new Vector3(half.x, -half.y, -half.z)) + pos,
+            (orientation * new Vector3(-half.x, -half.y, half.z)) + pos,
+            (orientation * new Vector3(-half.x, -half.y, -half.z)) + pos,
+        };
+
+        Line(points[0], points[1], color, duration);
+        Line(points[1], points[3], color, duration);
+        Line(points[3], points[2], color, duration);
+        Line(points[2], points[0], color, duration);
+
+        Line(points[0], points[4], color, duration);
+        Line(points[1], points[5], color, duration);
+        Line(points[2], points[6], color, duration);
+        Line(points[3], points[7], color, duration);
+
+        Line(points[7], points[6], color, duration);
+        Line(points[6], points[4], color, duration);
+        Line(points[4], points[5], color, duration);
+        Line(points[5], points[7], color, duration);
     }
 
     public static void Rectangle(Vector3 pos, Vector2 size, Color color, float duration = -1)
