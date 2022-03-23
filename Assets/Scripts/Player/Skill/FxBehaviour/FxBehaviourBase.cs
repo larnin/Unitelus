@@ -277,7 +277,8 @@ public abstract class FxBehaviourBase
         foreach (var box in m_boxes)
             DebugDraw.CenteredOrientedBox(box.center, box.halfExtends * 2, box.orientation, drawColor);
 
-        //todo draw capsule
+        foreach (var capsule in m_capsules)
+            DebugDraw.OrientedCapsule(capsule.pos1, capsule.pos2, capsule.radius, drawColor);
 
         foreach (var ray in m_rays)
             DebugDraw.Line(ray.pos1, ray.pos2, drawColor);

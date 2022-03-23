@@ -14,7 +14,7 @@ public static class DebugDraw
 
     public static void Line(Vector3 pos1, Vector3 pos2, Color color, float duration = -1)
     {
-        if (duration < 0)
+        if (duration <= 0)
             Debug.DrawLine(pos1, pos2, color);
         else Debug.DrawLine(pos1, pos2, color, duration);
     }
@@ -106,6 +106,51 @@ public static class DebugDraw
         }
     }
 
+    public static void OrientedCapsule(Vector3 pos1, Vector3 pos2, float radius, Color color, float duration = -1, int nbRay = 8)
+    {
+        float height = (pos1 - pos2).magnitude;
+
+        Vector3 up = (pos1 - pos2) / height;
+        Vector3 right = Vector3.Cross(up, Vector3.forward);
+        Vector3 forward = Vector3.Cross(right, up);
+
+        Quaternion angle = Quaternion.LookRotation(forward, up);
+
+        Cylinder((pos1 + pos2) / 2, radius, height, angle, color, duration, nbRay);
+
+        const int sphereNbPart = 16;
+        const float spherePartAngle = Mathf.PI * 2 / sphereNbPart;
+
+        float partAngle = Mathf.PI / nbRay * 2;
+
+        for (int i = 0; i < sphereNbPart / 2; i++)
+        {
+            float stepSphereAngle1 = spherePartAngle * i;
+            float x1 = Mathf.Cos(stepSphereAngle1) * radius;
+            float y1 = Mathf.Sin(stepSphereAngle1) * radius;
+
+            float stepSphereAngle2 = spherePartAngle * (i + 1);
+            float x2 = Mathf.Cos(stepSphereAngle2) * radius;
+            float y2 = Mathf.Sin(stepSphereAngle2) * radius;
+
+            for (int j = 0; j < nbRay; j++)
+            {
+                float rayAngle = partAngle * j;
+                float x = Mathf.Cos(rayAngle);
+                float z = Mathf.Sin(rayAngle);
+
+                Vector3 pos1Top = (angle * new Vector3(x1 * x, y1, x1 * z)) + pos1;
+                Vector3 pos2Top = (angle * new Vector3(x2 * x, y2, x2 * z)) + pos1;
+
+                Vector3 pos1Bottom = (angle * new Vector3(x1 * x, -y1, x1 * z)) + pos2;
+                Vector3 pos2Bottom = (angle * new Vector3(x2 * x, -y2, x2 * z)) + pos2;
+
+                Line(pos1Top, pos2Top, color, duration);
+                Line(pos1Bottom, pos2Bottom, color, duration);
+            }
+        }
+    }
+
     public static void Cylinder(Vector3 center, float radius, float height, Color color, float duration = -1, int nbRay = 8)
     {
         Cylinder(center, radius, height, Quaternion.identity, color, duration, nbRay);
@@ -133,7 +178,6 @@ public static class DebugDraw
             Line(pos1, pos2, color, duration);
         }
     }
-
 
     public static void Triangle(Vector2 pos1, Vector2 pos2, Vector2 pos3, float y, Color color, float duration)
     {
