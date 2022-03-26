@@ -32,4 +32,13 @@ public class SkillType : SerializedScriptableObject
 
     [SerializeField] List<SkillTypeStep> m_steps = new List<SkillTypeStep>();
 
+    public int StepCount { get { return m_steps.Count; } }
+
+    public SkillTypeStep Step(int index)
+    {
+        if (index < 0 || index > m_steps.Count)
+            return null;
+        return m_steps[index];
+    }
+
 }

@@ -7,5 +7,15 @@ using UnityEngine;
 
 public class FxBehaviourNoCollision : FxBehaviourBase
 {
-    //don't need anything, no collisions
+    protected override void OnStart()
+    {
+        pos = casterPos;
+        rot = casterRot;
+    }
+
+    protected override void OnUpdate()
+    {
+        pos = casterPos;
+        rot = casterRot;
+    }
 }

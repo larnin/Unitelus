@@ -33,7 +33,34 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 2|SkillTypeStep, Assembly-CSharp
+    - Name: m_fx
+      Entry: 6
+      Data: 
+    - Name: m_fxBehaviour
+      Entry: 7
+      Data: 3|FxBehaviourNoCollision, Assembly-CSharp
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: m_stickToEntity
+      Entry: 5
+      Data: false
+    - Name: m_orientation
+      Entry: 3
       Data: 0
+    - Name: m_followBone
+      Entry: 5
+      Data: true
+    - Name: m_boneName
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 13
       Data: 
