@@ -64,10 +64,10 @@ public class FxInstance
     Vector3 m_targetPos;
     Quaternion m_targetRot;
 
-    List<FxStructs.Sphere> m_spheres;
-    List<FxStructs.Box> m_boxes;
-    List<FxStructs.Capsule> m_capsules;
-    List<FxStructs.Ray> m_rays;
+    List<FxStructs.Sphere> m_spheres = new List<FxStructs.Sphere>();
+    List<FxStructs.Box> m_boxes = new List<FxStructs.Box>();
+    List<FxStructs.Capsule> m_capsules = new List<FxStructs.Capsule>();
+    List<FxStructs.Ray> m_rays = new List<FxStructs.Ray>();
 
     Bounds m_bounds;
     bool m_boundsSet;
@@ -180,7 +180,8 @@ public class FxInstance
         }
 
         m_casterPos = m_caster.transform.position;
-        m_casterRot = m_caster.transform.rotation;
+        if(m_step.orientation == SkillTypeStep.FxOrientation.Local)
+            m_casterRot = m_caster.transform.rotation;
 
         if (m_target == null)
             return;

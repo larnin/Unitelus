@@ -15,7 +15,8 @@ MonoBehaviour:
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
-    ReferencedUnityObjects: []
+    ReferencedUnityObjects:
+    - {fileID: 8926484042661614526, guid: ef9fc03813726534da47ec5eb89d8206, type: 3}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -38,8 +39,8 @@ MonoBehaviour:
       Entry: 7
       Data: 2|SkillTypeStep, Assembly-CSharp
     - Name: m_fx
-      Entry: 6
-      Data: 
+      Entry: 10
+      Data: 0
     - Name: m_fxBehaviour
       Entry: 7
       Data: 3|FxBehaviourNoCollision, Assembly-CSharp
@@ -48,7 +49,7 @@ MonoBehaviour:
       Data: 
     - Name: m_stickToEntity
       Entry: 5
-      Data: false
+      Data: true
     - Name: m_orientation
       Entry: 3
       Data: 0
